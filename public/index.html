@@ -1,0 +1,2091 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SLRC - School Learning Resources Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --cream: #f5f0e8;
+            --amber: #d4831a;
+            --amber-light: #e8a040;
+            --amber-dark: #b06a10;
+            --teal: #2d6e6e;
+            --teal-light: #3d8a8a;
+            --dark: #1a1a1a;
+            --dark-shelf: #2c2118;
+            --text-muted: #7a6e5f;
+            --text-body: #3d3328;
+            --border: rgba(212, 131, 26, 0.2);
+            --card-bg: rgba(250, 246, 238, 0.92);
+            --radius: 18px;
+            --shadow: 0 12px 40px rgba(26, 16, 5, 0.12);
+            --transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            color: var(--text-body);
+            overflow: auto;
+            position: relative;
+
+            /* === BACKGROUND: Replace 'bookshelf-bg.jpg' with your image path === */
+           
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        /* Warm cream overlay to keep text readable over bookshelf image */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(
+                135deg,
+                rgba(245, 240, 232, 0.88) 0%,
+                rgba(245, 240, 232, 0.72) 50%,
+                rgba(44, 33, 24, 0.40) 100%
+            );
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Decorative blob shapes like the reference image */
+        .blob {
+            position: fixed;
+            border-radius: 50%;
+            background: rgba(245, 240, 232, 0.85);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .blob-1 { width: 420px; height: 420px; top: -80px; right: -80px; }
+        .blob-2 { width: 280px; height: 280px; bottom: 10%; left: -60px; }
+
+        .page-layout {
+            margin-top: -100px;
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 3rem 2%;
+            padding-right: 5%;
+            margin-left: 380px;
+        }
+
+        /* Centered editorial panel */
+        .editorial-panel {
+            flex: 0 0 auto;
+            max-width: 520px;
+            width: 100%;
+            text-align: center;
+        }
+
+        /* Logo row */
+        .logo-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2.5rem;
+        }
+
+ 
+
+        /* === LOGO: Replace 'slrc-logo.png' with your actual logo path === */
+        .logo-mark img {
+            width: 250px;
+            height: 250px;
+            object-fit: contain;
+            padding: 1px;
+            margin-left: -10%;
+        }
+
+        /* Fallback icon if logo not loaded */
+        .logo-mark .logo-fallback {
+            font-size: 1.5rem;
+            color: var(--amber-light);
+        }
+
+        .logo-text {
+            line-height: 1.15;
+            margin-left: -150px;
+        }
+
+        .logo-text .abbr {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--dark);
+            letter-spacing: 1px;
+            
+        }
+
+        .logo-text .full {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        /* Big headline */
+        .headline {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.1rem, 1vw, 1.1rem);
+            font-weight: 700;
+            color: var(--dark);
+            line-height: 1.1;
+            margin-bottom: 1rem;
+            margin-top: -100px;
+        }
+
+        .headline em {
+            font-style: normal;
+            color: var(--teal);
+        }
+
+
+        /* Card */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 2.2rem 2rem;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(212, 131, 26, 0.15);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            margin: 0 auto;
+        }
+
+        .screen { display: none; animation: fadeUp 0.4s ease; }
+        .screen.active { display: flex; flex-direction: column; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Screen header */
+        .screen-header {
+            margin-bottom: 1.6rem;
+            text-align: center;
+        }
+
+        .screen-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            background: rgba(212, 131, 26, 0.12);
+            color: var(--amber-dark);
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 0.3rem 0.75rem;
+            border-radius: 50px;
+            margin-bottom: 0.6rem;
+        }
+
+        .screen-badge.admin-badge {
+            background: rgba(45, 110, 110, 0.12);
+            color: var(--teal);
+        }
+
+        .screen-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .screen-sub {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        /* Form */
+        .form-group { margin-bottom: 1.1rem; }
+
+        label {
+            display: block;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-body);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 0.5rem;
+        }
+
+        .input-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 0.95rem;
+            color: var(--amber);
+            font-size: 0.95rem;
+            pointer-events: none;
+        }
+
+        /* Password toggle button */
+        .password-toggle {
+            position: absolute;
+            right: 0.95rem;
+            background: none;
+            border: none;
+            color: var(--amber);
+            font-size: 0.95rem;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .password-toggle:hover {
+            color: var(--amber-dark);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 0.82rem 1rem 0.82rem 3.2rem;
+            border: 1.5px solid rgba(212, 131, 26, 0.22);
+            border-radius: 10px;
+            font-size: 0.92rem;
+            font-family: 'DM Sans', sans-serif;
+            background: rgba(255, 252, 245, 0.8);
+            color: var(--text-body);
+            transition: var(--transition);
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--amber);
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(212, 131, 26, 0.12);
+        }
+
+        input::placeholder { color: #b5a898; }
+
+        /* Buttons */
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            width: 100%;
+            padding: 0.88rem 1.5rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            transition: var(--transition);
+            letter-spacing: 0.3px;
+        }
+
+        .btn-primary {
+            background: var(--dark-shelf);
+            color: var(--cream);
+            box-shadow: 0 4px 14px rgba(26, 16, 5, 0.22);
+        }
+
+        .btn-primary:hover {
+            background: var(--amber-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(176, 106, 16, 0.32);
+        }
+
+        .btn-amber {
+            background: var(--amber);
+            color: white;
+            box-shadow: 0 4px 14px rgba(212, 131, 26, 0.28);
+        }
+
+        .btn-amber:hover {
+            background: var(--amber-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(176, 106, 16, 0.38);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1.5px solid var(--border);
+        }
+
+        .btn-ghost:hover {
+            border-color: var(--amber);
+            color: var(--amber-dark);
+            background: rgba(212, 131, 26, 0.05);
+        }
+
+        .btn-danger {
+            background: #b91c1c;
+            color: white;
+            box-shadow: 0 4px 14px rgba(185, 28, 28, 0.22);
+        }
+
+        .btn-danger:hover {
+            background: #991b1b;
+            transform: translateY(-2px);
+        }
+
+        .btn-teal {
+            background: var(--teal);
+            color: white;
+            box-shadow: 0 4px 14px rgba(45, 110, 110, 0.25);
+        }
+
+        .btn-teal:hover {
+            background: var(--teal-light);
+            transform: translateY(-2px);
+        }
+
+        /* Divider */
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 1.2rem 0;
+            color: #c5b9aa;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(212, 131, 26, 0.18);
+        }
+
+        /* User card */
+        .user-card {
+            background: rgba(212, 131, 26, 0.08);
+            border: 1.5px solid rgba(212, 131, 26, 0.18);
+            border-radius: 12px;
+            padding: 1.1rem 1.2rem;
+            margin: 0 auto 1.4rem;
+            text-align: center;
+        }
+
+        .user-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .user-grade {
+            font-size: 0.82rem;
+            color: var(--amber-dark);
+            font-weight: 600;
+            margin-top: 0.15rem;
+        }
+
+        .user-time {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-top: 0.3rem;
+        }
+
+        /* Error */
+        .error-msg {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 0.75rem 1rem;
+            border-radius: 9px;
+            border-left: 3px solid #dc2626;
+            margin-bottom: 0.9rem;
+            font-size: 0.85rem;
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .error-msg.show { opacity: 1; max-height: 80px; }
+
+        /* Success */
+        .success-wrap {
+            text-align: center;
+            padding: 1rem 0;
+        }
+
+        .success-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #059669, #34d399);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.2rem;
+            color: white;
+            font-size: 1.8rem;
+            box-shadow: 0 8px 24px rgba(5, 150, 105, 0.3);
+            animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.4); opacity: 0; }
+            to   { transform: scale(1); opacity: 1; }
+        }
+
+        .success-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 0.4rem;
+        }
+
+        .success-sub {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+        }
+
+        /* Spinner */
+        .spinner {
+            display: none;
+            width: 16px; height: 16px;
+            border: 2.5px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        .spinner.show { display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Footer */
+        .footer {
+            margin-top: 1.5rem;
+            text-align: center;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        .footer span { 
+            color: var(--amber); 
+            font-weight: 600; 
+        }
+
+        /* Arrow decoration (like reference image) */
+        .arrow-deco {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 1.5rem;
+            font-weight: 500;
+        }
+
+        .arrow-deco::after {
+            content: '→';
+            font-size: 1rem;
+        }
+
+        /* Left Sidebar - Current Users */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 380px;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--dark-shelf) 0%, rgba(44, 33, 24, 0.95) 100%);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-right: 2px solid rgba(212, 131, 26, 0.25);
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 4px 0 20px rgba(26, 16, 5, 0.3);
+        }
+
+        .sidebar-header {
+            padding: 1.5rem 1.2rem;
+            border-bottom: 2px solid rgba(212, 131, 26, 0.2);
+            background: rgba(212, 131, 26, 0.08);
+            position: sticky;
+            top: 0;
+            z-index: 101;
+        }
+
+        .sidebar-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--amber-light);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .sidebar-count {
+            display: inline-block;
+            background: var(--amber);
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-left: 0.5rem;
+        }
+
+        .sidebar-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .sidebar-content {
+            padding: 1rem 0.8rem;
+        }
+
+        .user-item {
+            background: rgba(212, 131, 26, 0.1);
+            border: 1.5px solid rgba(212, 131, 26, 0.2);
+            border-radius: 10px;
+            padding: 0.9rem;
+            margin-bottom: 0.8rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { 
+                opacity: 0; 
+                transform: translateX(-20px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateX(0); 
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+        }
+
+        .user-item:hover {
+            background: rgba(212, 131, 26, 0.15);
+            border-color: var(--amber-light);
+            transform: translateX(4px);
+        }
+
+        .user-item-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--cream);
+            margin-bottom: 0.3rem;
+        }
+
+        .user-item-info {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .user-item-time {
+            font-size: 0.7rem;
+            color: var(--amber-light);
+            font-weight: 500;
+            margin-top: 0.4rem;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .user-item-badge {
+            display: inline-block;
+            background: var(--amber);
+            color: var(--dark);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            margin-top: 0.4rem;
+            margin-right: 0.5rem;
+        }
+
+        .user-item-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.6rem;
+        }
+
+        .checkout-btn-small {
+            flex: 1;
+            background: #b91c1c;
+            color: white;
+            border: none;
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.3rem;
+        }
+
+        .checkout-btn-small:hover {
+            background: #991b1b;
+            transform: translateY(-1px);
+        }
+
+        .checkout-btn-small:active {
+            transform: translateY(0);
+        }
+
+        /* Sidebar book input field */
+        .sidebar-book-input {
+            width: 100%;
+            padding: 0.4rem 0.6rem;
+            font-size: 0.7rem;
+            border: 1px solid rgba(212, 131, 26, 0.3);
+            border-radius: 4px;
+            background: rgba(255, 252, 245, 0.15);
+            color: var(--cream);
+            font-family: 'DM Sans', sans-serif;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-book-input::placeholder {
+            color: rgba(212, 131, 26, 0.5);
+        }
+
+        .sidebar-book-input:focus {
+            outline: none;
+            border-color: var(--amber-light);
+            background: rgba(255, 252, 245, 0.25);
+        }
+
+        .sidebar-book-btn {
+            background: var(--amber);
+            color: white;
+            border: none;
+            padding: 0.4rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-book-btn:hover {
+            background: var(--amber-dark);
+            transform: translateY(-1px);
+        }
+
+        .sidebar-book-btn:active {
+            transform: translateY(0);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.8rem;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 0.8rem;
+            line-height: 1.5;
+        }
+
+        .sidebar-refresh {
+            text-align: center;
+            padding: 0.8rem;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        /* Adjust page layout to accommodate sidebar */
+
+        /* Scrollbar styling */
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(212, 131, 26, 0.1);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(212, 131, 26, 0.4);
+            border-radius: 3px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(212, 131, 26, 0.6);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(26, 26, 26, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeInOverlay 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(26, 26, 26, 0.3);
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            animation: slideInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal-header {
+            padding: 1.5rem 1.5rem 1rem;
+            border-bottom: 2px solid rgba(212, 131, 26, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin: 0;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: var(--transition);
+            line-height: 1;
+        }
+
+        .close-btn:hover {
+            background: rgba(212, 131, 26, 0.1);
+            color: var(--amber-dark);
+        }
+
+        .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+            padding: 1.5rem;
+            border-top: 1px solid rgba(212, 131, 26, 0.1);
+            background: rgba(245, 240, 232, 0.3);
+        }
+
+        .btn-primary {
+            background: var(--dark-shelf);
+            color: white;
+            box-shadow: 0 4px 14px rgba(26, 16, 5, 0.22);
+        }
+
+        .btn-primary:hover {
+            background: var(--amber-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(176, 106, 16, 0.32);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1.5px solid var(--border);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-ghost:hover {
+            border-color: var(--amber);
+            color: var(--amber-dark);
+            background: rgba(212, 131, 26, 0.05);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-body);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 3.2rem;
+            border: 1.5px solid rgba(212, 131, 26, 0.22);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: 'DM Sans', sans-serif;
+            background: rgba(255, 252, 245, 0.9);
+            color: var(--text-body);
+            transition: var(--transition);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--amber);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(212, 131, 26, 0.12);
+        }
+
+        .form-group input[readonly] {
+            background: #f3f4f6;
+            cursor: not-allowed;
+            color: var(--text-muted);
+        }
+
+        .form-group input::placeholder,
+        .form-group select::placeholder {
+            color: #b5a898;
+        }
+
+        @keyframes fadeInOverlay {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .sidebar {
+                width: 320px;
+            }
+            .page-layout {
+                margin-left: 320px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 200px;
+                position: static;
+                border-right: none;
+                border-bottom: 2px solid rgba(212, 131, 26, 0.25);
+            }
+            .page-layout { 
+                margin-left: 0;
+                padding: 2rem 1.2rem; 
+                justify-content: center; 
+            }
+            .editorial-panel { 
+                max-width: 100%; 
+            }
+            .headline { 
+                font-size: 2.2rem; 
+            }
+            .blob { 
+                display: none; 
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Decorative blobs (like reference image cutouts) -->
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <!-- Left Sidebar - Current Users -->
+    <div class="sidebar" id="users-sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">
+                <i class="fas fa-users"></i> 
+                Visitors Today
+                <span class="sidebar-count" id="user-count">0</span>
+            </div>
+            <div class="sidebar-subtitle">Currently checked in</div>
+        </div>
+        <div class="sidebar-content" id="sidebar-users-list">
+            <div class="empty-state">
+                <div class="empty-state-icon">📚</div>
+                <div class="empty-state-text">No visitors yet</div>
+            </div>
+        </div>
+        <div class="sidebar-refresh" id="sidebar-refresh-time">Last updated: just now</div>
+    </div>
+
+    <div class="page-layout">
+        <div class="editorial-panel">
+
+            <!-- Logo Row -->
+            <div class="logo-row">
+                <div class="logo-mark">
+                    <!-- Replace 'slrc-logo.png' with your actual logo filename/path -->
+                    <img src="../images/slrc-logo.png" alt="SLRC Logo"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <span class="logo-fallback" style="display:none;"><i class="fas fa-book-open"></i></span>
+                </div>
+                <div class="logo-text">
+                    <div class="abbr">SLRC</div>
+                    <div class="full">School Learning Resources Center</div>
+                    <div class="full">Bala National High School</div>
+                </div>
+            </div>
+
+            <!-- Headline (editorial style matching reference) -->
+            <h1 class="headline">
+                Fueling<em
+               > Literacy,</em>Strengthening <em>Futures.</em>
+            </h1>
+
+            <!-- Card with screens -->
+            <div class="card">
+
+                <!-- LOGIN SCREEN -->
+                <div id="login-screen" class="screen active">
+                    <div class="screen-header">
+                        <div class="screen-badge" id="login-badge"><i class="fas fa-user-graduate"></i> Student</div>
+                        <div class="screen-title">Welcome Back</div>
+                        <div class="screen-sub">Enter your SLRC ID to continue</div>
+                    </div>
+
+                    <form onsubmit="handleStudentLogin(event)">
+                        <div class="form-group">
+                            <label for="user_type">User Type</label>
+                            <div class="input-wrap">
+                                <i class="input-icon fas fa-user"></i>
+                                <select id="user_type" onchange="updateLoginBadge()" required>
+                                    <option value="student">👨‍🎓 Student</option>
+                                    <option value="faculty">👨‍🏫 Faculty</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="student_id">SLRC ID</label>
+                            <div class="input-wrap">
+                                <i class="input-icon fas fa-id-card"></i>
+                                <input type="text" id="student_id" placeholder="Your ID" autocomplete="off" required>
+                            </div>
+                        </div>
+                        <div class="error-msg" id="error-msg"></div>
+                        <button type="submit" class="btn btn-amber">
+                            <span class="spinner" id="auth-spinner"></span>
+                            <span>Continue</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </form>
+
+                    <div class="divider">or</div>
+
+                    <button class="btn btn-ghost" onclick="switchToAdminLogin()">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Admin Access</span>
+                    </button>
+                </div>
+
+                <!-- ADMIN LOGIN SCREEN -->
+                <div id="admin-login-screen" class="screen">
+                    <div class="screen-header">
+                        <div class="screen-badge admin-badge"><i class="fas fa-shield-alt"></i> Staff</div>
+                        <div class="screen-title">Admin Panel</div>
+                        <div class="screen-sub">Enter your staff credentials</div>
+                    </div>
+
+                    <form onsubmit="handleAdminLogin(event)">
+                        <div class="form-group">
+                            <label for="admin_id">Admin ID</label>
+                            <div class="input-wrap">
+                                <i class="input-icon fas fa-user"></i>
+                                <input type="text" id="admin_id" placeholder="Enter your staff ID" autocomplete="off" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="admin_password">Password</label>
+                            <div class="input-wrap">
+                                <i class="input-icon fas fa-lock"></i>
+                                <input type="password" id="admin_password" placeholder="Enter your password" autocomplete="off" required>
+                                <button type="button" class="password-toggle" onclick="togglePasswordVisibility()">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="error-msg" id="admin-error-msg"></div>
+                        <button type="submit" class="btn btn-teal">
+                            <span class="spinner" id="admin-spinner"></span>
+                            <span>Sign In</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </form>
+
+                    <div class="divider">back</div>
+
+                    <button class="btn btn-ghost" onclick="switchToStudentLogin()">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>Student Login</span>
+                    </button>
+                </div>
+
+                <!-- CHECK-IN SCREEN -->
+                <div id="check-in-screen" class="screen">
+                    <div class="user-card">
+                        <div class="user-name" id="checkin-name">Student Name</div>
+                        <div class="user-grade" id="checkin-grade">Grade — Section</div>
+                        <div class="user-time"><i class="fas fa-calendar-alt"></i> <span id="checkin-date">--</span></div>
+                    </div>
+
+                    <div class="screen-header" style="margin-bottom:1rem;">
+                        <div class="screen-badge" id="checkin-badge"><i class="fas fa-user-graduate"></i> Check In</div>
+                        <div class="screen-title">Purpose of Visit</div>
+                        <div class="screen-sub">What brings you to the library today?</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="visit_reason">Select Reason</label>
+                        <div class="input-wrap">
+                            <i class="input-icon fas fa-list"></i>
+                            <select id="visit_reason" required>
+                                <option value="">Choose a reason...</option>
+                                <option value="Borrow">📚 Borrow Item</option>
+                                <option value="Return">🔄 Return Item</option>
+                                <option value="Study">📖 Study Session</option>
+                                <option value="Research">🔍 Research / Thesis</option>
+                                <option value="Computer Use">💻 Computer Use</option>
+                                <option value="Group Work">👥 Group Study</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="error-msg" id="checkin-error-msg"></div>
+
+                    <button class="btn btn-amber" onclick="submitCheckIn()">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Check In</span>
+                    </button>
+                </div>
+
+                <!-- CHECK-OUT SCREEN -->
+                <div id="check-out-screen" class="screen">
+                    <div class="user-card">
+                        <div class="user-name" id="checkout-name">Student Name</div>
+                        <div class="user-grade" id="checkout-grade">Grade — Section</div>
+                        <div class="user-time"><i class="fas fa-clock"></i> Since <span id="checkout-time">--:--</span></div>
+                    </div>
+
+                    <div class="screen-header" style="margin-bottom:1rem;">
+                        <div style="font-size:2.4rem; margin-bottom:0.5rem;">👋</div>
+                        <div class="screen-title">Ready to Leave?</div>
+                        <div class="screen-sub">Thanks for visiting the library!</div>
+                    </div>
+
+                    <!-- Book Accession Input for Study Sessions -->
+                    <div id="checkout-book-section" style="display:none; animation: fadeUp 0.3s ease;">
+                        <div class="form-group">
+                            <label for="checkout_book_accession">📚 Return Book Accession Number</label>
+                            <div class="input-wrap">
+                                <i class="input-icon fas fa-barcode"></i>
+                                <input type="text" id="checkout_book_accession" placeholder="Enter book accession number" autocomplete="off">
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="addCheckOutBook()" style="margin-bottom: 1rem; background: var(--amber);">
+                            <i class="fas fa-plus"></i>
+                            <span>Add Book</span>
+                        </button>
+
+                        <!-- Books List -->
+                        <div id="checkout-books-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 1rem;"></div>
+                    </div>
+
+                    <div class="error-msg" id="checkout-error-msg"></div>
+
+                    <button class="btn btn-danger" onclick="submitCheckOut()">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Check Out</span>
+                    </button>
+                </div>
+
+                <!-- SUCCESS SCREEN -->
+                <div id="success-screen" class="screen">
+                    <div class="success-wrap">
+                        <div class="success-icon"><i class="fas fa-check"></i></div>
+                        <div class="success-title" id="success-title">Done!</div>
+                        <div class="success-sub" id="success-subtitle">Operation completed successfully.</div>
+                    </div>
+                    <button class="btn btn-primary" onclick="resetKiosk()">
+                        <i class="fas fa-redo"></i>
+                        <span>Next User</span>
+                    </button>
+                </div>
+
+            </div>
+            <!-- end .card -->
+
+            <div class="footer">
+                <i class="fas fa-map-marker-alt"></i> Library &nbsp;·&nbsp; <span id="current-time">00:00</span>
+            </div>
+
+            <div class="arrow-deco">Learn. Explore. Grow</div>
+
+        </div>
+    </div>
+
+<!-- Borrow Item Modal -->
+<div id="borrow-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Borrow Item</h2>
+            <button class="close-btn" onclick="closeBorrowModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Student Name</label>
+                <div class="input-wrap">
+                    <i class="input-icon fas fa-user"></i>
+                    <input type="text" id="borrow_student_name" readonly style="background: #f3f4f6; cursor: not-allowed;">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Section / Department</label>
+                <div class="input-wrap">
+                    <i class="input-icon fas fa-door-open"></i>
+                    <input type="text" id="borrow_section" readonly style="background: #f3f4f6; cursor: not-allowed;">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="borrow_category">Item Category *</label>
+                <div class="input-wrap">
+                    <i class="input-icon fas fa-box"></i>
+                    <select id="borrow_category" required>
+                        <option value="">Select category...</option>
+                        <option value="print">📖 Print Resources (Books)</option>
+                        <option value="non-print">🎮 Non-print Resources (Equipment/Games)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="borrow_title">Item Title/Name *</label>
+                <div class="input-wrap">
+                    <i class="input-icon fas fa-book"></i>
+                    <input type="text" id="borrow_title" placeholder="E.g., Introduction to Biology" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="borrow_code">Accession Number / Code *</label>
+                <div class="input-wrap">
+                    <i class="input-icon fas fa-barcode"></i>
+                    <input type="text" id="borrow_code" placeholder="E.g., BIO-001-2024" required>
+                </div>
+            </div>
+            <div class="error-msg" id="borrow-error-msg"></div>
+        </div>
+        <div class="modal-buttons">
+            <button class="btn btn-ghost" onclick="closeBorrowModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="submitBorrow()">
+                <i class="fas fa-check"></i> Confirm Borrow
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Return Item Modal -->
+<div id="return-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Return Item</h2>
+            <button class="close-btn" onclick="closeReturnModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="return_code">Item Code to Return *</label>
+                <div class="input-wrap">
+                    <i class="input-icon fas fa-undo"></i>
+                    <input type="text" id="return_code" placeholder="E.g., BIO-001-2024" required>
+                </div>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin: 1rem 0;">After confirming, the item details will be shown for verification.</p>
+            <div class="error-msg" id="return-error-msg"></div>
+        </div>
+        <div class="modal-buttons">
+            <button class="btn btn-ghost" onclick="closeReturnModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="submitReturn()">
+                <i class="fas fa-check"></i> Confirm Return
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Return Confirmation Modal (shows summary) -->
+<div id="return-summary-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Return Confirmed</h2>
+            <button class="close-btn" onclick="closeReturnSummaryModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div style="background: var(--gray-50); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                <p><strong>Item Title:</strong> <span id="summary_title"></span></p>
+                <p><strong>Item Code:</strong> <span id="summary_code"></span></p>
+                <p><strong>Borrowed Date:</strong> <span id="summary_borrow_date"></span></p>
+                <p><strong>Borrowed Time:</strong> <span id="summary_borrow_time"></span></p>
+                <p><strong>Returned Date:</strong> <span id="summary_return_date"></span></p>
+                <p><strong>Returned Time:</strong> <span id="summary_return_time"></span></p>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.85rem;">This information has been recorded. Admin will verify the return shortly.</p>
+        </div>
+        <div class="modal-buttons">
+            <button class="btn btn-primary" onclick="resetKiosk()">
+                <i class="fas fa-arrow-left"></i> Back to Home
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    let currentUserData = {};
+    let visitorBooks = {}; // Store books for each visitor by log_id
+
+    document.addEventListener('DOMContentLoaded', () => {
+        updateTime();
+        setInterval(updateTime, 1000);
+        
+        // Load current users and refresh every 1 hour
+        loadCurrentUsers();
+        setInterval(loadCurrentUsers, 3600000);
+    });
+
+    // Load and display current users
+    async function loadCurrentUsers() {
+        try {
+            console.log('[DEBUG] Fetching current users...');
+            const res = await fetch('/api/current-users');
+            const data = await res.json();
+            
+            console.log('[DEBUG] Response status:', res.status);
+            console.log('[DEBUG] Response from API:', data);
+            
+            if (data.error) {
+                console.error('❌ Error from API:', data.error);
+                showEmptyState('Error: ' + data.error);
+                return;
+            }
+
+            if (!data.users || data.users.length === 0) {
+                console.log('[DEBUG] No users found - API returned empty list');
+                showEmptyState('No visitors yet');
+                return;
+            }
+
+            console.log('[DEBUG] Displaying', data.count, 'users');
+            displayCurrentUsers(data.users, data.count);
+            updateRefreshTime();
+        } catch (error) {
+            console.error('❌ Failed to fetch current users:', error);
+            showEmptyState('Connection error: ' + error.message);
+        }
+    }
+
+    // Show empty state message
+    function showEmptyState(message) {
+        const usersList = document.getElementById('sidebar-users-list');
+        const userCount = document.getElementById('user-count');
+        userCount.textContent = '0';
+        usersList.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📚</div>
+                <div class="empty-state-text">${message}</div>
+            </div>
+        `;
+    }
+
+    // Display users in the sidebar
+    function displayCurrentUsers(users, count) {
+        const usersList = document.getElementById('sidebar-users-list');
+        const userCount = document.getElementById('user-count');
+
+        userCount.textContent = count;
+
+        if (!users || users.length === 0) {
+            showEmptyState('No visitors yet');
+            return;
+        }
+
+        console.log('[DEBUG] Building user HTML for', users.length, 'users');
+        usersList.innerHTML = users.map(user => {
+            console.log('[DEBUG] User data:', user);
+            console.log('[DEBUG] *** log_id value:', user.log_id, '*** (this is what gets passed to checkout)');
+            
+            // Determine ID and info based on user type
+            const isStudent = user.user_type === 'student';
+            const displayId = isStudent ? user.student_id : user.faculty_id;
+            const displayInfo = isStudent 
+                ? `Section: <strong>${user.section || 'N/A'}</strong> | Sex: <strong>${user.sex || 'N/A'}</strong>`
+                : `Position: <strong>${user.position || 'N/A'}</strong> | Sex: <strong>${user.sex || 'N/A'}</strong>`;
+            const userType = isStudent ? '👨‍🎓 Student' : '👨‍🏫 Faculty';
+            
+            return `
+            <div class="user-item">
+                <div class="user-item-name">${user.name || 'Unknown'} <span style="font-size:0.8em; opacity:0.7;">${userType}</span></div>
+                <div class="user-item-info">
+                    ${isStudent ? 'ID' : 'Faculty ID'}: <strong>${displayId || 'N/A'}</strong><br>
+                    ${displayInfo}
+                </div>
+                <div class="user-item-time">
+                    <i class="fas fa-clock"></i> Since ${formatTimeShort(user.check_in_time)}
+                </div>
+                
+                <!-- Book Input Section - Only for Study Sessions -->
+                ${user.visit_reason === 'Study' 
+                    ? `<div style="margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px solid rgba(212, 131, 26, 0.1);">
+                        <div id="book-inputs-${user.log_id}" style="display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.4rem;">
+                            <div style="display: flex; gap: 0.4rem;">
+                                <input type="text" id="book-input-${user.log_id}-0" class="sidebar-book-input" placeholder="Book accession..." onkeypress="handleBookInputKeypress(event, '${user.log_id}')" />
+                                <button onclick="addBookToVisitor('${user.log_id}')" class="sidebar-book-btn" title="Add book">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                                <button onclick="addNewBookInputField('${user.log_id}')" class="sidebar-book-btn" style="background: var(--teal);" title="Add input field">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Books List -->
+                    ${visitorBooks[user.log_id] && visitorBooks[user.log_id].length > 0 
+                        ? `<div style="margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px solid rgba(212, 131, 26, 0.1);">
+                            <div style="font-size: 0.7rem; font-weight: 600; color: var(--amber-light); text-transform: uppercase; margin-bottom: 0.3rem;">📚 Books (${visitorBooks[user.log_id].length})</div>
+                            ${visitorBooks[user.log_id].map(book => `<div style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.2rem; display: flex; justify-content: space-between; align-items: center;">
+                                <span>• ${book}</span>
+                                <button onclick="removeBookFromVisitor('${user.log_id}', '${book}')" style="background: none; border: none; color: #dc2626; cursor: pointer; font-size: 0.65rem; padding: 0;">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>`).join('')}
+                           </div>`
+                        : ''
+                    }` 
+                    : ''
+                }
+                
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+                    <div class="user-item-badge">${user.visit_reason || 'Visit'}</div>
+                    <button class="checkout-btn-small" onclick="checkOutFromSidebar('${user.log_id}', '${user.name.replace(/'/g, "\\'")}')" data-log-id="${user.log_id}"
+                            title="Check out ${user.name}">
+                        <i class="fas fa-sign-out-alt"></i> Check Out
+                    </button>
+                </div>
+            </div>
+        `}).join('');
+    }
+
+    // Update the "last refreshed" timestamp
+    function updateRefreshTime() {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        document.getElementById('sidebar-refresh-time').textContent = `Last updated: ${timeStr}`;
+    }
+
+    // Format time in short format (HH:MM)
+    function formatTimeShort(t) {
+        // If t is already in HH:MM:SS format, just extract HH:MM
+        if (t && typeof t === 'string' && t.includes(':')) {
+            const parts = t.split(':');
+            return `${parts[0]}:${parts[1]}`; // HH:MM
+        }
+        
+        // Fallback for other formats
+        try {
+            return new Date(t).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        } catch {
+            return 'N/A';
+        }
+    }
+
+    // Check out a user from the sidebar
+    async function checkOutFromSidebar(log_id, userName) {
+        try {
+            console.log('[DEBUG] ============ CHECKOUT START ============');
+            console.log('[DEBUG] log_id parameter received:', log_id, 'Type:', typeof log_id);
+            console.log('[DEBUG] userName parameter received:', userName);
+            
+            if (!log_id || log_id === 'undefined') {
+                console.error('[ERROR] ❌ NO LOG_ID PROVIDED! Cannot proceed.');
+                alert('❌ Error: Missing log ID. The visitor data may be corrupted. Try refreshing the page.');
+                return;
+            }
+            
+            const books = visitorBooks[log_id] || [];
+            const payload = { log_id, books };
+            console.log('[DEBUG] Sending payload to /api/check-out:', JSON.stringify(payload));
+            
+            const res = await fetch('/api/check-out', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            
+            console.log('[DEBUG] Check-out response status:', res.status, res.statusText);
+            const data = await res.json();
+            console.log('[DEBUG] Check-out response data:', JSON.stringify(data));
+
+            if (data.error) {
+                console.error('[ERROR] ❌ Check-out failed:', data.error);
+                alert('❌ Check-out failed: ' + data.error);
+                return;
+            }
+
+            if (!res.ok) {
+                console.error('[ERROR] ❌ Response not OK:', res.status);
+                alert('❌ Check-out failed with status ' + res.status);
+                return;
+            }
+
+            console.log('[DEBUG] ✅ Check-out successful for:', userName);
+            console.log('[DEBUG] ============ CHECKOUT END ============');
+            
+            // Clear the books for this visitor
+            delete visitorBooks[log_id];
+            
+            // Refresh the sidebar list immediately
+            loadCurrentUsers();
+            
+            // Show success notification
+            showCheckOutNotification(userName);
+        } catch (error) {
+            console.error('[ERROR] ❌ Catch block - Exception:', error);
+            console.error('[ERROR] Stack:', error.stack);
+            alert('❌ Connection error: ' + error.message);
+        }
+    }
+
+    // Show a brief success notification
+    function showCheckOutNotification(userName) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #059669, #34d399);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+            font-weight: 600;
+            z-index: 10000;
+            animation: slideInRight 0.3s ease;
+        `;
+        notification.innerHTML = `<i class="fas fa-check-circle"></i> ${userName} checked out`;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.style.animation = 'slideOutRight 0.3s ease';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+
+    // Add book to a visitor from sidebar
+    function addBookToVisitor(logId) {
+        // Try to find the first non-empty input field
+        const inputsContainer = document.getElementById(`book-inputs-${logId}`);
+        if (!inputsContainer) return;
+        
+        const inputs = inputsContainer.querySelectorAll('input');
+        let accession = '';
+        let focusedInput = null;
+        
+        // Find which input has text
+        for (let input of inputs) {
+            if (input.value.trim()) {
+                accession = input.value.trim();
+                focusedInput = input;
+                break;
+            }
+        }
+        
+        if (!accession) {
+            alert('❌ Please enter a book accession number');
+            return;
+        }
+        
+        // Validate book accession against database
+        validateAndAddBook(logId, accession, focusedInput);
+    }
+
+    // Validate book and add to visitor
+    async function validateAndAddBook(logId, accession, inputField) {
+        try {
+            const res = await fetch('/api/validate-book', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ accession_number: accession })
+            });
+
+            const data = await res.json();
+
+            if (!data.valid) {
+                alert(`❌ Book not found: ${data.error}`);
+                if (inputField) inputField.focus();
+                return;
+            }
+
+            if (!visitorBooks[logId]) {
+                visitorBooks[logId] = [];
+            }
+            
+            if (visitorBooks[logId].includes(accession)) {
+                alert('⚠️ This book is already in the list');
+                if (inputField) inputField.focus();
+                return;
+            }
+
+            // Book is valid, add it
+            visitorBooks[logId].push(accession);
+            if (inputField) inputField.value = '';
+            
+            // Show validation success
+            if (data.book) {
+                console.log(`✅ Added: ${data.book.title} (${data.book.author})`);
+            }
+            
+            loadCurrentUsers(); // Refresh to show the book in the list
+        } catch (error) {
+            console.error('Validation error:', error);
+            alert('❌ Error validating book: ' + error.message);
+        }
+    }
+
+    // Remove book from visitor
+    function removeBookFromVisitor(logId, accession) {
+        if (visitorBooks[logId]) {
+            visitorBooks[logId] = visitorBooks[logId].filter(b => b !== accession);
+            loadCurrentUsers(); // Refresh to remove the book from display
+        }
+    }
+
+    // Handle Enter key in book input
+    function handleBookInputKeypress(event, logId) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            addBookToVisitor(logId);
+        }
+    }
+
+    // Add a new book input field for a visitor
+    function addNewBookInputField(logId) {
+        const inputsContainer = document.getElementById(`book-inputs-${logId}`);
+        if (!inputsContainer) return;
+        
+        const fieldCount = inputsContainer.querySelectorAll('input').length;
+        
+        const newField = document.createElement('div');
+        newField.style.cssText = 'display: flex; gap: 0.4rem;';
+        newField.innerHTML = `
+            <input type="text" id="book-input-${logId}-${fieldCount}" class="sidebar-book-input" placeholder="Book accession..." onkeypress="handleBookInputKeypress(event, '${logId}')" />
+            <button onclick="addBookToVisitor('${logId}')" class="sidebar-book-btn" title="Add book">
+                <i class="fas fa-plus"></i>
+            </button>
+            <button onclick="removeBookInputField('${logId}', ${fieldCount})" class="sidebar-book-btn" style="background: #dc2626;" title="Remove field">
+                <i class="fas fa-minus"></i>
+            </button>
+        `;
+        
+        inputsContainer.appendChild(newField);
+        document.getElementById(`book-input-${logId}-${fieldCount}`).focus();
+    }
+
+    // Remove a book input field
+    function removeBookInputField(logId, fieldIndex) {
+        const inputField = document.getElementById(`book-input-${logId}-${fieldIndex}`);
+        if (inputField) {
+            inputField.parentElement.remove();
+        }
+    }
+
+    function updateTime() {
+        const now = new Date();
+        document.getElementById('current-time').textContent =
+            now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const dateEl = document.getElementById('checkin-date');
+        if (dateEl) dateEl.textContent = now.toLocaleDateString();
+    }
+
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+        document.getElementById(`${id}-screen`).classList.add('active');
+        
+        // Update badge based on user role if showing check-in screen
+        if (id === 'check-in' && currentUserData.role === 'faculty') {
+            const badge = document.getElementById('checkin-badge');
+            if (badge) {
+                badge.innerHTML = '<i class="fas fa-chalkboard-user"></i> Faculty Check In';
+            }
+        }
+    }
+
+    function showError(elId, msg) {
+        const el = document.getElementById(elId);
+        if (el) {
+            el.textContent = msg;
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 5000);
+        }
+    }
+
+    function setSpinner(elId, show) {
+        const el = document.getElementById(elId);
+        if (el) el.classList.toggle('show', show);
+    }
+
+    function handleStudentLogin(e) { e.preventDefault(); authenticateStudent(); }
+    function handleAdminLogin(e)   { e.preventDefault(); authenticateAdmin(); }
+
+    function updateLoginBadge() {
+        const userType = document.getElementById('user_type').value;
+        const badge = document.getElementById('login-badge');
+        if (userType === 'faculty') {
+            badge.innerHTML = '<i class="fas fa-chalkboard-user"></i> Faculty';
+        } else {
+            badge.innerHTML = '<i class="fas fa-user-graduate"></i> Student';
+        }
+    }
+
+    async function authenticateStudent() {
+        const student_id = document.getElementById('student_id').value.trim();
+        const user_type = document.getElementById('user_type').value;
+        
+        if (!student_id) { showError('error-msg', '❌ Please enter your ID'); return; }
+        if (student_id.length < 3) { showError('error-msg', '❌ ID must be at least 3 characters'); return; }
+
+        setSpinner('auth-spinner', true);
+        try {
+            const res  = await fetch('/api/authenticate', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ student_id, user_type }) });
+            const data = await res.json();
+            setSpinner('auth-spinner', false);
+            if (data.error) { showError('error-msg', `❌ ${data.error}`); return; }
+            if (data.role === 'admin') { window.location.href = '/admin.html'; return; }
+            currentUserData = data;
+            currentUserData.student_id = student_id;
+            if (data.intent === 'check-in') {
+                if (data.role === 'faculty') {
+                    document.getElementById('checkin-name').textContent  = data.name;
+                    document.getElementById('checkin-grade').textContent = `${data.position || 'Position'} — Faculty`;
+                } else {
+                    document.getElementById('checkin-name').textContent  = data.name;
+                    document.getElementById('checkin-grade').textContent = `${data.grade || 'N/A'} — ${data.section || 'N/A'}`;
+                }
+                showScreen('check-in');
+            } else {
+                if (data.role === 'faculty') {
+                    document.getElementById('checkout-name').textContent  = data.name;
+                    document.getElementById('checkout-grade').textContent = `${data.position || 'Position'} — Faculty`;
+                } else {
+                    document.getElementById('checkout-name').textContent  = data.name;
+                    document.getElementById('checkout-grade').textContent = `${data.grade || 'N/A'} — ${data.section || 'N/A'}`;
+                }
+                document.getElementById('checkout-time').textContent  = formatTime(data.check_in_time);
+                // Show book section for study sessions on checkout
+                if (data.visit_reason === 'Study') {
+                    document.getElementById('checkout-book-section').style.display = 'block';
+                    checkoutBooks = []; // Reset for this checkout
+                    document.getElementById('checkout-books-list').innerHTML = '';
+                } else {
+                    document.getElementById('checkout-book-section').style.display = 'none';
+                    checkoutBooks = [];
+                }
+                showScreen('check-out');
+            }
+        } catch { setSpinner('auth-spinner', false); showError('error-msg', '❌ Connection error. Please try again.'); }
+    }
+
+    async function authenticateAdmin() {
+        const admin_id = document.getElementById('admin_id').value.trim();
+        const admin_password = document.getElementById('admin_password').value.trim();
+        if (!admin_id || !admin_password) { showError('admin-error-msg', '❌ Please enter both fields'); return; }
+        setSpinner('admin-spinner', true);
+        try {
+            const res  = await fetch('/api/authenticate', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ student_id: admin_id, password: admin_password }) });
+            const data = await res.json();
+            setSpinner('admin-spinner', false);
+            if (data.error) { showError('admin-error-msg', `❌ ${data.error}`); return; }
+            if (data.role === 'admin') { window.location.href = '/admin.html'; return; }
+            showError('admin-error-msg', '❌ Invalid admin credentials');
+        } catch { setSpinner('admin-spinner', false); showError('admin-error-msg', '❌ Connection error'); }
+    }
+
+    async function submitCheckIn() {
+        const reason = document.getElementById('visit_reason').value;
+        if (!reason) { showError('checkin-error-msg', '❌ Please select a reason'); return; }
+        
+        // If Borrow or Return, show the respective modal instead of checking in
+        if (reason === 'Borrow') {
+            // Pre-populate student info in borrow modal
+            document.getElementById('borrow_student_name').value = currentUserData.name || '';
+            if (currentUserData.role === 'faculty') {
+                document.getElementById('borrow_section').value = currentUserData.section || 'Faculty';
+            } else {
+                document.getElementById('borrow_section').value = currentUserData.section || '';
+            }
+            document.getElementById('borrow-error-msg').classList.remove('show');
+            openBorrowModal();
+            return;
+        } else if (reason === 'Return') {
+            document.getElementById('return-error-msg').classList.remove('show');
+            openReturnModal();
+            return;
+        }
+        
+        // For other reasons, proceed with normal check-in
+        try {
+            const userType = currentUserData.role === 'faculty' ? 'faculty' : 'student';
+            
+            // Prepare check-in data
+            const checkInData = { 
+                user_id: currentUserData.user_id, 
+                visit_reason: reason, 
+                user_type: userType
+            };
+            
+            await fetch('/api/check-in', { 
+                method:'POST', 
+                headers:{'Content-Type':'application/json'}, 
+                body: JSON.stringify(checkInData) 
+            });
+            
+            loadCurrentUsers();
+            document.getElementById('success-title').textContent    = 'Welcome In!';
+            document.getElementById('success-subtitle').textContent = 'You are now checked in. Enjoy your visit!';
+            showScreen('success');
+        } catch { showError('checkin-error-msg', '❌ Check-in failed. Try again.'); }
+    }
+
+    async function submitCheckOut() {
+        try {
+            // Include checkout books if they were entered for study sessions
+            const checkoutData = { 
+                log_id: currentUserData.log_id,
+                books: checkoutBooks
+            };
+            
+            await fetch('/api/check-out', { 
+                method:'POST', 
+                headers:{'Content-Type':'application/json'}, 
+                body: JSON.stringify(checkoutData)
+            });
+            
+            checkoutBooks = []; // Clear the books list
+            loadCurrentUsers(); // Refresh the sidebar immediately
+            document.getElementById('success-title').textContent    = 'Goodbye!';
+            document.getElementById('success-subtitle').textContent = 'See you next time. Have a great day!';
+            showScreen('success');
+        } catch { showError('checkout-error-msg', '❌ Check-out failed. Try again.'); }
+    }
+
+    function resetKiosk() {
+        ['student_id','admin_id','admin_password','visit_reason','user_type'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = id === 'user_type' ? 'student' : '';
+        });
+        ['error-msg','admin-error-msg','checkin-error-msg','checkout-error-msg'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('show');
+        });
+        checkoutBooks = [];
+        document.getElementById('checkout-books-list').innerHTML = '';
+        document.getElementById('checkout-book-section').style.display = 'none';
+        updateLoginBadge();
+        showScreen('login');
+    }
+
+    function switchToAdminLogin() {
+        document.getElementById('student_id').value = '';
+        document.getElementById('error-msg').classList.remove('show');
+        document.getElementById('user_type').value = 'student';
+        showScreen('admin-login');
+    }
+
+    function switchToStudentLogin() {
+        document.getElementById('admin_id').value = '';
+        document.getElementById('admin_password').value = '';
+        document.getElementById('admin-error-msg').classList.remove('show');
+        document.getElementById('user_type').value = 'student';
+        updateLoginBadge();
+        showScreen('login');
+    }
+
+    function formatTime(t) {
+        return new Date(t).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    }
+
+    function togglePasswordVisibility() {
+        const passwordInput = document.getElementById('admin_password');
+        const toggleButton = document.querySelector('.password-toggle i');
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            toggleButton.classList.remove('fa-eye');
+            toggleButton.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            toggleButton.classList.remove('fa-eye-slash');
+            toggleButton.classList.add('fa-eye');
+        }
+    }
+
+    // ========== CHECKOUT BOOKS TRACKING ==========
+    let checkoutBooks = [];
+
+    // Check-out book functions
+    function addCheckOutBook() {
+        const accession = document.getElementById('checkout_book_accession').value.trim();
+        
+        if (!accession) {
+            showError('checkout-error-msg', '❌ Please enter a book accession number');
+            return;
+        }
+
+        if (checkoutBooks.includes(accession)) {
+            showError('checkout-error-msg', '⚠️ This book is already in your list');
+            return;
+        }
+
+        checkoutBooks.push(accession);
+        renderCheckOutBooksList();
+        document.getElementById('checkout_book_accession').value = '';
+        document.getElementById('checkout_book_accession').focus();
+    }
+
+    function removeCheckOutBook(accession) {
+        checkoutBooks = checkoutBooks.filter(b => b !== accession);
+        renderCheckOutBooksList();
+    }
+
+    function renderCheckOutBooksList() {
+        const listEl = document.getElementById('checkout-books-list');
+        if (checkoutBooks.length === 0) {
+            listEl.innerHTML = '';
+            return;
+        }
+
+        listEl.innerHTML = `
+            <div style="background: rgba(212, 131, 26, 0.08); border-radius: 10px; padding: 0.8rem; border: 1.5px solid rgba(212, 131, 26, 0.2);">
+                <div style="font-size: 0.75rem; font-weight: 600; color: var(--amber-dark); text-transform: uppercase; margin-bottom: 0.6rem;">📖 Books to Return (${checkoutBooks.length})</div>
+                ${checkoutBooks.map((book, idx) => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem; background: white; border-radius: 6px; margin-bottom: 0.5rem; border: 1px solid rgba(212, 131, 26, 0.1);">
+                        <span style="font-size: 0.85rem; color: var(--text-body); font-weight: 500;">${book}</span>
+                        <button type="button" onclick="removeCheckOutBook('${book}')" style="background: none; border: none; color: #dc2626; cursor: pointer; font-size: 0.9rem; padding: 0.2rem 0.5rem;">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    // ========== BORROW/RETURN FUNCTIONS ==========
+
+    function openBorrowModal() {
+        document.getElementById('borrow-modal').classList.add('active');
+    }
+
+    function closeBorrowModal() {
+        document.getElementById('borrow-modal').classList.remove('active');
+        // Clear form
+        document.getElementById('borrow_category').value = '';
+        document.getElementById('borrow_title').value = '';
+        document.getElementById('borrow_code').value = '';
+    }
+
+    function openReturnModal() {
+        document.getElementById('return-modal').classList.add('active');
+        document.getElementById('return_code').value = '';
+    }
+
+    function closeReturnModal() {
+        document.getElementById('return-modal').classList.remove('active');
+        document.getElementById('return_code').value = '';
+    }
+
+    function closeReturnSummaryModal() {
+        document.getElementById('return-summary-modal').classList.remove('active');
+        resetKiosk();
+    }
+
+    async function submitBorrow() {
+        const category = document.getElementById('borrow_category').value.trim();
+        const title = document.getElementById('borrow_title').value.trim();
+        const code = document.getElementById('borrow_code').value.trim();
+
+        if (!category || !title || !code) {
+            showError('borrow-error-msg', '❌ Please fill in all required fields');
+            return;
+        }
+
+        try {
+            // Validate that required user data is present
+            if (!currentUserData.student_id || !currentUserData.name) {
+                showError('borrow-error-msg', '❌ Student information not loaded. Please log in again.');
+                return;
+            }
+
+            const response = await fetch('/api/borrow', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    student_id: currentUserData.student_id,
+                    student_name: currentUserData.name,
+                    section: currentUserData.section || '',
+                    item_category: category,
+                    item_title: title,
+                    item_code: code
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                closeBorrowModal();
+                document.getElementById('success-title').textContent = 'Borrow Recorded!';
+                document.getElementById('success-subtitle').textContent = `${title} has been recorded for borrowing. Admin will verify it shortly.`;
+                showScreen('success');
+            } else {
+                showError('borrow-error-msg', `❌ ${data.error || 'Error recording borrow'}`);
+            }
+        } catch (error) {
+            console.error('Borrow error:', error);
+            showError('borrow-error-msg', '❌ Connection error. Please try again.');
+        }
+    }
+
+    async function submitReturn() {
+        const itemCode = document.getElementById('return_code').value.trim();
+
+        if (!itemCode) {
+            showError('return-error-msg', '❌ Please enter the item code');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/return-item', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    student_id: currentUserData.student_id,
+                    item_code: itemCode
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                closeReturnModal();
+                // Show return summary with item details
+                document.getElementById('summary_title').textContent = data.record.item_title;
+                document.getElementById('summary_code').textContent = data.record.item_code;
+                document.getElementById('summary_borrow_date').textContent = new Date(data.record.borrow_date).toLocaleDateString();
+                document.getElementById('summary_borrow_time').textContent = data.record.borrow_time;
+                document.getElementById('summary_return_date').textContent = new Date(data.record.return_date).toLocaleDateString();
+                document.getElementById('summary_return_time').textContent = data.record.return_time;
+                document.getElementById('return-summary-modal').classList.add('active');
+            } else {
+                showError('return-error-msg', `❌ ${data.error || 'Error recording return'}`);
+            }
+        } catch (error) {
+            console.error('Return error:', error);
+            showError('return-error-msg', '❌ Connection error. Please try again.');
+        }
+    }
+</script>
+
+</body>
+</html>

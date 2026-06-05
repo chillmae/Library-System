@@ -1,0 +1,2478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard | SLRC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    :root {
+      --bg:        #0d0f14;
+      --bg-2:      #131620;
+      --bg-3:      #1a1e2b;
+      --bg-4:      #212538;
+      --border:    rgba(255,255,255,0.07);
+      --border-hi: rgba(255,255,255,0.14);
+      --text:      #e8eaf0;
+      --text-dim:  #7a80a0;
+      --text-mute: #3d4260;
+      --accent:    #5b6ef5;
+      --accent-2:  #8b5cf6;
+      --accent-glow: rgba(91,110,245,0.22);
+      --success:   #22c55e;
+      --danger:    #f43f5e;
+      --warning:   #f59e0b;
+      --gold:      #e2b96a;
+      --radius-sm: 8px;
+      --radius:    14px;
+      --radius-lg: 20px;
+      --shadow:    0 4px 24px rgba(0,0,0,0.35);
+      --shadow-lg: 0 12px 48px rgba(0,0,0,0.5);
+      --transition: all 0.22s cubic-bezier(0.4,0,0.2,1);
+      --font-display: 'DM Serif Display', serif;
+      --font-body: 'DM Sans', sans-serif;
+    }
+
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ─── SIDEBAR ─────────────────────────────────── */
+    .sidebar {
+      width: 240px;
+      flex-shrink: 0;
+      background: var(--bg-2);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .sidebar::before {
+      content: '';
+      position: absolute;
+      top: -80px; left: -80px;
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(91,110,245,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .sidebar-brand {
+      padding: 28px 24px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+
+    .brand-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px;
+      box-shadow: 0 0 18px var(--accent-glow);
+    }
+
+    .brand-name {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      letter-spacing: 0.03em;
+      color: var(--text);
+    }
+
+    .brand-sub {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding-left: 46px;
+      margin-top: -2px;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 16px 12px;
+      overflow-y: auto;
+    }
+
+    .nav-section-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-mute);
+      padding: 12px 12px 6px;
+      font-weight: 600;
+    }
+
+    .nav-item {
+      list-style: none;
+      margin-bottom: 2px;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      color: var(--text-dim);
+      text-decoration: none;
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 0.875rem;
+      font-weight: 500;
+      position: relative;
+      border: 1px solid transparent;
+    }
+
+    .nav-link:hover {
+      background: var(--bg-3);
+      color: var(--text);
+      border-color: var(--border);
+    }
+
+    .nav-link.active {
+      background: linear-gradient(90deg, rgba(91,110,245,0.18), rgba(139,92,246,0.08));
+      color: #a5aefc;
+      border-color: rgba(91,110,245,0.3);
+    }
+
+    .nav-link.active::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 20%; bottom: 20%;
+      width: 3px;
+      background: var(--accent);
+      border-radius: 0 4px 4px 0;
+    }
+
+    .nav-icon {
+      width: 18px; text-align: center;
+      font-size: 0.9rem;
+      opacity: 0.85;
+    }
+
+    .sidebar-footer {
+      padding: 16px 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .logout-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: rgba(244,63,94,0.1);
+      color: #fb7185;
+      border: 1px solid rgba(244,63,94,0.25);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.875rem;
+      font-family: var(--font-body);
+      transition: var(--transition);
+    }
+
+    .logout-btn:hover {
+      background: rgba(244,63,94,0.2);
+      border-color: rgba(244,63,94,0.45);
+      color: #ff8096;
+    }
+
+    /* ─── MAIN ────────────────────────────────────── */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    /* ─── TOPBAR ──────────────────────────────────── */
+    .topbar {
+      background: var(--bg-2);
+      border-bottom: 1px solid var(--border);
+      padding: 0 28px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .topbar-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .topbar-title .page-icon {
+      color: var(--accent);
+      font-size: 0.9rem;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      background: rgba(34,197,94,0.1);
+      border: 1px solid rgba(34,197,94,0.25);
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #4ade80;
+    }
+
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* ─── CONTENT ─────────────────────────────────── */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--bg-4) transparent;
+    }
+
+    .content::-webkit-scrollbar { width: 5px; }
+    .content::-webkit-scrollbar-track { background: transparent; }
+    .content::-webkit-scrollbar-thumb { background: var(--bg-4); border-radius: 3px; }
+
+    .content-section {
+      display: none;
+      animation: fadeUp 0.3s ease;
+    }
+
+    .content-section.active { display: block; }
+
+    @keyframes fadeUp {
+      from { opacity:0; transform: translateY(12px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+
+    /* ─── PAGE HEADER ─────────────────────────────── */
+    .page-header {
+      margin-bottom: 24px;
+    }
+
+    .page-header h2 {
+      font-family: var(--font-display);
+      font-size: 1.75rem;
+      color: var(--text);
+      line-height: 1.2;
+    }
+
+    .page-header p {
+      color: var(--text-dim);
+      font-size: 0.875rem;
+      margin-top: 4px;
+    }
+
+    /* ─── STAT CARDS ──────────────────────────────── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      position: relative;
+      overflow: hidden;
+      transition: var(--transition);
+    }
+
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--accent);
+      opacity: 0;
+      transition: var(--transition);
+    }
+
+    .stat-card.success::after { background: var(--success); }
+    .stat-card.danger::after  { background: var(--danger); }
+    .stat-card.gold::after    { background: var(--gold); }
+
+    .stat-card:hover { border-color: var(--border-hi); transform: translateY(-2px); }
+    .stat-card:hover::after { opacity: 1; }
+
+    .stat-icon {
+      width: 38px; height: 38px;
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      margin-bottom: 14px;
+      background: rgba(91,110,245,0.12);
+      color: #a5aefc;
+    }
+
+    .stat-card.success .stat-icon { background: rgba(34,197,94,0.1); color: #4ade80; }
+    .stat-card.danger  .stat-icon { background: rgba(244,63,94,0.1); color: #fb7185; }
+    .stat-card.gold    .stat-icon { background: rgba(226,185,106,0.1); color: var(--gold); }
+
+    .stat-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .stat-sub {
+      font-size: 0.75rem;
+      color: var(--text-mute);
+      margin-top: 4px;
+    }
+
+    /* ─── CARDS ───────────────────────────────────── */
+    .card {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .card-title-icon {
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem;
+      background: rgba(91,110,245,0.12);
+      color: #a5aefc;
+    }
+
+    /* ─── FORMS ───────────────────────────────────── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .form-grid.single { grid-template-columns: 1fr; }
+    .form-grid.triple { grid-template-columns: 1fr 1fr 1fr; }
+
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+
+    label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+
+    input, select, textarea {
+      background: var(--bg-3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 0.9rem;
+      font-family: var(--font-body);
+      color: var(--text);
+      transition: var(--transition);
+      outline: none;
+    }
+
+    input::placeholder { color: var(--text-mute); }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+      background: var(--bg-4);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    select option { background: var(--bg-3); }
+
+    /* ─── BUTTONS ─────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 10px 18px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 0 16px rgba(91,110,245,0.3);
+    }
+
+    .btn-primary:hover {
+      background: #6d7ff7;
+      transform: translateY(-1px);
+      box-shadow: 0 0 24px rgba(91,110,245,0.45);
+    }
+
+    .btn-success {
+      background: rgba(34,197,94,0.15);
+      color: #4ade80;
+      border: 1px solid rgba(34,197,94,0.3);
+    }
+
+    .btn-success:hover {
+      background: rgba(34,197,94,0.25);
+      border-color: rgba(34,197,94,0.5);
+    }
+
+    .btn-danger {
+      background: rgba(244,63,94,0.1);
+      color: #fb7185;
+      border: 1px solid rgba(244,63,94,0.25);
+    }
+
+    .btn-danger:hover {
+      background: rgba(244,63,94,0.2);
+      border-color: rgba(244,63,94,0.45);
+    }
+
+    .btn-ghost {
+      background: var(--bg-3);
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover { border-color: var(--border-hi); color: var(--text); }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      border-radius: 6px;
+    }
+
+    /* ─── REFRESH BUTTON ───────────────────────── */
+    #refresh-analytics-btn {
+      position: relative;
+    }
+
+    #refresh-analytics-btn:hover:not(:disabled) {
+      background: var(--accent-glow);
+      border-color: #7d8ff7;
+      color: #7d8ff7;
+      box-shadow: 0 0 12px rgba(91,110,245,0.4);
+      transform: translateY(-2px);
+    }
+
+    #refresh-analytics-btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    #refresh-analytics-btn:disabled {
+      cursor: not-allowed;
+    }
+
+    #refresh-icon {
+      display: inline-block;
+      transform-origin: center;
+    }
+
+    #refresh-icon.fa-spin {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* ─── TABLES ──────────────────────────────────── */
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    thead tr th {
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-mute);
+      background: var(--bg-3);
+      border-bottom: 1px solid var(--border);
+    }
+
+    thead tr th:first-child { border-radius: var(--radius-sm) 0 0 0; }
+    thead tr th:last-child  { border-radius: 0 var(--radius-sm) 0 0; }
+
+    tbody tr td {
+      padding: 12px 14px;
+      font-size: 0.875rem;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+
+    tbody tr {
+      transition: var(--transition);
+    }
+
+    tbody tr:hover td { background: rgba(255,255,255,0.025); }
+
+    .action-group { display: flex; gap: 6px; }
+
+    code {
+      font-family: 'DM Mono', 'Fira Code', monospace;
+      font-size: 0.78rem;
+      background: var(--bg-3);
+      padding: 2px 7px;
+      border-radius: 4px;
+      color: #a5aefc;
+      border: 1px solid var(--border);
+    }
+
+    /* ─── BADGES ──────────────────────────────────── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .badge-success { background: rgba(34,197,94,0.1); color: #4ade80; border: 1px solid rgba(34,197,94,0.2); }
+    .badge-danger  { background: rgba(244,63,94,0.1); color: #fb7185; border: 1px solid rgba(244,63,94,0.2); }
+    .badge-warning { background: rgba(245,158,11,0.1); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2); }
+    .badge-blue    { background: rgba(91,110,245,0.1); color: #a5aefc; border: 1px solid rgba(91,110,245,0.2); }
+    .badge-purple  { background: rgba(139,92,246,0.1); color: #c4b5fd; border: 1px solid rgba(139,92,246,0.2); }
+
+    /* ─── QUICK STATS BOX ─────────────────────────── */
+    .quick-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .qs-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+    }
+
+    .qs-label {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
+
+    .qs-val {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* ─── CHART ───────────────────────────────────── */
+    .chart-area {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 8px;
+      height: 160px;
+      padding: 12px 0 0;
+    }
+
+    .chart-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      gap: 6px;
+    }
+
+    .chart-col-inner {
+      flex: 1;
+      width: 100%;
+      display: flex;
+      align-items: flex-end;
+      position: relative;
+    }
+
+    .chart-bar {
+      width: 100%;
+      background: linear-gradient(180deg, #6d7ff7, #a5aefc40);
+      border-radius: 4px 4px 0 0;
+      transition: height 0.5s cubic-bezier(0.34,1.56,0.64,1);
+      position: relative;
+      min-height: 3px;
+      cursor: pointer;
+    }
+
+    .chart-bar:hover {
+      background: linear-gradient(180deg, #8b5cf6, #c4b5fd40);
+    }
+
+    .chart-bar:hover .bar-tip {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-4px);
+    }
+
+    .bar-tip {
+      position: absolute;
+      top: -30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(0);
+      background: var(--bg-4);
+      border: 1px solid var(--border-hi);
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+      opacity: 0;
+      transition: all 0.2s ease;
+      pointer-events: none;
+    }
+
+    .chart-label {
+      font-size: 0.7rem;
+      color: var(--text-mute);
+      text-align: center;
+    }
+
+    /* ─── TABS ────────────────────────────────────── */
+    .tab-bar {
+      display: flex;
+      gap: 4px;
+      background: var(--bg-3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 4px;
+      margin-bottom: 20px;
+      width: fit-content;
+    }
+
+    .tab-btn {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-dim);
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .tab-btn:hover { color: var(--text); }
+
+    .tab-btn.active {
+      background: var(--bg-2);
+      color: var(--text);
+      box-shadow: 0 1px 6px rgba(0,0,0,0.3);
+      border: 1px solid var(--border);
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeUp 0.25s ease; }
+
+    /* ─── MODALS ──────────────────────────────────── */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.active { display: flex; }
+
+    .modal-box {
+      background: var(--bg-2);
+      border: 1px solid var(--border-hi);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      width: 90%;
+      max-width: 480px;
+      box-shadow: var(--shadow-lg);
+      animation: modalIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    }
+
+    @keyframes modalIn {
+      from { opacity:0; transform: scale(0.92) translateY(20px); }
+      to   { opacity:1; transform: scale(1)    translateY(0); }
+    }
+
+    .modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .modal-head h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      width: 32px; height: 32px;
+      background: var(--bg-3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      color: var(--text-dim);
+      font-size: 1rem;
+      transition: var(--transition);
+    }
+
+    .modal-close:hover { color: var(--text); border-color: var(--border-hi); }
+
+    .modal-form .form-group { margin-bottom: 14px; }
+
+    .modal-footer {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ─── MESSAGES ────────────────────────────────── */
+    .msg {
+      display: none;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      margin-bottom: 12px;
+    }
+
+    .msg.show { display: flex; align-items: center; gap: 8px; animation: fadeUp 0.3s ease; }
+    .msg.success { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25); color: #4ade80; }
+    .msg.error   { background: rgba(244,63,94,0.1); border: 1px solid rgba(244,63,94,0.25); color: #fb7185; }
+
+    /* ─── EXPORT AREA ─────────────────────────────── */
+    .export-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* ─── DIVIDER ─────────────────────────────────── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 20px 0;
+    }
+
+    /* ─── EMPTY STATE ─────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-mute);
+    }
+
+    .empty-icon {
+      font-size: 2rem;
+      margin-bottom: 10px;
+      opacity: 0.4;
+    }
+
+    .empty-text { font-size: 0.875rem; }
+
+    /* ─── RESPONSIVE ──────────────────────────────── */
+    @media (max-width: 768px) {
+      body { flex-direction: column; overflow: auto; height: auto; }
+      .sidebar { width: 100%; flex-direction: row; flex-wrap: wrap; padding: 12px; }
+      .sidebar-nav { display: flex; flex-direction: row; overflow-x: auto; }
+      .content { padding: 16px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .tab-bar { overflow-x: auto; width: 100%; }
+      .quick-stats { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── SIDEBAR ─────────────────────────────────── -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-logo">
+      <div class="brand-icon"><i class="fas fa-shield-halved"></i></div>
+      <span class="brand-name">SLRC</span>
+    </div>
+    <div class="brand-sub">Admin Panel</div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Overview</div>
+    <ul style="list-style:none">
+      <li class="nav-item">
+        <a class="nav-link active" onclick="showSection('dashboard', this)">
+          <i class="nav-icon fas fa-chart-line"></i> Dashboard
+        </a>
+      </li>
+    </ul>
+
+    <div class="nav-section-label" style="margin-top:10px">Management</div>
+    <ul style="list-style:none">
+      <li class="nav-item"><a class="nav-link" onclick="showSection('students', this)"><i class="nav-icon fas fa-users"></i> Students</a></li>
+      <li class="nav-item"><a class="nav-link" onclick="showSection('faculty', this)"><i class="nav-icon fas fa-chalkboard-user"></i> Faculty</a></li>
+      <li class="nav-item"><a class="nav-link" onclick="showSection('books', this)"><i class="nav-icon fas fa-book-open"></i> Print Resources</a></li>
+      <li class="nav-item"><a class="nav-link" onclick="showSection('non-print', this)"><i class="nav-icon fas fa-toolbox"></i> Non-print Resources</a></li>
+      <li class="nav-item"><a class="nav-link" onclick="showSection('borrowing', this)"><i class="nav-icon fas fa-arrows-rotate"></i> Borrowing</a></li>
+    </ul>
+
+    <div class="nav-section-label" style="margin-top:10px">Insights</div>
+    <ul style="list-style:none">
+      <li class="nav-item"><a class="nav-link" onclick="showSection('analytics', this)"><i class="nav-icon fas fa-book-bookmark"></i> Book Analytics</a></li>
+      <li class="nav-item"><a class="nav-link" onclick="showSection('reports', this)"><i class="nav-icon fas fa-chart-column"></i> Reports</a></li>
+    </ul>
+  </nav>
+
+  <div class="sidebar-footer">
+    <button class="logout-btn" onclick="logout()">
+      <i class="fas fa-arrow-right-from-bracket"></i> Sign Out
+    </button>
+  </div>
+</aside>
+
+<!-- ─── MAIN ─────────────────────────────────────── -->
+<div class="main-content">
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="topbar-title" id="topbar-title">
+      <i class="page-icon fas fa-chart-line"></i>
+      <span>Dashboard</span>
+    </div>
+    <div class="topbar-right">
+      <div class="status-pill">
+        <span class="status-dot"></span>
+        System Online
+      </div>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <main class="content">
+
+    <!-- ─── DASHBOARD ──────────────────────────── -->
+    <section id="dashboard" class="content-section active">
+      <div class="page-header">
+        <h2>Good morning, Admin 👋</h2>
+        <p>Here's what's happening in the library today.</p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-users"></i></div>
+          <div class="stat-label">Total Students</div>
+          <div class="stat-value" id="total-students">—</div>
+          <div class="stat-sub">registered in system</div>
+        </div>
+        <div class="stat-card success">
+          <div class="stat-icon"><i class="fas fa-arrow-right-to-bracket"></i></div>
+          <div class="stat-label">Today's Check-ins</div>
+          <div class="stat-value" id="today-checkins">—</div>
+          <div class="stat-sub">visits today</div>
+        </div>
+        <div class="stat-card danger">
+          <div class="stat-icon"><i class="fas fa-hourglass-half"></i></div>
+          <div class="stat-label">Active Sessions</div>
+          <div class="stat-value" id="active-sessions">—</div>
+          <div class="stat-sub">currently in library</div>
+        </div>
+        <div class="stat-card gold">
+          <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
+          <div class="stat-label">Monthly Visits</div>
+          <div class="stat-value" id="month-visits">—</div>
+          <div class="stat-sub">this month</div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <div class="card-title-icon"><i class="fas fa-bolt"></i></div>
+              Today's Summary
+            </div>
+          </div>
+          <div class="quick-stats" id="dashboard-stats">
+            <div class="qs-row"><span class="qs-label">Check-ins</span><span class="qs-val" id="qs-checkins">—</span></div>
+            <div class="qs-row"><span class="qs-label">Check-outs</span><span class="qs-val" id="qs-checkouts">—</span></div>
+            <div class="qs-row"><span class="qs-label">Avg Duration</span><span class="qs-val" id="qs-duration">—</span></div>
+            <div class="qs-row"><span class="qs-label">Unique Students</span><span class="qs-val" id="qs-unique">—</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <div class="card-title-icon"><i class="fas fa-chart-bar"></i></div>
+              Visits This Month
+            </div>
+          </div>
+          <div class="chart-area" id="mini-chart">
+            <div style="color:var(--text-mute); font-size:0.8rem; margin:auto;">Loading chart…</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── STUDENTS ───────────────────────────── -->
+    <section id="students" class="content-section">
+      <div class="page-header">
+        <h2>Student Management</h2>
+        <p>Add, edit, and manage all registered students.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-title-icon"><i class="fas fa-user-plus"></i></div>
+            Register New Student
+          </div>
+        </div>
+        <div id="add-student-message" class="msg"></div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>SLRC ID *</label>
+            <input type="text" id="student_id" placeholder="e.g., 2026-0001">
+          </div>
+          <div class="form-group">
+            <label>Full Name *</label>
+            <input type="text" id="student_name" placeholder="e.g., Juan dela Cruz">
+          </div>
+          <div class="form-group">
+            <label>Grade</label>
+            <input type="text" id="student_grade" placeholder="e.g., 11">
+          </div>
+          <div class="form-group">
+            <label>Section</label>
+            <input type="text" id="student_section" placeholder="e.g., GAS">
+          </div>
+          <div class="form-group">
+            <label>Sex</label>
+            <select id="student_sex">
+              <option value="">-- Select --</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Birthdate</label>
+            <input type="date" id="student_birthdate">
+          </div>
+          <div class="form-group">
+            <label>Age</label>
+            <input type="number" id="student_age" placeholder="e.g., 18" min="0" max="120">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="addStudent()">
+          <i class="fas fa-plus"></i> Add Student
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-title-icon"><i class="fas fa-list-ul"></i></div>
+            All Students
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>SLRC ID</th>
+                <th>Full Name</th>
+                <th>Section</th>
+                <th>Sex</th>
+                <th>Birthdate</th>
+                <th>Age</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="students-table">
+              <tr><td colspan="5"><div class="empty-state"><div class="empty-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="empty-text">Loading students…</div></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── FACULTY ───────────────────────────── -->
+    <section id="faculty" class="content-section">
+      <div class="page-header">
+        <h2>Faculty Management</h2>
+        <p>Add, edit, and manage all registered faculty members.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-title-icon"><i class="fas fa-user-plus"></i></div>
+            Register New Faculty
+          </div>
+        </div>
+        <div id="add-faculty-message" class="msg"></div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Faculty ID *</label>
+            <input type="text" id="faculty_id" placeholder="e.g., FAC-001">
+          </div>
+          <div class="form-group">
+            <label>Full Name *</label>
+            <input type="text" id="faculty_name" placeholder="e.g., Dr. Maria Santos">
+          </div>
+          <div class="form-group">
+            <label>Position</label>
+            <input type="text" id="faculty_position" placeholder="e.g., English Teacher">
+          </div>
+          <div class="form-group">
+            <label>Sex</label>
+            <select id="faculty_sex">
+              <option value="">-- Select --</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Birthdate</label>
+            <input type="date" id="faculty_birthdate">
+          </div>
+          <div class="form-group">
+            <label>Age</label>
+            <input type="number" id="faculty_age" placeholder="e.g., 35" min="0" max="120">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="addFaculty()">
+          <i class="fas fa-plus"></i> Add Faculty
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-title-icon"><i class="fas fa-list-ul"></i></div>
+            All Faculty Members
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Faculty ID</th>
+                <th>Full Name</th>
+                <th>Position</th>
+                <th>Sex</th>
+                <th>Birthdate</th>
+                <th>Age</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="faculty-table">
+              <tr><td colspan="4"><div class="empty-state"><div class="empty-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="empty-text">Loading faculty…</div></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── PRINT RESOURCES ────────────────────── -->
+    <section id="books" class="content-section">
+      <div class="page-header">
+        <h2>Print Resources</h2>
+        <p>Manage books and other printed library materials.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-title-icon"><i class="fas fa-book-medical"></i></div>
+            Add New Book
+          </div>
+        </div>
+        <div id="add-book-message" class="msg"></div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Accession Number *</label>
+            <input type="text" id="book_accession" placeholder="e.g., ACC-001">
+          </div>
+          <div class="form-group">
+            <label>Call Number *</label>
+            <input type="text" id="book_call_number" placeholder="e.g., FIC-100">
+          </div>
+          <div class="form-group">
+            <label>Book Title *</label>
+            <input type="text" id="book_title" placeholder="e.g., The Great Gatsby">
+          </div>
+          <div class="form-group">
+            <label>Author *</label>
+            <input type="text" id="book_author" placeholder="e.g., F. Scott Fitzgerald">
+          </div>
+          <div class="form-group">
+            <label>Category *</label>
+            <select id="book_category">
+              <option value="">Select Category</option>
+              <option value="Filipiniana">Filipiniana</option>
+              <option value="General References">General References</option>
+              <option value="Learning Area References">Learning Area References</option>
+              <option value="Supplementary Reading Remediation Materials">Supplementary Reading</option>
+              <option value="Fiction">Fiction</option>
+              <option value="Learning Activity Sheets">Learning Activity Sheets</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Copyright Year</label>
+            <input type="number" id="book_copyright" placeholder="e.g., 2020" min="1000" max="2099">
+          </div>
+          <div class="form-group">
+            <label>ISBN</label>
+            <input type="text" id="book_isbn" placeholder="e.g., 978-0743273565">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="addBook()">
+          <i class="fas fa-plus"></i> Add Book
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-title-icon"><i class="fas fa-books"></i></div>
+            Library Catalogue
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Accession #</th>
+                <th>Call No.</th>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Category</th>
+                <th>Year</th>
+                <th>ISBN</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="books-table">
+              <tr><td colspan="8"><div class="empty-state"><div class="empty-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="empty-text">Loading books…</div></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── NON-PRINT ───────────────────────────── -->
+    <section id="non-print" class="content-section">
+      <div class="page-header">
+        <h2>Non-print Resources</h2>
+        <p>Equipment, tools, and other non-print library materials.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-title-icon"><i class="fas fa-box-open"></i></div>
+            Add New Resource
+          </div>
+        </div>
+        <div id="add-resource-message" class="msg"></div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Code *</label>
+            <input type="text" id="resource_code" placeholder="e.g., RES-001">
+          </div>
+          <div class="form-group">
+            <label>Unit Count *</label>
+            <input type="text" id="resource_unit" placeholder="e.g., 5">
+          </div>
+          <div class="form-group">
+            <label>Resource Name *</label>
+            <input type="text" id="resource_name" placeholder="e.g., Microscope">
+          </div>
+          <div class="form-group">
+            <label>Category *</label>
+            <select id="resource_category">
+              <option value="">Select Category</option>
+              <option value="Science Tool/Equipment">Science Tool / Equipment</option>
+              <option value="Math Tool/Equipment">Math Tool / Equipment</option>
+              <option value="Table Top Games">Table Top Games</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Condition *</label>
+            <select id="resource_condition">
+              <option value="">Select Condition</option>
+              <option value="Usable">Usable</option>
+              <option value="Damaged">Damaged</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="addNonPrintResource()">
+          <i class="fas fa-plus"></i> Add Resource
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-title-icon"><i class="fas fa-cubes"></i></div>
+            Resource Inventory
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Code</th><th>Units</th><th>Name</th><th>Category</th><th>Condition</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="resources-table">
+              <tr><td colspan="6"><div class="empty-state"><div class="empty-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="empty-text">Loading resources…</div></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── BORROWING ──────────────────────────── -->
+    <section id="borrowing" class="content-section">
+      <div class="page-header">
+        <h2>Borrowing Management</h2>
+        <p>Review, verify, and track all borrowing activity.</p>
+      </div>
+
+      <div class="tab-bar">
+        <button class="tab-btn active" id="tab-pending-borrow" onclick="showBorrowingTab('pending-borrow')">
+          <i class="fas fa-clock"></i> Pending Borrows
+        </button>
+        <button class="tab-btn" id="tab-pending-return" onclick="showBorrowingTab('pending-return')">
+          <i class="fas fa-rotate-left"></i> Pending Returns
+        </button>
+        <button class="tab-btn" id="tab-all-records" onclick="showBorrowingTab('all-records')">
+          <i class="fas fa-table-list"></i> All Records
+        </button>
+      </div>
+
+      <div id="pending-borrow-section" class="tab-content active">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><div class="card-title-icon"><i class="fas fa-inbox"></i></div> Pending Borrow Confirmations</div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Student</th><th>ID</th><th>Grade/Section</th><th>Category</th><th>Item Title</th><th>Code</th><th>Date</th><th>Actions</th></tr></thead>
+              <tbody id="pending-borrows-table"><tr><td colspan="8" style="text-align:center; color:var(--text-mute)">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="pending-return-section" class="tab-content">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><div class="card-title-icon"><i class="fas fa-check-double"></i></div> Pending Return Verifications</div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Student</th><th>ID</th><th>Item Title</th><th>Code</th><th>Borrowed</th><th>Return Date</th><th>Actions</th></tr></thead>
+              <tbody id="pending-returns-table"><tr><td colspan="7" style="text-align:center; color:var(--text-mute)">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="all-records-section" class="tab-content">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><div class="card-title-icon"><i class="fas fa-scroll"></i></div> Complete Borrowing History</div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Student</th><th>ID</th><th>Item Title</th><th>Code</th><th>Category</th><th>Borrowed</th><th>Returned</th><th>Status</th><th>Verified</th><th>Action</th></tr></thead>
+              <tbody id="all-records-table"><tr><td colspan="10" style="text-align:center; color:var(--text-mute)">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── BOOK ANALYTICS ────────────────────────── -->
+    <section id="analytics" class="content-section">
+      <div class="page-header">
+        <h2>📚 Book Analytics</h2>
+        <p>Track and analyze which books are most frequently read and accessed.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <h3 style="margin: 0;">Most Read Books</h3>
+          <button id="refresh-analytics-btn" class="btn-secondary" onclick="refreshBookAnalyticsWithFeedback()" style="display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: var(--radius-sm); background: var(--accent-glow); border: 1px solid var(--accent); color: var(--accent); transition: var(--transition); cursor: pointer; font-weight: 500;" title="Click to refresh analytics data">
+            <i class="fas fa-sync-alt" id="refresh-icon" style="font-size: 1rem; transition: transform 0.3s ease;"></i>
+            <span id="refresh-text">Refresh Data</span>
+          </button>
+        </div>
+        <div class="card-body">
+          <div id="analytics-loading" style="text-align: center; padding: 40px;">
+            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: var(--accent);"></i>
+            <p style="margin-top: 12px;">Loading analytics...</p>
+          </div>
+          <div id="analytics-content" style="display: none;">
+            <div style="margin-bottom: 20px;">
+              <p style="color: var(--text-dim); font-size: 0.9rem;">
+                Total Reading Sessions: <strong id="total-sessions" style="color: var(--accent);">0</strong> | 
+                Unique Books: <strong id="unique-books" style="color: var(--accent-2);">0</strong>
+              </p>
+            </div>
+            
+            <div id="analytics-table-wrapper" style="overflow-x: auto;">
+              <table class="data-table" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr style="border-bottom: 1px solid var(--border);">
+                    <th style="text-align: left; padding: 12px; color: var(--text-dim); font-weight: 600; font-size: 0.85rem;">Rank</th>
+                    <th style="text-align: left; padding: 12px; color: var(--text-dim); font-weight: 600; font-size: 0.85rem;">Accession</th>
+                    <th style="text-align: left; padding: 12px; color: var(--text-dim); font-weight: 600; font-size: 0.85rem;">Book Title</th>
+                    <th style="text-align: left; padding: 12px; color: var(--text-dim); font-weight: 600; font-size: 0.85rem;">Author</th>
+                    <th style="text-align: left; padding: 12px; color: var(--text-dim); font-weight: 600; font-size: 0.85rem;">Category</th>
+                    <th style="text-align: center; padding: 12px; color: var(--text-dim); font-weight: 600; font-size: 0.85rem;">Read Count</th>
+                  </tr>
+                </thead>
+                <tbody id="analytics-tbody">
+                  <tr>
+                    <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-dim);">No data available</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div id="analytics-error" style="display: none; color: var(--danger); padding: 20px; text-align: center;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── REPORTS ────────────────────────────── -->
+    <section id="reports" class="content-section">
+      <div class="page-header">
+        <h2>Reports &amp; Analytics</h2>
+        <p>Visual insights into library usage and activity.</p>
+      </div>
+
+      <!-- Visitor Analytics -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-title-icon"><i class="fas fa-users"></i></div>
+            👥 Visitor Analytics — By Grade Level
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Grade Level</th><th>Total Visits</th><th>Unique Students</th><th>% of Total</th></tr>
+            </thead>
+            <tbody id="visitors-by-grade-table">
+              <tr><td colspan="4" style="text-align:center; color:var(--text-mute)">Loading visitor data…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Visitor Purpose Analytics -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-title-icon"><i class="fas fa-list"></i></div>
+            📋 Visitor Analytics — By Purpose
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Purpose</th><th>Total Visits</th><th>% of Total</th></tr>
+            </thead>
+            <tbody id="visitors-by-purpose-table">
+              <tr><td colspan="3" style="text-align:center; color:var(--text-mute)">Loading purpose data…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Visitor Gender Analytics -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-title-icon"><i class="fas fa-venus-mars"></i></div>
+            ⚧ Visitor Analytics — By Gender
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Gender</th><th>Total Visits</th><th>% of Total</th></tr>
+            </thead>
+            <tbody id="visitors-by-gender-table">
+              <tr><td colspan="3" style="text-align:center; color:var(--text-mute)">Loading gender data…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-title-icon"><i class="fas fa-chart-bar"></i></div>
+            Library Visits — This Month
+          </div>
+        </div>
+        <div class="chart-area" id="visits-chart">
+          <div style="color:var(--text-mute); font-size:0.8rem; margin:auto;">Loading chart data…</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-title-icon"><i class="fas fa-clock-rotate-left"></i></div>
+            Recent Activity
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Student</th><th>Date</th><th>Check-in</th><th>Check-out</th><th>Reason</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="activity-table">
+              <tr><td colspan="6" style="text-align:center; color:var(--text-mute)">Loading activity…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-title-icon"><i class="fas fa-file-export"></i></div>
+            Export Reports
+          </div>
+        </div>
+        <div class="export-row">
+          <button class="btn btn-success" onclick="generateCSVReport()">
+            <i class="fas fa-file-csv"></i> Export CSV
+          </button>
+          <button class="btn btn-primary" onclick="generatePDFReport()">
+            <i class="fas fa-file-pdf"></i> Export PDF
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ─── MODALS ───────────────────────────────────── -->
+
+<!-- Edit Student -->
+<div id="edit-modal" class="modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2>Edit Student</h2>
+      <button class="modal-close" onclick="closeModal('edit-modal')"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="modal-form">
+      <div class="form-group"><label>SLRC ID</label><input type="text" id="edit_student_id" disabled style="opacity:.5; cursor:not-allowed;"></div>
+      <div class="form-group"><label>Full Name</label><input type="text" id="edit_student_name"></div>
+      <div class="form-group"><label>Grade</label><input type="text" id="edit_student_grade"></div>
+      <div class="form-group"><label>Section</label><input type="text" id="edit_student_section"></div>
+      <div class="form-group"><label>Sex</label><select id="edit_student_sex"><option value="">-- Select --</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
+      <div class="form-group"><label>Birthdate</label><input type="date" id="edit_student_birthdate"></div>
+      <div class="form-group"><label>Age</label><input type="number" id="edit_student_age" min="0" max="120"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('edit-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="updateStudent()"><i class="fas fa-save"></i> Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Faculty -->
+<div id="edit-faculty-modal" class="modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2>Edit Faculty</h2>
+      <button class="modal-close" onclick="closeModal('edit-faculty-modal')"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="modal-form">
+      <div class="form-group"><label>Faculty ID</label><input type="text" id="edit_faculty_id" disabled style="opacity:.5; cursor:not-allowed;"></div>
+      <div class="form-group"><label>Full Name</label><input type="text" id="edit_faculty_name"></div>
+      <div class="form-group"><label>Position</label><input type="text" id="edit_faculty_position"></div>
+      <div class="form-group"><label>Sex</label><select id="edit_faculty_sex"><option value="">-- Select --</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
+      <div class="form-group"><label>Birthdate</label><input type="date" id="edit_faculty_birthdate"></div>
+      <div class="form-group"><label>Age</label><input type="number" id="edit_faculty_age" min="0" max="120"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('edit-faculty-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="updateFaculty()"><i class="fas fa-save"></i> Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Book -->
+<div id="edit-book-modal" class="modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2>Edit Book</h2>
+      <button class="modal-close" onclick="closeModal('edit-book-modal')"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="modal-form">
+      <div class="form-grid">
+        <div class="form-group"><label>Accession Number</label><input type="text" id="edit_book_accession"></div>
+        <div class="form-group"><label>Call Number</label><input type="text" id="edit_book_call_number"></div>
+        <div class="form-group"><label>Title</label><input type="text" id="edit_book_title"></div>
+        <div class="form-group"><label>Author</label><input type="text" id="edit_book_author"></div>
+        <div class="form-group"><label>Category</label>
+          <select id="edit_book_category">
+            <option value="Filipiniana">Filipiniana</option>
+            <option value="General References">General References</option>
+            <option value="Learning Area References">Learning Area References</option>
+            <option value="Supplementary Reading Remediation Materials">Supplementary Reading</option>
+            <option value="Fiction">Fiction</option>
+            <option value="Learning Activity Sheets">Learning Activity Sheets</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Copyright Year</label><input type="number" id="edit_book_copyright" min="1000" max="2099"></div>
+        <div class="form-group"><label>ISBN</label><input type="text" id="edit_book_isbn"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('edit-book-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="updateBook()"><i class="fas fa-save"></i> Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Resource -->
+<div id="edit-resource-modal" class="modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2>Edit Resource</h2>
+      <button class="modal-close" onclick="closeModal('edit-resource-modal')"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="modal-form">
+      <div class="form-grid">
+        <div class="form-group"><label>Code</label><input type="text" id="edit_resource_code"></div>
+        <div class="form-group"><label>Unit</label><input type="text" id="edit_resource_unit"></div>
+        <div class="form-group"><label>Name</label><input type="text" id="edit_resource_name"></div>
+        <div class="form-group"><label>Category</label>
+          <select id="edit_resource_category">
+            <option value="Science Tool/Equipment">Science Tool/Equipment</option>
+            <option value="Math Tool/Equipment">Math Tool/Equipment</option>
+            <option value="Table Top Games">Table Top Games</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Condition</label>
+          <select id="edit_resource_condition">
+            <option value="Usable">Usable</option>
+            <option value="Damaged">Damaged</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('edit-resource-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="updateNonPrintResource()"><i class="fas fa-save"></i> Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── SCRIPTS ──────────────────────────────────── -->
+<script>
+  /* ── State ─────────────────────────────────── */
+  let allStudents = [], allLogs = [], allBooks = [], allNonPrintResources = [], allFaculty = [];
+  let currentEditId = null, currentEditBookId = null, currentEditResourceId = null, currentEditFacultyId = null;
+
+  const PAGE_TITLES = {
+    dashboard: ['fa-chart-line','Dashboard'],
+    students:  ['fa-users','Students'],
+    faculty:   ['fa-chalkboard-user','Faculty'],
+    books:     ['fa-book-open','Print Resources'],
+    'non-print': ['fa-toolbox','Non-print Resources'],
+    borrowing: ['fa-arrows-rotate','Borrowing Management'],
+    analytics: ['fa-book-bookmark','Book Analytics'],
+    reports:   ['fa-chart-column','Reports & Analytics'],
+  };
+
+  /* ── Init ──────────────────────────────────── */
+  document.addEventListener('DOMContentLoaded', () => {
+    loadDashboard();
+    loadStudents();
+    loadFaculty();
+    loadActivityLogs();
+    loadBooks();
+    loadNonPrintResources();
+  });
+
+  /* ── Navigation ────────────────────────────── */
+  function showSection(id, el) {
+    document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-link').forEach(a => a.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if (el) el.classList.add('active');
+
+    const [icon, title] = PAGE_TITLES[id] || ['fa-circle','Page'];
+    document.getElementById('topbar-title').innerHTML =
+      `<i class="page-icon fas ${icon}"></i><span>${title}</span>`;
+
+    if (id === 'reports') loadReports();
+    if (id === 'borrowing') loadPendingBorrows();
+    if (id === 'analytics') loadBookAnalytics();
+  }
+
+  /* ── Message ───────────────────────────────── */
+  function showMessage(id, text, type='success') {
+    const el = document.getElementById(id);
+    el.innerHTML = `<i class="fas fa-${type==='success'?'check-circle':'exclamation-circle'}"></i> ${text}`;
+    el.className = `msg show ${type}`;
+    setTimeout(() => el.classList.remove('show'), 5000);
+  }
+
+  /* ── Dashboard ─────────────────────────────── */
+  async function loadDashboard() {
+    try {
+      const r = await fetch('/api/admin/analytics');
+      const d = await r.json();
+      document.getElementById('total-students').textContent = d.total_students ?? '—';
+      document.getElementById('today-checkins').textContent = d.today_checkins ?? '—';
+      document.getElementById('active-sessions').textContent = d.active_sessions ?? '—';
+      document.getElementById('month-visits').textContent = d.month_visits ?? '—';
+      document.getElementById('qs-checkins').textContent = d.today_checkins ?? '—';
+      document.getElementById('qs-checkouts').textContent = d.today_checkouts ?? '—';
+      document.getElementById('qs-duration').textContent = d.avg_duration ?? '—';
+      document.getElementById('qs-unique').textContent = d.unique_students ?? '—';
+      if (d.chart_data) generateMiniChart(d.chart_data, 'mini-chart');
+    } catch(e) { console.error(e); }
+  }
+
+  /* ── Book Analytics ────────────────────────── */
+  async function refreshBookAnalyticsWithFeedback() {
+    const btn = document.getElementById('refresh-analytics-btn');
+    const icon = document.getElementById('refresh-icon');
+    const text = document.getElementById('refresh-text');
+    
+    // Disable button and show loading state
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    btn.style.pointerEvents = 'none';
+    icon.classList.add('fa-spin');
+    text.textContent = 'Refreshing...';
+    
+    // Call the main load function
+    await loadBookAnalytics();
+    
+    // Re-enable button and restore state
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+    icon.classList.remove('fa-spin');
+    text.textContent = 'Refresh Data';
+  }
+
+  async function loadBookAnalytics() {
+    try {
+      const loading = document.getElementById('analytics-loading');
+      const content = document.getElementById('analytics-content');
+      const error = document.getElementById('analytics-error');
+
+      loading.style.display = 'block';
+      content.style.display = 'none';
+      error.style.display = 'none';
+
+      const res = await fetch('/api/book-analytics');
+      const data = await res.json();
+
+      if (data.error) throw new Error(data.error);
+
+      document.getElementById('total-sessions').textContent = data.total_reading_sessions || 0;
+      document.getElementById('unique-books').textContent = data.total_unique_books || 0;
+
+      const tbody = document.getElementById('analytics-tbody');
+      
+      if (!data.analytics || data.analytics.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 40px; color: var(--text-dim);">No reading data available yet</td></tr>`;
+        loading.style.display = 'none';
+        content.style.display = 'block';
+        return;
+      }
+
+      tbody.innerHTML = data.analytics.map((book, idx) => `
+        <tr style="border-bottom: 1px solid var(--border);">
+          <td style="padding: 12px; text-align: center;">
+            <strong style="color: var(--accent);">#${idx + 1}</strong>
+          </td>
+          <td style="padding: 12px;">
+            <code style="font-size: 0.8rem; background: var(--bg-4); padding: 4px 8px; border-radius: 4px;">${book.accession_number}</code>
+          </td>
+          <td style="padding: 12px;">
+            <strong>${book.title}</strong>
+          </td>
+          <td style="padding: 12px; color: var(--text-dim);">
+            ${book.author}
+          </td>
+          <td style="padding: 12px; font-size: 0.85rem;">
+            <span style="background: var(--accent-glow); color: var(--accent); padding: 4px 8px; border-radius: 4px;">${book.category}</span>
+          </td>
+          <td style="padding: 12px; text-align: center; font-weight: 600; color: var(--accent-2);">
+            <i class="fas fa-book-open"></i> ${book.read_count} times
+          </td>
+        </tr>
+      `).join('');
+
+      loading.style.display = 'none';
+      content.style.display = 'block';
+    } catch (e) {
+      console.error('Book analytics error:', e);
+      document.getElementById('analytics-error').textContent = 'Error loading analytics: ' + e.message;
+      document.getElementById('analytics-error').style.display = 'block';
+      document.getElementById('analytics-loading').style.display = 'none';
+    }
+  }
+
+  /* ── Chart ─────────────────────────────────── */
+  function generateMiniChart(data, containerId) {
+    const c = document.getElementById(containerId);
+    if (!data || !data.length) { c.innerHTML = `<div style="margin:auto;color:var(--text-mute);font-size:.8rem">No data</div>`; return; }
+    const peak = Math.max(...data.map(d=>d.visits), 1);
+    c.innerHTML = data.map(item => {
+      const h = Math.max((item.visits / peak) * 100, 2);
+      return `<div class="chart-col">
+        <div class="chart-col-inner">
+          <div class="chart-bar" style="height:${h}%">
+            <span class="bar-tip">${item.visits}</span>
+          </div>
+        </div>
+        <span class="chart-label">${item.day}</span>
+      </div>`;
+    }).join('');
+  }
+
+  /* ── Students ──────────────────────────────── */
+  async function loadStudents() {
+    try {
+      const r = await fetch('/api/admin/students');
+      const d = await r.json();
+      allStudents = d.students || [];
+      updateStudentsTable();
+    } catch(e) { console.error(e); }
+  }
+
+  function updateStudentsTable() {
+    const tbody = document.getElementById('students-table');
+    if (!allStudents.length) {
+      tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="empty-icon"><i class="fas fa-user-slash"></i></div><div class="empty-text">No students found</div></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = allStudents.map(s => `
+      <tr>
+        <td><code>${s.student_id}</code></td>
+        <td><strong>${s.name||'—'}</strong></td>
+        <td>${s.section||'—'}</td>
+        <td>${s.sex||'—'}</td>
+        <td>${s.birthdate||'—'}</td>
+        <td>${s.age||'—'}</td>
+        <td>
+          <div class="action-group">
+            <button class="btn btn-ghost btn-sm" onclick="openEditModal(${s.id})"><i class="fas fa-pen"></i></button>
+            <button class="btn btn-danger btn-sm" onclick="deleteStudent(${s.id},'${s.student_id}')"><i class="fas fa-trash"></i></button>
+          </div>
+        </td>
+      </tr>`).join('');
+  }
+
+  async function addStudent() {
+    const student_id = document.getElementById('student_id').value.trim();
+    const name = document.getElementById('student_name').value.trim();
+    const grade = document.getElementById('student_grade').value.trim();
+    const section = document.getElementById('student_section').value.trim();
+    const sex = document.getElementById('student_sex').value.trim();
+    const birthdate = document.getElementById('student_birthdate').value;
+    const age = document.getElementById('student_age').value;
+    if (!student_id || !name) { showMessage('add-student-message','SLRC ID and Name are required','error'); return; }
+    try {
+      const res = await fetch('/api/admin/add-student',{ method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id,name,grade,section,sex,birthdate,age:parseInt(age)||null}) });
+      const data = await res.json();
+      if (res.ok) {
+        Swal.fire({ icon:'success', title:'Student Added!', text:'Student has been registered.', confirmButtonColor:'#5b6ef5', background:'#1a1e2b', color:'#e8eaf0' });
+        ['student_id','student_name','student_grade','student_section','student_sex','student_birthdate','student_age'].forEach(id => document.getElementById(id).value='');
+        loadStudents(); loadDashboard();
+      } else { Swal.fire({ icon:'error', title:'Error', text:data.error||'Could not add student', confirmButtonColor:'#f43f5e', background:'#1a1e2b', color:'#e8eaf0' }); }
+    } catch(e) { Swal.fire({ icon:'error', title:'Connection Error', text:'Cannot reach server.', confirmButtonColor:'#f43f5e', background:'#1a1e2b', color:'#e8eaf0' }); }
+  }
+
+  function openEditModal(id) {
+    const s = allStudents.find(x=>x.id===id); if (!s) return;
+    currentEditId = id;
+    document.getElementById('edit_student_id').value = s.student_id;
+    document.getElementById('edit_student_name').value = s.name||'';
+    document.getElementById('edit_student_grade').value = s.grade||'';
+    document.getElementById('edit_student_section').value = s.section||'';
+    document.getElementById('edit_student_sex').value = s.sex||'';
+    document.getElementById('edit_student_birthdate').value = s.birthdate||'';
+    document.getElementById('edit_student_age').value = s.age||'';
+    document.getElementById('edit-modal').classList.add('active');
+  }
+
+  async function updateStudent() {
+    const name = document.getElementById('edit_student_name').value.trim();
+    const grade = document.getElementById('edit_student_grade').value.trim();
+    const section = document.getElementById('edit_student_section').value.trim();
+    const sex = document.getElementById('edit_student_sex').value.trim();
+    const birthdate = document.getElementById('edit_student_birthdate').value;
+    const age = document.getElementById('edit_student_age').value;
+    if (!name) { Swal.fire({icon:'warning',title:'Name required',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); return; }
+    try {
+      const res = await fetch(`/api/admin/students/${currentEditId}`,{ method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,grade,section,sex,birthdate,age:parseInt(age)||null}) });
+      if (res.ok) {
+        Swal.fire({icon:'success',title:'Updated!',text:'Student info updated.',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}).then(()=>{ closeModal('edit-modal'); loadStudents(); });
+      } else { Swal.fire({icon:'error',title:'Error',text:'Could not update.',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+    } catch(e) { Swal.fire({icon:'error',title:'Connection Error',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+  }
+
+  async function deleteStudent(id, code) {
+    Swal.fire({ title:'Delete Student?', text:`Remove ${code}? This cannot be undone.`, icon:'warning', showCancelButton:true, confirmButtonColor:'#f43f5e', cancelButtonColor:'#3d4260', confirmButtonText:'Delete', cancelButtonText:'Cancel', background:'#1a1e2b', color:'#e8eaf0' })
+    .then(async r => {
+      if (!r.isConfirmed) return;
+      const res = await fetch(`/api/admin/students/${id}`,{ method:'DELETE' });
+      if (res.ok) { Swal.fire({icon:'success',title:'Deleted',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}).then(()=>{ loadStudents(); loadDashboard(); }); }
+      else { Swal.fire({icon:'error',title:'Error',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+    });
+  }
+
+  /* ── Faculty Management ─────────────────────── */
+  async function loadFaculty() {
+    try {
+      const r = await fetch('/api/admin/faculty');
+      const d = await r.json();
+      allFaculty = d.faculty || [];
+      updateFacultyTable();
+    } catch(e) { console.error(e); }
+  }
+
+  function updateFacultyTable() {
+    const tbody = document.getElementById('faculty-table');
+    if (!allFaculty.length) {
+      tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="empty-icon"><i class="fas fa-user-slash"></i></div><div class="empty-text">No faculty found</div></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = allFaculty.map(f => `
+      <tr>
+        <td><code>${f.faculty_id}</code></td>
+        <td><strong>${f.name||'—'}</strong></td>
+        <td>${f.position||'—'}</td>
+        <td>${f.sex||'—'}</td>
+        <td>${f.birthdate||'—'}</td>
+        <td>${f.age||'—'}</td>
+        <td>
+          <div class="action-group">
+            <button class="btn btn-ghost btn-sm" onclick="openEditFacultyModal(${f.id})"><i class="fas fa-pen"></i></button>
+            <button class="btn btn-danger btn-sm" onclick="deleteFaculty(${f.id},'${f.faculty_id}')"><i class="fas fa-trash"></i></button>
+          </div>
+        </td>
+      </tr>`).join('');
+  }
+
+  async function addFaculty() {
+    const faculty_id = document.getElementById('faculty_id').value.trim();
+    const name = document.getElementById('faculty_name').value.trim();
+    const position = document.getElementById('faculty_position').value.trim();
+    const sex = document.getElementById('faculty_sex').value.trim();
+    const birthdate = document.getElementById('faculty_birthdate').value;
+    const age = document.getElementById('faculty_age').value;
+    if (!faculty_id || !name) { showMessage('add-faculty-message','Faculty ID and Name are required','error'); return; }
+    try {
+      const res = await fetch('/api/admin/add-faculty',{ method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({faculty_id,name,position,sex,birthdate,age:parseInt(age)||null}) });
+      const data = await res.json();
+      if (res.ok) {
+        Swal.fire({ icon:'success', title:'Faculty Added!', text:'Faculty member has been registered.', confirmButtonColor:'#5b6ef5', background:'#1a1e2b', color:'#e8eaf0' });
+        ['faculty_id','faculty_name','faculty_position','faculty_sex','faculty_birthdate','faculty_age'].forEach(id => document.getElementById(id).value='');
+        loadFaculty(); loadDashboard();
+      } else { Swal.fire({ icon:'error', title:'Error', text:data.error||'Could not add faculty', confirmButtonColor:'#f43f5e', background:'#1a1e2b', color:'#e8eaf0' }); }
+    } catch(e) { Swal.fire({ icon:'error', title:'Connection Error', text:'Cannot reach server.', confirmButtonColor:'#f43f5e', background:'#1a1e2b', color:'#e8eaf0' }); }
+  }
+
+  function openEditFacultyModal(id) {
+    const f = allFaculty.find(x=>x.id===id); if (!f) return;
+    currentEditFacultyId = id;
+    document.getElementById('edit_faculty_id').value = f.faculty_id;
+    document.getElementById('edit_faculty_name').value = f.name||'';
+    document.getElementById('edit_faculty_position').value = f.position||'';
+    document.getElementById('edit_faculty_sex').value = f.sex||'';
+    document.getElementById('edit_faculty_birthdate').value = f.birthdate||'';
+    document.getElementById('edit_faculty_age').value = f.age||'';
+    document.getElementById('edit-faculty-modal').classList.add('active');
+  }
+
+  async function updateFaculty() {
+    const name = document.getElementById('edit_faculty_name').value.trim();
+    const position = document.getElementById('edit_faculty_position').value.trim();
+    const sex = document.getElementById('edit_faculty_sex').value.trim();
+    const birthdate = document.getElementById('edit_faculty_birthdate').value;
+    const age = document.getElementById('edit_faculty_age').value;
+    if (!name) { Swal.fire({icon:'warning',title:'Name required',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); return; }
+    try {
+      const res = await fetch(`/api/admin/faculty/${currentEditFacultyId}`,{ method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,position,sex,birthdate,age:parseInt(age)||null}) });
+      if (res.ok) {
+        Swal.fire({icon:'success',title:'Updated!',text:'Faculty info updated.',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}).then(()=>{ closeModal('edit-faculty-modal'); loadFaculty(); });
+      } else { Swal.fire({icon:'error',title:'Error',text:'Could not update.',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+    } catch(e) { Swal.fire({icon:'error',title:'Connection Error',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+  }
+
+  async function deleteFaculty(id, code) {
+    Swal.fire({ title:'Delete Faculty?', text:`Remove ${code}? This cannot be undone.`, icon:'warning', showCancelButton:true, confirmButtonColor:'#f43f5e', cancelButtonColor:'#3d4260', confirmButtonText:'Delete', cancelButtonText:'Cancel', background:'#1a1e2b', color:'#e8eaf0' })
+    .then(async r => {
+      if (!r.isConfirmed) return;
+      const res = await fetch(`/api/admin/faculty/${id}`,{ method:'DELETE' });
+      if (res.ok) { Swal.fire({icon:'success',title:'Deleted',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}).then(()=>{ loadFaculty(); loadDashboard(); }); }
+      else { Swal.fire({icon:'error',title:'Error',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+    });
+  }
+
+  /* ── Activity Logs ─────────────────────────── */
+  async function loadActivityLogs() {
+    try {
+      const r = await fetch('/api/admin/logs');
+      const d = await r.json();
+      allLogs = d.logs || [];
+      updateActivityTable();
+    } catch(e) { console.error(e); }
+  }
+
+  function updateActivityTable() {
+    const tbody = document.getElementById('activity-table');
+    if (!allLogs.length) { tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-icon"><i class="fas fa-inbox"></i></div><div class="empty-text">No activity yet</div></div></td></tr>`; return; }
+    tbody.innerHTML = allLogs.slice(0,20).map(log => {
+      const ci = log.check_in_time  ? new Date(log.check_in_time).toLocaleTimeString() : '—';
+      const co = log.check_out_time ? new Date(log.check_out_time).toLocaleTimeString() : '<span class="badge badge-success">Active</span>';
+      return `<tr>
+        <td><strong>${log.student_name||'Unknown'}</strong></td>
+        <td>${log.action_date}</td>
+        <td>${ci}</td>
+        <td>${co}</td>
+        <td>${log.visit_reason||'—'}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteLog(${log.id})"><i class="fas fa-trash"></i></button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  async function deleteLog(id) {
+    Swal.fire({ title:'Delete Record?', text:'This will affect chart statistics.', icon:'warning', showCancelButton:true, confirmButtonColor:'#f43f5e', cancelButtonColor:'#3d4260', background:'#1a1e2b', color:'#e8eaf0' })
+    .then(async r => {
+      if (!r.isConfirmed) return;
+      const res = await fetch(`/api/admin/logs/${id}`,{ method:'DELETE' });
+      if (res.ok) { await loadActivityLogs(); await loadDashboard(); if (document.getElementById('reports').classList.contains('active')) loadReports(); }
+    });
+  }
+
+  /* ── Reports ───────────────────────────────── */
+  async function loadReports() {
+    const c = document.getElementById('visits-chart');
+    try {
+      const res = await fetch('/api/admin/analytics');
+      const d = await res.json();
+      updateActivityTable();
+      generateMiniChart(d.chart_data, 'visits-chart');
+      
+      // Load visitor analytics
+      await loadVisitorAnalytics();
+    } catch(e) {
+      console.error('Analytics error:', e);
+      c.innerHTML = `<div style="margin:auto;color:#f43f5e;font-size:.8rem"><i class="fas fa-exclamation-triangle"></i> Cannot connect to server</div>`;
+    }
+  }
+
+  async function loadVisitorAnalytics() {
+    try {
+      // By Grade Level
+      const gradeRes = await fetch('/api/admin/visitors-by-grade');
+      const gradeData = await gradeRes.json();
+      const gradeTbody = document.getElementById('visitors-by-grade-table');
+      
+      if (gradeData.grades && gradeData.grades.length > 0) {
+        gradeTbody.innerHTML = gradeData.grades.map(g => `
+          <tr>
+            <td><strong>${g.grade || 'N/A'}</strong></td>
+            <td>${g.visits}</td>
+            <td>${g.unique_students}</td>
+            <td><strong>${g.percentage}%</strong></td>
+          </tr>
+        `).join('');
+      } else {
+        gradeTbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-mute)">No data</td></tr>';
+      }
+      
+      // By Purpose
+      const purposeRes = await fetch('/api/admin/visitors-by-purpose');
+      const purposeData = await purposeRes.json();
+      const purposeTbody = document.getElementById('visitors-by-purpose-table');
+      
+      if (purposeData.purposes && purposeData.purposes.length > 0) {
+        purposeTbody.innerHTML = purposeData.purposes.map(p => `
+          <tr>
+            <td><strong>${p.purpose || 'N/A'}</strong></td>
+            <td>${p.visits}</td>
+            <td><strong>${p.percentage}%</strong></td>
+          </tr>
+        `).join('');
+      } else {
+        purposeTbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-mute)">No data</td></tr>';
+      }
+      
+      // By Gender
+      const genderRes = await fetch('/api/admin/visitors-by-gender');
+      const genderData = await genderRes.json();
+      const genderTbody = document.getElementById('visitors-by-gender-table');
+      
+      if (genderData.genders && genderData.genders.length > 0) {
+        genderTbody.innerHTML = genderData.genders.map(g => `
+          <tr>
+            <td><strong>${g.sex || 'N/A'}</strong></td>
+            <td>${g.visits}</td>
+            <td><strong>${g.percentage}%</strong></td>
+          </tr>
+        `).join('');
+      } else {
+        genderTbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-mute)">No data</td></tr>';
+      }
+    } catch(e) { console.error('Visitor analytics error:', e); }
+  }
+
+  /* ── Books ─────────────────────────────────── */
+  async function loadBooks() {
+    try {
+      const r = await fetch('/api/admin/books');
+      const d = await r.json();
+      allBooks = d.books || [];
+      updateBooksTable();
+    } catch(e) { console.error(e); }
+  }
+
+  function updateBooksTable() {
+    const tbody = document.getElementById('books-table');
+    if (!allBooks.length) { tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon"><i class="fas fa-book-open"></i></div><div class="empty-text">No books found</div></div></td></tr>`; return; }
+    tbody.innerHTML = allBooks.map(b => `
+      <tr>
+        <td><code>${b.accession_number}</code></td>
+        <td><code>${b.call_number}</code></td>
+        <td><strong>${b.title}</strong></td>
+        <td>${b.author}</td>
+        <td><span class="badge badge-blue">${b.category||'—'}</span></td>
+        <td>${b.copyright_year||'—'}</td>
+        <td>${b.isbn||'—'}</td>
+        <td>
+          <div class="action-group">
+            <button class="btn btn-ghost btn-sm" onclick="openEditBookModal('${b.id}')"><i class="fas fa-pen"></i></button>
+            <button class="btn btn-danger btn-sm" onclick="deleteBook('${b.id}','${b.accession_number}')"><i class="fas fa-trash"></i></button>
+          </div>
+        </td>
+      </tr>`).join('');
+  }
+
+  async function addBook() {
+    const accession_number = document.getElementById('book_accession').value.trim();
+    const call_number = document.getElementById('book_call_number').value.trim();
+    const title = document.getElementById('book_title').value.trim();
+    const author = document.getElementById('book_author').value.trim();
+    const category = document.getElementById('book_category').value.trim();
+    const copyright_year = document.getElementById('book_copyright').value.trim();
+    const isbn = document.getElementById('book_isbn').value.trim();
+    if (!accession_number||!call_number||!title||!author||!category) { showMessage('add-book-message','Fill in all required fields','error'); return; }
+    try {
+      const res = await fetch('/api/admin/add-book',{ method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accession_number,call_number,title,author,category,copyright_year:copyright_year||null,isbn:isbn||null}) });
+      const d = await res.json();
+      if (res.ok) {
+        Swal.fire({icon:'success',title:'Book Added!',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'});
+        ['book_accession','book_call_number','book_title','book_author','book_copyright','book_isbn'].forEach(id=>document.getElementById(id).value='');
+        document.getElementById('book_category').value='';
+        loadBooks();
+      } else { Swal.fire({icon:'error',title:'Error',text:d.error,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+    } catch(e) { Swal.fire({icon:'error',title:'Connection Error',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+  }
+
+  function openEditBookModal(id) {
+    const b = allBooks.find(x=>x.id===id); if(!b) return;
+    currentEditBookId = id;
+    document.getElementById('edit_book_accession').value = b.accession_number;
+    document.getElementById('edit_book_call_number').value = b.call_number;
+    document.getElementById('edit_book_title').value = b.title;
+    document.getElementById('edit_book_author').value = b.author;
+    document.getElementById('edit_book_category').value = b.category||'';
+    document.getElementById('edit_book_copyright').value = b.copyright_year||'';
+    document.getElementById('edit_book_isbn').value = b.isbn||'';
+    document.getElementById('edit-book-modal').classList.add('active');
+  }
+
+  async function updateBook() {
+    const accession_number = document.getElementById('edit_book_accession').value.trim();
+    const call_number = document.getElementById('edit_book_call_number').value.trim();
+    const title = document.getElementById('edit_book_title').value.trim();
+    const author = document.getElementById('edit_book_author').value.trim();
+    const category = document.getElementById('edit_book_category').value.trim();
+    const copyright_year = document.getElementById('edit_book_copyright').value.trim();
+    const isbn = document.getElementById('edit_book_isbn').value.trim();
+    if(!accession_number||!call_number||!title||!author||!category){Swal.fire({icon:'warning',title:'Required fields missing',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'});return;}
+    try {
+      const res = await fetch(`/api/admin/books/${currentEditBookId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({accession_number,call_number,title,author,category,copyright_year:copyright_year||null,isbn:isbn||null})});
+      if(res.ok){Swal.fire({icon:'success',title:'Updated!',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}).then(()=>{closeModal('edit-book-modal');loadBooks();});}
+      else{Swal.fire({icon:'error',title:'Error',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'});}
+    }catch(e){Swal.fire({icon:'error',title:'Connection Error',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'});}
+  }
+
+  async function deleteBook(id, acc) {
+    Swal.fire({title:'Delete Book?',text:`Remove ${acc}?`,icon:'warning',showCancelButton:true,confirmButtonColor:'#f43f5e',cancelButtonColor:'#3d4260',background:'#1a1e2b',color:'#e8eaf0'})
+    .then(async r=>{
+      if(!r.isConfirmed)return;
+      const res = await fetch(`/api/admin/books/${id}`,{method:'DELETE'});
+      if(res.ok){Swal.fire({icon:'success',title:'Deleted',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}).then(()=>loadBooks());}
+    });
+  }
+
+  /* ── Non-Print ─────────────────────────────── */
+  async function loadNonPrintResources() {
+    try {
+      const r = await fetch('/api/admin/non-print-resources');
+      const d = await r.json();
+      allNonPrintResources = d.resources || [];
+      updateNonPrintResourcesTable();
+    } catch(e) { console.error(e); }
+  }
+
+  function updateNonPrintResourcesTable() {
+    const tbody = document.getElementById('resources-table');
+    if (!allNonPrintResources.length) { tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-icon"><i class="fas fa-cubes"></i></div><div class="empty-text">No resources found</div></div></td></tr>`; return; }
+    tbody.innerHTML = allNonPrintResources.map(r => `
+      <tr>
+        <td><code>${r.code}</code></td>
+        <td>${r.unit}</td>
+        <td><strong>${r.name}</strong></td>
+        <td><span class="badge badge-purple">${r.category||'—'}</span></td>
+        <td><span class="badge ${r.condition==='Usable'?'badge-success':'badge-danger'}">${r.condition||'—'}</span></td>
+        <td>
+          <div class="action-group">
+            <button class="btn btn-ghost btn-sm" onclick="openEditResourceModal('${r.id}')"><i class="fas fa-pen"></i></button>
+            <button class="btn btn-danger btn-sm" onclick="deleteNonPrintResource('${r.id}','${r.code}')"><i class="fas fa-trash"></i></button>
+          </div>
+        </td>
+      </tr>`).join('');
+  }
+
+  async function addNonPrintResource() {
+    const code = document.getElementById('resource_code').value.trim();
+    const unit = document.getElementById('resource_unit').value.trim();
+    const name = document.getElementById('resource_name').value.trim();
+    const category = document.getElementById('resource_category').value.trim();
+    const condition = document.getElementById('resource_condition').value.trim();
+    if (!code||!unit||!name||!category||!condition) { showMessage('add-resource-message','All fields are required','error'); return; }
+    try {
+      const res = await fetch('/api/admin/add-non-print-resource',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,unit,name,category,condition})});
+      const d = await res.json();
+      if(res.ok){
+        Swal.fire({icon:'success',title:'Resource Added!',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'});
+        ['resource_code','resource_unit','resource_name'].forEach(i=>document.getElementById(i).value='');
+        document.getElementById('resource_category').value=''; document.getElementById('resource_condition').value='';
+        loadNonPrintResources();
+      } else { Swal.fire({icon:'error',title:'Error',text:d.error,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+    }catch(e){Swal.fire({icon:'error',title:'Connection Error',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'});}
+  }
+
+  function openEditResourceModal(id) {
+    const r = allNonPrintResources.find(x=>x.id===id); if(!r) return;
+    currentEditResourceId = id;
+    document.getElementById('edit_resource_code').value = r.code;
+    document.getElementById('edit_resource_unit').value = r.unit;
+    document.getElementById('edit_resource_name').value = r.name;
+    document.getElementById('edit_resource_category').value = r.category||'';
+    document.getElementById('edit_resource_condition').value = r.condition||'';
+    document.getElementById('edit-resource-modal').classList.add('active');
+  }
+
+  async function updateNonPrintResource() {
+    const code = document.getElementById('edit_resource_code').value.trim();
+    const unit = document.getElementById('edit_resource_unit').value.trim();
+    const name = document.getElementById('edit_resource_name').value.trim();
+    const category = document.getElementById('edit_resource_category').value.trim();
+    const condition = document.getElementById('edit_resource_condition').value.trim();
+    if(!code||!unit||!name||!category||!condition){Swal.fire({icon:'warning',title:'All fields required',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'});return;}
+    try{
+      const res = await fetch(`/api/admin/non-print-resources/${currentEditResourceId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,unit,name,category,condition})});
+      if(res.ok){Swal.fire({icon:'success',title:'Updated!',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}).then(()=>{closeModal('edit-resource-modal');loadNonPrintResources();});}
+      else{Swal.fire({icon:'error',title:'Error',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'});}
+    }catch(e){Swal.fire({icon:'error',title:'Connection Error',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'});}
+  }
+
+  async function deleteNonPrintResource(id, code) {
+    Swal.fire({title:'Delete Resource?',text:`Remove ${code}?`,icon:'warning',showCancelButton:true,confirmButtonColor:'#f43f5e',cancelButtonColor:'#3d4260',background:'#1a1e2b',color:'#e8eaf0'})
+    .then(async r=>{
+      if(!r.isConfirmed)return;
+      const res = await fetch(`/api/admin/non-print-resources/${id}`,{method:'DELETE'});
+      if(res.ok){Swal.fire({icon:'success',title:'Deleted',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}).then(()=>loadNonPrintResources());}
+    });
+  }
+
+  /* ── Borrowing ─────────────────────────────── */
+  function showBorrowingTab(tab) {
+    document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
+    document.getElementById(`${tab}-section`).classList.add('active');
+    document.getElementById(`tab-${tab}`).classList.add('active');
+    if(tab==='pending-borrow') loadPendingBorrows();
+    else if(tab==='pending-return') loadPendingReturns();
+    else loadAllBorrowRecords();
+  }
+
+  async function loadPendingBorrows() {
+    try {
+      const r = await fetch('/api/admin/pending-borrows');
+      const d = await r.json();
+      updatePendingBorrowsTable(d.records);
+    } catch(e) { console.error(e); }
+  }
+
+  function updatePendingBorrowsTable(records) {
+    const tbody = document.getElementById('pending-borrows-table');
+    if (!records||!records.length) { tbody.innerHTML=`<tr><td colspan="9"><div class="empty-state"><div class="empty-text">No pending borrows</div></div></td></tr>`; return; }
+    tbody.innerHTML = records.map(rec => {
+      const bd = new Date(rec.borrow_date).toLocaleDateString();
+      const gs = rec.grade + (rec.section?` - ${rec.section}`:'');
+      const cat = rec.item_category==='print'
+        ? '<span class="badge badge-blue">📖 Print</span>'
+        : '<span class="badge badge-purple">🎮 Non-Print</span>';
+      return `<tr>
+        <td><strong>${rec.student_name}</strong></td><td><code>${rec.student_id}</code></td>
+        <td>${gs}</td><td>${cat}</td><td>${rec.item_title}</td>
+        <td><code>${rec.item_code}</code></td><td>${bd}</td>
+        <td><button class="btn btn-success btn-sm" onclick="verifyBorrow('${rec.id}')"><i class="fas fa-check"></i> Verify</button> <button class="btn btn-danger btn-sm" onclick="deleteBorrowRecord('${rec.id}','pending-borrow')"><i class="fas fa-trash"></i></button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  async function loadPendingReturns() {
+    try {
+      const r = await fetch('/api/admin/pending-returns');
+      const d = await r.json();
+      updatePendingReturnsTable(d.records);
+    } catch(e) { console.error(e); }
+  }
+
+  function updatePendingReturnsTable(records) {
+    const tbody = document.getElementById('pending-returns-table');
+    if(!records||!records.length){tbody.innerHTML=`<tr><td colspan="7"><div class="empty-state"><div class="empty-text">No pending returns</div></div></td></tr>`;return;}
+    tbody.innerHTML = records.map(rec=>{
+      const bd = new Date(rec.borrow_date).toLocaleDateString();
+      const rd = new Date(rec.return_date).toLocaleDateString();
+      return `<tr>
+        <td><strong>${rec.student_name}</strong></td><td><code>${rec.student_id}</code></td>
+        <td>${rec.item_title}</td><td><code>${rec.item_code}</code></td>
+        <td>${bd}</td><td>${rd}</td>
+        <td><button class="btn btn-success btn-sm" onclick="verifyReturn('${rec.id}')"><i class="fas fa-check"></i> Verify</button> <button class="btn btn-danger btn-sm" onclick="deleteBorrowRecord('${rec.id}','pending-return')"><i class="fas fa-trash"></i></button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  async function loadAllBorrowRecords() {
+    try {
+      const r = await fetch('/api/admin/all-borrows');
+      const d = await r.json();
+      updateAllBorrowRecordsTable(d.records);
+    } catch(e) { console.error(e); }
+  }
+
+  function updateAllBorrowRecordsTable(records) {
+    const tbody = document.getElementById('all-records-table');
+    if(!records||!records.length){tbody.innerHTML=`<tr><td colspan="10"><div class="empty-state"><div class="empty-text">No records found</div></div></td></tr>`;return;}
+    tbody.innerHTML = records.map(rec=>{
+      const bd = new Date(rec.borrow_date).toLocaleDateString();
+      const rd = rec.return_date ? new Date(rec.return_date).toLocaleDateString() : '—';
+      const status = rec.status==='borrowed'? '<span class="badge badge-warning">Borrowed</span>'
+                   : rec.status==='returned'? '<span class="badge badge-success">Returned</span>'
+                   : '<span class="badge badge-danger">Overdue</span>';
+      const verified = rec.admin_verified
+        ? '<span class="badge badge-success"><i class="fas fa-check"></i> Yes</span>'
+        : '<span class="badge badge-warning">Pending</span>';
+      return `<tr>
+        <td><strong>${rec.student_name}</strong></td><td><code>${rec.student_id}</code></td>
+        <td>${rec.item_title}</td><td><code>${rec.item_code}</code></td>
+        <td>${rec.item_category==='print'?'📖 Print':'🎮 Non-Print'}</td>
+        <td>${bd}</td><td>${rd}</td><td>${status}</td><td>${verified}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteBorrowRecord('${rec.id}','all-records')"><i class="fas fa-trash"></i> Delete</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  async function verifyBorrow(id) {
+    const res = await fetch(`/api/admin/verify-borrow/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'}});
+    if(res.ok){Swal.fire({icon:'success',title:'Verified!',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}).then(()=>loadPendingBorrows());}
+  }
+
+  async function verifyReturn(id) {
+    const res = await fetch(`/api/admin/verify-return/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'}});
+    if(res.ok){Swal.fire({icon:'success',title:'Return Verified!',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}).then(()=>loadPendingReturns());}
+  }
+
+  async function deleteBorrowRecord(id, type) {
+    Swal.fire({
+      title: 'Delete Record?',
+      text: 'This borrowing record will be permanently deleted.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#f43f5e',
+      cancelButtonColor: '#3d4260',
+      confirmButtonText: 'Delete',
+      cancelButtonText: 'Cancel',
+      background: '#1a1e2b',
+      color: '#e8eaf0'
+    }).then(async r => {
+      if (!r.isConfirmed) return;
+      try {
+        const res = await fetch(`/api/admin/delete-borrow/${id}`, {method: 'DELETE'});
+        const data = await res.json();
+        if (res.ok) {
+          Swal.fire({icon: 'success', title: 'Deleted!', confirmButtonColor: '#5b6ef5', background: '#1a1e2b', color: '#e8eaf0'}).then(() => {
+            if (type === 'pending-borrow') loadPendingBorrows();
+            else if (type === 'pending-return') loadPendingReturns();
+            else if (type === 'all-records') loadAllBorrowRecords();
+          });
+        } else {
+          Swal.fire({icon: 'error', title: 'Error', text: data.error || 'Could not delete record', confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0'});
+          console.error('Delete error:', data);
+        }
+      } catch (e) {
+        Swal.fire({icon: 'error', title: 'Error', text: e.message, confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0'});
+        console.error('Delete error:', e);
+      }
+    });
+  }
+
+  /* ── Export ─────────────────────────────────── */
+  function generateCSVReport() {
+    let csv = 'Student ID,Name,Grade,Strand,Total Visits\n';
+    allStudents.forEach(s => {
+      const visits = allLogs.filter(l=>l.user_id===s.id).length;
+      csv += `${s.student_id},${s.name},${s.grade},${s.strand},${visits}\n`;
+    });
+    const blob = new Blob([csv],{type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download='slrc-report.csv'; a.click();
+  }
+
+  function generatePDFReport() {
+    Swal.fire({icon:'info',title:'Coming Soon',text:'PDF export will be available in the next update.',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'});
+  }
+
+  /* ── Modals ─────────────────────────────────── */
+  function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+  document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if(e.target===m) m.classList.remove('active'); }));
+
+  /* ── Logout ─────────────────────────────────── */
+  function logout() {
+    Swal.fire({title:'Sign Out?',text:'You will be redirected to the login page.',icon:'question',showCancelButton:true,confirmButtonColor:'#5b6ef5',cancelButtonColor:'#3d4260',confirmButtonText:'Sign Out',background:'#1a1e2b',color:'#e8eaf0'})
+    .then(r=>{ if(r.isConfirmed) window.location.href='/index.html'; });
+  }
+</script>
+</body>
+</html>
