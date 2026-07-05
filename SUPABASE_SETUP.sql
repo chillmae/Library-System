@@ -171,16 +171,18 @@ CREATE INDEX IF NOT EXISTS idx_library_logs_user_type ON library_logs(user_type)
 CREATE INDEX IF NOT EXISTS idx_library_logs_action_date ON library_logs(action_date);
 CREATE INDEX IF NOT EXISTS idx_library_logs_check_out ON library_logs(check_out_time);
 
--- Sample library logs
+-- Sample library logs (includes expanded purposes for analytics)
 INSERT INTO library_logs (user_id, user_type, action_date, check_in_time, check_out_time, visit_reason) VALUES
 (1, 'student', '2026-06-05', '09:00:00', '10:30:00', 'Study'),
 (2, 'student', '2026-06-05', '09:15:00', NULL, 'Research'),
-(1, 'student', '2026-06-04', '08:45:00', '11:15:00', 'Borrow Books'),
-(3, 'student', '2026-06-04', '10:00:00', '12:00:00', 'Study'),
+(1, 'student', '2026-06-04', '08:45:00', '11:15:00', 'Borrow'),
+(3, 'student', '2026-06-04', '10:00:00', '12:00:00', 'Storytelling Session'),
 (1, 'faculty', '2026-06-05', '14:00:00', '15:30:00', 'Research'),
-(2, 'faculty', '2026-06-05', '08:30:00', '17:00:00', 'Work'),
-(4, 'student', '2026-06-03', '13:20:00', '14:50:00', 'Research'),
-(1, 'student', '2026-06-03', '09:30:00', '11:45:00', 'Study');
+(2, 'faculty', '2026-06-05', '08:30:00', '17:00:00', 'Meeting (Book Club, LRMT, SLRComm, etc.)'),
+(4, 'student', '2026-06-03', '13:20:00', '14:50:00', 'Reading Remediation'),
+(1, 'student', '2026-06-03', '09:30:00', '11:45:00', 'SLRC Tour/ Orientation/ Validation'),
+(5, 'faculty', '2026-06-06', '10:00:00', '12:00:00', 'SLRC Use Training Session'),
+(6, 'student', '2026-06-06', '11:00:00', '13:00:00', 'Workshop (Research Writing)');
 
 -- =====================================================
 -- END OF SETUP SCRIPT
