@@ -12,6 +12,10 @@ CREATE TABLE IF NOT EXISTS users (
     name VARCHAR(255) NOT NULL,
     grade VARCHAR(50),
     section VARCHAR(100),
+    session VARCHAR(50),
+    adviser VARCHAR(255),
+    address VARCHAR(255),
+    contact_number VARCHAR(50),
     sex VARCHAR(20),
     birthdate DATE,
     age INT,
@@ -23,12 +27,18 @@ CREATE INDEX IF NOT EXISTS idx_users_student_id ON users(student_id);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 
 -- Sample students
-INSERT INTO users (student_id, name, password, role, grade, section, sex, birthdate, age) VALUES
-('5231587', 'Richmond O. Genelaso', 'pass', 'student', '11', '11-GAS', 'Male', '2007-05-15', 18),
-('5231588', 'Maria D. Santos', 'pass', 'student', '11', '11-STEM', 'Female', '2007-08-20', 18),
-('5231589', 'Juan P. Dela Cruz', 'pass', 'student', '12', '12-HUMSS', 'Male', '2006-03-10', 19),
-('5231590', 'Rosa L. Garcia', 'pass', 'student', '10', '10-PEARL', 'Female', '2009-07-25', 16),
-('ADMIN001', 'Admin User', 'admin', 'admin', NULL, NULL, 'Male', NULL, NULL);
+INSERT INTO users (student_id, name, password, role, grade, section, session, adviser, address, contact_number, sex, birthdate, age) VALUES
+('5231587', 'Richmond O. Genelaso', 'pass', 'student', '11', '11-GAS', 'Morning', 'Mr. Santos', '123 Cebu St.', '09171234567', 'Male', '2007-05-15', 18),
+('5231588', 'Maria D. Santos', 'pass', 'student', '11', '11-STEM', 'Afternoon', 'Ms. Reyes', '456 Lahug Ave.', '09181234567', 'Female', '2007-08-20', 18),
+('5231589', 'Juan P. Dela Cruz', 'pass', 'student', '12', '12-HUMSS', 'Morning', 'Mr. Cruz', '789 Mabolo Rd.', '09191234567', 'Male', '2006-03-10', 19),
+('5231590', 'Rosa L. Garcia', 'pass', 'student', '10', '10-PEARL', 'Afternoon', 'Ms. Velasco', '321 Banilad St.', '09201234567', 'Female', '2009-07-25', 16),
+('ADMIN001', 'Admin User', 'admin', 'admin', NULL, NULL, NULL, NULL, NULL, NULL, 'Male', NULL, NULL);
+
+-- Add missing user fields if table already exists
+ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS session VARCHAR(50);
+ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS adviser VARCHAR(255);
+ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS address VARCHAR(255);
+ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS contact_number VARCHAR(50);
 
 -- 2. FACULTY TABLE
 CREATE TABLE IF NOT EXISTS faculty (
@@ -37,6 +47,9 @@ CREATE TABLE IF NOT EXISTS faculty (
     name VARCHAR(255) NOT NULL,
     position VARCHAR(255),
     sex VARCHAR(20),
+    address VARCHAR(255),
+    contact_number VARCHAR(50),
+    email VARCHAR(255),
     birthdate DATE,
     age INT,
     role VARCHAR(50) DEFAULT 'faculty',
@@ -48,10 +61,10 @@ CREATE INDEX IF NOT EXISTS idx_faculty_faculty_id ON faculty(faculty_id);
 CREATE INDEX IF NOT EXISTS idx_faculty_role ON faculty(role);
 
 -- Sample faculty
-INSERT INTO faculty (faculty_id, name, position, sex, birthdate, age) VALUES
-('FAC001', 'Dr. Roberto C. Aquino', 'Teacher III - English', 'Male', '1980-02-14', 46),
-('FAC002', 'Ms. Elena R. Fernandez', 'Teacher II - Science', 'Female', '1988-06-22', 37),
-('FAC003', 'Mr. Carlos M. Reyes', 'Librarian', 'Male', '1985-11-30', 40);
+INSERT INTO faculty (faculty_id, name, position, sex, address, contact_number, email, birthdate, age) VALUES
+('FAC001', 'Dr. Roberto C. Aquino', 'Teacher III - English', 'Male', '123 Rizal St., Cebu City', '0917-111-2222', 'roberto.aquino@example.com', '1980-02-14', 46),
+('FAC002', 'Ms. Elena R. Fernandez', 'Teacher II - Science', 'Female', '456 Mabini Ave., Cebu City', '0917-333-4444', 'elena.fernandez@example.com', '1988-06-22', 37),
+('FAC003', 'Mr. Carlos M. Reyes', 'Librarian', 'Male', '789 Colon St., Cebu City', '0917-555-6666', 'carlos.reyes@example.com', '1985-11-30', 40);
 
 -- 3. BOOKS TABLE
 CREATE TABLE IF NOT EXISTS books (
@@ -113,6 +126,8 @@ CREATE TABLE IF NOT EXISTS borrow_records (
     borrow_time TIME NOT NULL,
     return_date DATE,
     return_time TIME,
+    due_date DATE,
+    return_condition VARCHAR(50),
     status VARCHAR(20) NOT NULL DEFAULT 'borrowed',
     admin_verified BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT NOW(),
@@ -123,6 +138,9 @@ CREATE INDEX IF NOT EXISTS idx_borrow_student_id ON borrow_records(student_id);
 CREATE INDEX IF NOT EXISTS idx_borrow_status ON borrow_records(status);
 CREATE INDEX IF NOT EXISTS idx_borrow_item_code ON borrow_records(item_code);
 CREATE INDEX IF NOT EXISTS idx_borrow_item_title ON borrow_records(item_title);
+
+ALTER TABLE IF EXISTS borrow_records ADD COLUMN IF NOT EXISTS due_date DATE;
+ALTER TABLE IF EXISTS borrow_records ADD COLUMN IF NOT EXISTS return_condition VARCHAR(50);
 
 -- Sample borrow records
 INSERT INTO borrow_records (

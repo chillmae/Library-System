@@ -384,7 +384,7 @@ app.get('/api/current-users', async (req, res) => {
 
 // 4. Admin: Add a new student
 app.post('/api/admin/add-student', async (req, res) => {
-    const { student_id, name, grade, section, sex, birthdate, age } = req.body;
+    const { student_id, name, grade, section, session, adviser, address, contact_number, sex, birthdate, age } = req.body;
 
     if (!student_id || !name) {
         return res.status(400).json({ error: 'Student ID and Name are required.' });
@@ -392,11 +392,14 @@ app.post('/api/admin/add-student', async (req, res) => {
 
     const { data, error } = await supabase
         .from('users')
-        .insert([{ student_id: student_id, name, grade, section, sex, birthdate, age: age || null, password: 'NOT_REQUIRED', role: 'student' }]);
+        .insert([{ student_id: student_id, name, grade, section, session, adviser, address, contact_number, sex, birthdate, age: age || null, password: 'NOT_REQUIRED', role: 'student' }]);
 
     if (error) {
         if (error.code === '23505') {
             return res.status(400).json({ error: 'This Student ID is already registered.' });
+        }
+        if (error.message && /column|schema cache|Could not find/i.test(error.message)) {
+            return res.status(500).json({ error: 'The student table is missing new profile columns. Please run the SQL migration in SUPABASE_SETUP.sql first.' });
         }
         return res.status(500).json({ error: error.message });
     }
@@ -424,15 +427,20 @@ app.get('/api/admin/students', async (req, res) => {
 // 6. Admin: Update a student
 app.put('/api/admin/students/:id', async (req, res) => {
     const { id } = req.params;
-    const { name, grade, section, sex, birthdate, age } = req.body;
+    const { name, grade, section, session, adviser, address, contact_number, sex, birthdate, age } = req.body;
 
     try {
         const { data, error } = await supabase
             .from('users')
-            .update({ name, grade, section, sex, birthdate, age: age || null })
+            .update({ name, grade, section, session, adviser, address, contact_number, sex, birthdate, age: age || null })
             .eq('id', id);
 
-        if (error) return res.status(500).json({ error: error.message });
+        if (error) {
+            if (error.message && /column|schema cache|Could not find/i.test(error.message)) {
+                return res.status(500).json({ error: 'The student table is missing new profile columns. Please run the SQL migration in SUPABASE_SETUP.sql first.' });
+            }
+            return res.status(500).json({ error: error.message });
+        }
 
         res.json({ message: 'Student updated successfully' });
     } catch (error) {
@@ -488,19 +496,118 @@ app.delete('/api/admin/students/:id', async (req, res) => {
     }
 });
 
+// Get single student by ID (for library card export)
+app.get('/api/admin/students/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const { data: student, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (error || !student) {
+            return res.status(404).json({ error: 'Student not found' });
+        }
+
+        res.json({ student });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get borrowing records for a student (for library card export)
+app.get('/api/admin/student-borrow-records/:studentId', async (req, res) => {
+    const { studentId } = req.params;
+    try {
+        const { data: records, error } = await supabase
+            .from('borrow_records')
+            .select('*')
+            .eq('student_id', studentId)
+            .order('borrow_date', { ascending: false });
+
+        if (error) {
+            return res.status(500).json({ error: error.message });
+        }
+
+        const enrichedRecords = await Promise.all((records || []).map(async (record) => {
+            let call_number = '';
+            let author = '';
+            let due_date = record.due_date || record.return_date || '';
+            let return_condition = record.return_condition || '';
+            let remarks = record.status === 'returned' ? 'Returned' : (record.status === 'borrowed' ? 'On loan' : (record.status || ''));
+
+            if (record.status === 'returned') {
+                if (return_condition === 'Damaged') {
+                    remarks = 'Returned Damaged';
+                } else if (return_condition === 'Good Condition') {
+                    remarks = 'Returned in Good Condition';
+                } else {
+                    remarks = 'Returned';
+                }
+            }
+
+            if (record.item_category === 'print') {
+                const { data: book } = await supabase
+                    .from('books')
+                    .select('call_number, author')
+                    .eq('accession_number', record.item_code)
+                    .maybeSingle();
+
+                if (book) {
+                    call_number = book.call_number || '';
+                    author = book.author || '';
+                }
+            } else if (record.item_category === 'non-print') {
+                const { data: resource } = await supabase
+                    .from('non_print_resources')
+                    .select('resource_code')
+                    .eq('resource_code', record.item_code)
+                    .maybeSingle();
+
+                if (resource) {
+                    call_number = resource.resource_code || '';
+                }
+            }
+
+            if (!due_date && record.borrow_date) {
+                const due = new Date(record.borrow_date);
+                due.setDate(due.getDate() + 7);
+                due_date = due.toISOString().split('T')[0];
+            }
+
+            return {
+                ...record,
+                call_number,
+                author,
+                due_date,
+                return_condition,
+                remarks
+            };
+        }));
+
+        res.json({ records: enrichedRecords || [] });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // ========== FACULTY ENDPOINTS ==========
 
 // Add Faculty
 app.post('/api/admin/add-faculty', async (req, res) => {
-    const { faculty_id, name, position, sex, birthdate, age } = req.body;
+    const { faculty_id, name, position, sex, address, contact_number, email, birthdate, age } = req.body;
 
     if (!faculty_id || !name) {
-        return res.status(400).json({ error: 'Faculty ID and Name are required.' });
+        return res.status(400).json({ error: 'Employee No. and Name are required.' });
     }
 
+    console.log('[ADD-FACULTY] payload:', { faculty_id, name, position, sex, address, contact_number, email, birthdate, age });
     const { data, error } = await supabase
         .from('faculty')
-        .insert([{ faculty_id, name, position, sex, birthdate, age: age || null }]);
+        .insert([{ faculty_id, name, position, sex, address, contact_number, email, birthdate, age: age || null }]);
+
+    console.log('[ADD-FACULTY] supabase response:', { data, error });
 
     if (error) {
         if (error.code === '23505') {
@@ -509,7 +616,7 @@ app.post('/api/admin/add-faculty', async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 
-    res.json({ message: `Faculty ${faculty_id} (${name}) successfully registered!` });
+    res.json({ message: `Faculty ${faculty_id} (${name}) successfully registered!`, data });
 });
 
 // Get all faculty
@@ -531,17 +638,20 @@ app.get('/api/admin/faculty', async (req, res) => {
 // Update Faculty
 app.put('/api/admin/faculty/:id', async (req, res) => {
     const { id } = req.params;
-    const { name, position, sex, birthdate, age } = req.body;
+    const { name, position, sex, address, contact_number, email, birthdate, age } = req.body;
 
     try {
+        console.log('[UPDATE-FACULTY] id:', id, 'payload:', { name, position, sex, address, contact_number, email, birthdate, age });
         const { data, error } = await supabase
             .from('faculty')
-            .update({ name, position, sex, birthdate, age: age || null })
+            .update({ name, position, sex, address, contact_number, email, birthdate, age: age || null })
             .eq('id', id);
+
+        console.log('[UPDATE-FACULTY] supabase response:', { data, error });
 
         if (error) return res.status(500).json({ error: error.message });
 
-        res.json({ message: 'Faculty updated successfully' });
+        res.json({ message: 'Faculty updated successfully', data });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -1001,6 +1111,19 @@ app.post('/api/borrow', async (req, res) => {
             return res.status(404).json({ error: 'Book not found in the library. Please check the accession number.' });
         }
 
+        const { data: activeBorrow, error: activeBorrowError } = await supabase
+            .from('borrow_records')
+            .select('id')
+            .eq('item_code', item_code.trim())
+            .eq('item_category', item_category.trim())
+            .eq('status', 'borrowed')
+            .maybeSingle();
+
+        if (activeBorrowError) throw activeBorrowError;
+        if (activeBorrow) {
+            return res.status(409).json({ error: 'This item is currently borrowed and cannot be borrowed again until it is returned.' });
+        }
+
         const now = new Date();
         const borrow_date = now.toISOString().split('T')[0]; // YYYY-MM-DD
         
@@ -1037,7 +1160,24 @@ app.post('/api/borrow', async (req, res) => {
     }
 });
 
-// 20. Get all pending borrows for admin verification
+// 20. Get all active borrowers for admin view
+app.get('/api/admin/active-borrowers', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('borrow_records')
+            .select('*')
+            .eq('status', 'borrowed')
+            .order('borrow_date', { ascending: false });
+
+        if (error) throw error;
+
+        res.json({ records: data || [] });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// 21. Get all pending borrows for admin verification
 app.get('/api/admin/pending-borrows', async (req, res) => {
     try {
         const { data, error } = await supabase
@@ -1074,14 +1214,21 @@ app.get('/api/admin/all-borrows', async (req, res) => {
 // 22. Admin verifies a borrow
 app.put('/api/admin/verify-borrow/:id', async (req, res) => {
     const { id } = req.params;
+    const { due_date } = req.body || {};
 
     try {
+        const updatePayload = {
+            admin_verified: true,
+            updated_at: new Date().toISOString()
+        };
+
+        if (due_date) {
+            updatePayload.due_date = due_date;
+        }
+
         const { data, error } = await supabase
             .from('borrow_records')
-            .update({
-                admin_verified: true,
-                updated_at: new Date().toISOString()
-            })
+            .update(updatePayload)
             .eq('id', id);
 
         if (error) throw error;
@@ -1167,12 +1314,305 @@ app.get('/api/admin/pending-returns', async (req, res) => {
             .from('borrow_records')
             .select('*')
             .eq('status', 'returned')
-            .eq('admin_verified', false)
             .order('return_date', { ascending: true });
 
         if (error) throw error;
 
-        res.json({ records: data || [] });
+        const pendingReturns = (data || []).filter(rec => {
+            const condition = (rec.return_condition || '').toString().trim();
+            return !condition;
+        });
+
+        res.json({ records: pendingReturns });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Export all students as CSV
+app.get('/api/admin/export/students', async (req, res) => {
+    try {
+        const { data: students, error } = await supabase
+            .from('users')
+            .select('student_id,name,grade,section,session,adviser,address,contact_number,sex,birthdate,age,role')
+            .eq('role', 'student')
+            .order('name', { ascending: true });
+
+        if (error) throw error;
+
+        const rows = (students || []).map(s => ({
+            student_id: s.student_id || '',
+            name: s.name || '',
+            grade: s.grade || '',
+            section: s.section || '',
+            session: s.session || '',
+            adviser: s.adviser || '',
+            address: s.address || '',
+            contact_number: s.contact_number || '',
+            sex: s.sex || '',
+            birthdate: s.birthdate || '',
+            age: s.age || ''
+        }));
+
+        const header = Object.keys(rows[0] || {
+            student_id: '', name: '', grade: '', section: '', session: '', adviser: '', address: '', contact_number: '', sex: '', birthdate: '', age: ''
+        });
+
+        const csv = [header.join(',')].concat(rows.map(r => header.map(h => `"${(r[h]||'').toString().replace(/"/g,'""')}"`).join(','))).join('\n');
+
+        res.setHeader('Content-disposition', 'attachment; filename=students.csv');
+        res.setHeader('Content-Type', 'text/csv');
+        res.send(csv);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Export learner borrower's log (formatted CSV matching the provided template)
+app.get('/api/admin/export/borrowers-log', async (req, res) => {
+    try {
+        // exclude any borrow records created by admin accounts
+        const { data: adminUsers } = await supabase.from('users').select('student_id').eq('role', 'admin');
+        const adminIds = (adminUsers || []).map(a => a.student_id);
+
+        const { data: records, error } = await supabase
+            .from('borrow_records')
+            .select('*')
+            .order('borrow_date', { ascending: true });
+
+        // filter out admin-related records
+        const filteredRecords = (records || []).filter(r => !adminIds.includes(r.student_id));
+
+        if (error) throw error;
+
+        // Enrich with book data (author, copyright)
+        const enriched = await Promise.all((filteredRecords || []).map(async (rec) => {
+            let author = '';
+            let copyright = '';
+            if (rec.item_category === 'print') {
+                const { data: book } = await supabase.from('books').select('author,copyright_year').eq('accession_number', rec.item_code).maybeSingle();
+                if (book) {
+                    author = book.author || '';
+                    copyright = book.copyright_year ? book.copyright_year.toString() : '';
+                }
+            }
+
+            let remarks = '';
+            if (rec.status === 'returned') {
+                if (rec.return_condition === 'Damaged') remarks = 'Returned Damaged';
+                else if (rec.return_condition === 'Good Condition') remarks = 'Returned in Good Condition';
+                else remarks = 'Returned';
+            }
+
+            return {
+                date_borrowed: rec.borrow_date || '',
+                borrower_name: rec.student_name || '',
+                grade_section: rec.section || '',
+                author,
+                title: rec.item_title || '',
+                copyright,
+                due_date: rec.due_date || '',
+                signature: '',
+                date_returned: rec.return_date || '',
+                signature_return: '',
+                remarks
+            };
+        }));
+
+        const header = ['Date Borrowed','Borrower\'s Name','Grade Level & Section','Author','Title','Copyright','Due Date','Signature','Date Returned','Signature (Returned)','Remarks'];
+        const csvRows = enriched.map(r => header.map(h => {
+            const key = ({
+                'Date Borrowed':'date_borrowed','Borrower\'s Name':'borrower_name','Grade Level & Section':'grade_section','Author':'author','Title':'title','Copyright':'copyright','Due Date':'due_date','Signature':'signature','Date Returned':'date_returned','Signature (Returned)':'signature_return','Remarks':'remarks'
+            })[h];
+            return `"${(r[key]||'').toString().replace(/"/g,'""')}"`;
+        }).join(','));
+
+        const csv = [header.join(',')].concat(csvRows).join('\n');
+
+        res.setHeader('Content-disposition', 'attachment; filename=borrowers_log.csv');
+        res.setHeader('Content-Type', 'text/csv');
+        res.send(csv);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Return borrowers log as JSON (enriched) for PDF/Excel export
+app.get('/api/admin/export/borrowers-json', async (req, res) => {
+    try {
+        const { data: adminUsers } = await supabase.from('users').select('student_id').eq('role', 'admin');
+        const adminIds = (adminUsers || []).map(a => a.student_id);
+
+        const { data: records, error } = await supabase
+            .from('borrow_records')
+            .select('*')
+            .order('borrow_date', { ascending: true });
+
+        if (error) throw error;
+
+        const filteredRecords = (records || []).filter(r => !adminIds.includes(r.student_id));
+
+        const enriched = await Promise.all((filteredRecords || []).map(async (rec) => {
+            let author = '';
+            let copyright = '';
+            if (rec.item_category === 'print') {
+                const { data: book } = await supabase.from('books').select('author,copyright_year').eq('accession_number', rec.item_code).maybeSingle();
+                if (book) {
+                    author = book.author || '';
+                    copyright = book.copyright_year ? book.copyright_year.toString() : '';
+                }
+            }
+
+            let remarks = '';
+            if (rec.status === 'returned') {
+                if (rec.return_condition === 'Damaged') remarks = 'Returned Damaged';
+                else if (rec.return_condition === 'Good Condition') remarks = 'Returned in Good Condition';
+                else remarks = 'Returned';
+            }
+
+            return {
+                date_borrowed: rec.borrow_date || '',
+                borrower_name: rec.student_name || '',
+                grade_section: rec.section || '',
+                author,
+                title: rec.item_title || '',
+                copyright,
+                due_date: rec.due_date || '',
+                date_returned: rec.return_date || '',
+                remarks
+            };
+        }));
+
+        res.json({ records: enriched });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Export teacher borrower's log (formatted CSV matching the provided template)
+app.get('/api/admin/export/teacher-borrowers-log', async (req, res) => {
+    try {
+        const { data: facultyUsers, error: facultyError } = await supabase.from('faculty').select('faculty_id');
+        if (facultyError) throw facultyError;
+
+        const facultyIds = (facultyUsers || []).map(f => f.faculty_id).filter(Boolean);
+        if (!facultyIds.length) {
+            const header = ['Date Borrowed','Borrower\'s Name','Grade Level & Section','Author','Title','Copyright','Due Date','Signature','Date Returned','Signature (Returned)','Remarks'];
+            res.setHeader('Content-disposition', 'attachment; filename=teacher_borrowers_log.csv');
+            res.setHeader('Content-Type', 'text/csv');
+            return res.send(header.join(','));
+        }
+
+        const { data: records, error } = await supabase
+            .from('borrow_records')
+            .select('*')
+            .in('student_id', facultyIds)
+            .order('borrow_date', { ascending: true });
+
+        if (error) throw error;
+
+        const enriched = await Promise.all((records || []).map(async (rec) => {
+            let author = '';
+            let copyright = '';
+            if (rec.item_category === 'print') {
+                const { data: book } = await supabase.from('books').select('author,copyright_year').eq('accession_number', rec.item_code).maybeSingle();
+                if (book) {
+                    author = book.author || '';
+                    copyright = book.copyright_year ? book.copyright_year.toString() : '';
+                }
+            }
+
+            let remarks = '';
+            if (rec.status === 'returned') {
+                if (rec.return_condition === 'Damaged') remarks = 'Returned Damaged';
+                else if (rec.return_condition === 'Good Condition') remarks = 'Returned in Good Condition';
+                else remarks = 'Returned';
+            }
+
+            return {
+                date_borrowed: rec.borrow_date || '',
+                borrower_name: rec.student_name || '',
+                grade_section: rec.section || '',
+                author,
+                title: rec.item_title || '',
+                copyright,
+                due_date: rec.due_date || '',
+                signature: '',
+                date_returned: rec.return_date || '',
+                signature_return: '',
+                remarks
+            };
+        }));
+
+        const header = ['Date Borrowed','Borrower\'s Name','Grade Level & Section','Author','Title','Copyright','Due Date','Signature','Date Returned','Signature (Returned)','Remarks'];
+        const csvRows = enriched.map(r => header.map(h => {
+            const key = ({
+                'Date Borrowed':'date_borrowed','Borrower\'s Name':'borrower_name','Grade Level & Section':'grade_section','Author':'author','Title':'title','Copyright':'copyright','Due Date':'due_date','Signature':'signature','Date Returned':'date_returned','Signature (Returned)':'signature_return','Remarks':'remarks'
+            })[h];
+            return `"${(r[key]||'').toString().replace(/"/g,'""')}"`;
+        }).join(','));
+
+        const csv = [header.join(',')].concat(csvRows).join('\n');
+
+        res.setHeader('Content-disposition', 'attachment; filename=teacher_borrowers_log.csv');
+        res.setHeader('Content-Type', 'text/csv');
+        res.send(csv);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Return teacher borrowers log as JSON (enriched) for PDF/Excel export
+app.get('/api/admin/export/teacher-borrowers-json', async (req, res) => {
+    try {
+        const { data: facultyUsers, error: facultyError } = await supabase.from('faculty').select('faculty_id');
+        if (facultyError) throw facultyError;
+
+        const facultyIds = (facultyUsers || []).map(f => f.faculty_id).filter(Boolean);
+        if (!facultyIds.length) {
+            return res.json({ records: [] });
+        }
+
+        const { data: records, error } = await supabase
+            .from('borrow_records')
+            .select('*')
+            .in('student_id', facultyIds)
+            .order('borrow_date', { ascending: true });
+
+        if (error) throw error;
+
+        const enriched = await Promise.all((records || []).map(async (rec) => {
+            let author = '';
+            let copyright = '';
+            if (rec.item_category === 'print') {
+                const { data: book } = await supabase.from('books').select('author,copyright_year').eq('accession_number', rec.item_code).maybeSingle();
+                if (book) {
+                    author = book.author || '';
+                    copyright = book.copyright_year ? book.copyright_year.toString() : '';
+                }
+            }
+
+            let remarks = '';
+            if (rec.status === 'returned') {
+                if (rec.return_condition === 'Damaged') remarks = 'Returned Damaged';
+                else if (rec.return_condition === 'Good Condition') remarks = 'Returned in Good Condition';
+                else remarks = 'Returned';
+            }
+
+            return {
+                date_borrowed: rec.borrow_date || '',
+                borrower_name: rec.student_name || '',
+                grade_section: rec.section || '',
+                author,
+                title: rec.item_title || '',
+                copyright,
+                due_date: rec.due_date || '',
+                date_returned: rec.return_date || '',
+                remarks
+            };
+        }));
+
+        res.json({ records: enriched });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -1181,12 +1621,18 @@ app.get('/api/admin/pending-returns', async (req, res) => {
 // 25. Admin verifies a return
 app.put('/api/admin/verify-return/:id', async (req, res) => {
     const { id } = req.params;
+    const { return_condition } = req.body || {};
+
+    if (!return_condition || !['Good Condition', 'Damaged'].includes(return_condition)) {
+        return res.status(400).json({ error: 'Please select the item condition before confirming the return.' });
+    }
 
     try {
         const { data, error } = await supabase
             .from('borrow_records')
             .update({
                 admin_verified: true,
+                return_condition,
                 updated_at: new Date().toISOString()
             })
             .eq('id', id);

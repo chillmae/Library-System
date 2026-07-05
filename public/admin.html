@@ -786,6 +786,9 @@
       padding: 28px;
       width: 90%;
       max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+      overflow-x: hidden;
       box-shadow: var(--shadow-lg);
       animation: modalIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
     }
@@ -885,6 +888,202 @@
       .tab-bar { overflow-x: auto; width: 100%; }
       .quick-stats { grid-template-columns: 1fr; }
     }
+
+    /* ─── LIBRARY CARD TEMPLATE ─────────────────── */
+    .library-card-template {
+      width: 100%;
+      max-width: 850px;
+      margin: 0 auto;
+      padding: 40px;
+      background: white;
+      color: #000;
+      font-family: 'Arial', sans-serif;
+      font-size: 11pt;
+      line-height: 1.4;
+    }
+
+    .card-header-deped {
+      text-align: center;
+      border-bottom: 2px solid #000;
+      padding-bottom: 15px;
+      margin-bottom: 15px;
+    }
+
+    .card-header-deped .logo-area {
+      margin-bottom: 10px;
+      font-size: 10pt;
+    }
+
+    .card-header-deped .org-name {
+      font-weight: bold;
+      font-size: 11pt;
+      margin-bottom: 2px;
+    }
+
+    .card-header-deped .org-sub {
+      font-size: 10pt;
+      margin-bottom: 1px;
+    }
+
+    .card-header-deped .org-location {
+      font-size: 10pt;
+      margin-bottom: 8px;
+    }
+
+    .card-header-deped .card-title1 {
+      display: flex;
+      color:#000;
+      font-weight: bold;
+      font-size: 14pt;
+      letter-spacing: 2px;
+      margin-bottom: 2px;
+      justify-content: center; /* Centers horizontally */
+    align-items: center;
+    }
+
+    .card-header-deped .card-subtitle {
+      font-size: 10pt;
+    }
+
+    .card-school-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-bottom: 15px;
+     
+    }
+
+    .card-school-info-item {
+      font-size: 10pt;
+      
+    }
+
+    .card-school-info-item label {
+      font-weight: bold;
+      display: inline-block;
+      width: 80px;
+    }
+
+    .card-school-info-item .line {
+      border-bottom: 1px solid #000;
+      display: inline-block;
+      width: 150px;
+      height: 12px;
+    }
+
+    .card-student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-bottom: 15px;
+      
+    }
+
+    .card-student-column {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card-student-field {
+      display: flex;
+      align-items: baseline;
+      gap: 5px;
+      font-size: 10pt;
+     
+    }
+
+    .card-student-field label {
+      font-weight: bold;
+      white-space: nowrap;
+      min-width: 110px;
+    }
+
+    .card-student-field .value {
+      flex: 1;
+      border-bottom: 1px solid #000;
+      min-height: 14px;
+      padding: 0 3px;
+    }
+
+    .card-table-wrapper {
+      margin: 20px 0;
+    }
+
+    .card-borrow-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid #000;
+      font-size: 9pt;
+    }
+
+    .card-borrow-table thead th {
+      border: 1px solid #000;
+      padding: 6px 3px;
+      text-align: center;
+      font-weight: bold;
+      background: #f5f5f5;
+      color: #000;
+    }
+
+    .card-borrow-table tbody td {
+      border: 1px solid #000;
+      padding: 8px 3px;
+      height: 22px;
+      vertical-align: top;
+      color: #000;
+    }
+
+    .card-footer {
+      text-align: center;
+      margin-top: 20px;
+      border-top: 2px solid #000;
+      padding-top: 10px;
+      font-size: 9pt;
+      color: #666;
+    }
+
+    /* ─── PRINT STYLES ─────────────────────────────── */
+    @media print {
+      * {
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        box-shadow: none;
+      }
+
+      body {
+        display: block;
+        overflow: visible;
+        height: auto;
+        background: white;
+        color: #000;
+        font-family: Arial, sans-serif;
+      }
+
+      .sidebar, .main-content, .topbar, .modal, .modal-overlay,
+      .btn, .nav-link, .card-header, .page-header,
+      #library-card-modal, .modal-box, .modal-footer {
+        display: none !important;
+      }
+
+      .library-card-print-container,
+      .library-card-template {
+        display: block !important;
+        margin: 0;
+        padding: 0;
+        background: white;
+        width: 100%;
+        max-width: 100%;
+        page-break-inside: avoid;
+        page-break-after: avoid;
+      }
+
+      @page {
+        margin: 0.2in;
+        size: A4 landscape;
+      }
+    }
   </style>
 </head>
 <body>
@@ -916,6 +1115,7 @@
       <li class="nav-item"><a class="nav-link" onclick="showSection('books', this)"><i class="nav-icon fas fa-book-open"></i> Print Resources</a></li>
       <li class="nav-item"><a class="nav-link" onclick="showSection('non-print', this)"><i class="nav-icon fas fa-toolbox"></i> Non-print Resources</a></li>
       <li class="nav-item"><a class="nav-link" onclick="showSection('borrowing', this)"><i class="nav-icon fas fa-arrows-rotate"></i> Borrowing</a></li>
+      <li class="nav-item"><a class="nav-link" onclick="showSection('active-borrowers', this)"><i class="nav-icon fas fa-user-clock"></i> Active Borrowers</a></li>
     </ul>
 
     <div class="nav-section-label" style="margin-top:10px">Insights</div>
@@ -1048,6 +1248,22 @@
             <input type="text" id="student_section" placeholder="e.g., GAS">
           </div>
           <div class="form-group">
+            <label>Session</label>
+            <input type="text" id="student_session" placeholder="Morning / Afternoon">
+          </div>
+          <div class="form-group">
+            <label>Adviser</label>
+            <input type="text" id="student_adviser" placeholder="e.g., Mr. Santos">
+          </div>
+          <div class="form-group">
+            <label>Address</label>
+            <input type="text" id="student_address" placeholder="e.g., 123 Cebu St.">
+          </div>
+          <div class="form-group">
+            <label>Contact No.</label>
+            <input type="text" id="student_contact" placeholder="e.g., 09171234567">
+          </div>
+          <div class="form-group">
             <label>Sex</label>
             <select id="student_sex">
               <option value="">-- Select --</option>
@@ -1070,10 +1286,20 @@
       </div>
 
       <div class="card">
-        <div class="card-header">
+        <div class="card-header" style="align-items: flex-start; gap: 12px; flex-wrap: wrap;">
           <div class="card-title">
             <div class="card-title-icon"><i class="fas fa-list-ul"></i></div>
             All Students
+          </div>
+          <div style="margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap: wrap;">
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:var(--text-dim);">
+              Section:
+              <select id="student-section-filter" onchange="filterStudentsBySection()" style="min-width:140px;">
+                <option value="all">All Students</option>
+              </select>
+            </label>
+            <button class="btn btn-secondary" onclick="exportBorrowersLog()"><i class="fas fa-file-csv"></i> Export Borrower's Log (CSV)</button>
+            <button class="btn btn-secondary" onclick="exportBorrowersPDF()"><i class="fas fa-file-pdf"></i> Export Borrower's Log (PDF)</button>
           </div>
         </div>
         <div class="table-wrap">
@@ -1083,6 +1309,9 @@
                 <th>SLRC ID</th>
                 <th>Full Name</th>
                 <th>Section</th>
+                <th>Session</th>
+                <th>Contact</th>
+                <th>Address</th>
                 <th>Sex</th>
                 <th>Birthdate</th>
                 <th>Age</th>
@@ -1114,8 +1343,8 @@
         <div id="add-faculty-message" class="msg"></div>
         <div class="form-grid">
           <div class="form-group">
-            <label>Faculty ID *</label>
-            <input type="text" id="faculty_id" placeholder="e.g., FAC-001">
+            <label>Employee No. *</label>
+            <input type="text" id="faculty_id" placeholder="e.g., EMP-001">
           </div>
           <div class="form-group">
             <label>Full Name *</label>
@@ -1134,6 +1363,18 @@
             </select>
           </div>
           <div class="form-group">
+            <label>Address</label>
+            <input type="text" id="faculty_address" placeholder="e.g., 123 Rizal St.">
+          </div>
+          <div class="form-group">
+            <label>Contact No.</label>
+            <input type="text" id="faculty_contact_number" placeholder="e.g., 0917-123-4567">
+          </div>
+          <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" id="faculty_email" placeholder="e.g., teacher@example.com">
+          </div>
+          <div class="form-group">
             <label>Birthdate</label>
             <input type="date" id="faculty_birthdate">
           </div>
@@ -1148,10 +1389,20 @@
       </div>
 
       <div class="card">
-        <div class="card-header">
+        <div class="card-header" style="align-items: flex-start; gap: 12px; flex-wrap: wrap;">
           <div class="card-title">
             <div class="card-title-icon"><i class="fas fa-list-ul"></i></div>
             All Faculty Members
+          </div>
+          <div style="margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap: wrap;">
+            <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:var(--text-dim);">
+              Filter:
+              <select id="faculty-position-filter" onchange="filterFacultyByPosition()" style="min-width:160px;">
+                <option value="all">All Faculty</option>
+              </select>
+            </label>
+            <button class="btn btn-secondary" onclick="exportTeacherBorrowersLog()"><i class="fas fa-file-csv"></i> Export Teacher Borrower's Log (CSV)</button>
+            <button class="btn btn-secondary" onclick="exportTeacherBorrowersPDF()"><i class="fas fa-file-pdf"></i> Export Teacher Borrower's Log (PDF)</button>
           </div>
         </div>
         <div class="table-wrap">
@@ -1162,13 +1413,16 @@
                 <th>Full Name</th>
                 <th>Position</th>
                 <th>Sex</th>
+                <th>Contact</th>
+                <th>Address</th>
+                <th>Email</th>
                 <th>Birthdate</th>
                 <th>Age</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody id="faculty-table">
-              <tr><td colspan="4"><div class="empty-state"><div class="empty-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="empty-text">Loading faculty…</div></div></td></tr>
+              <tr><td colspan="10"><div class="empty-state"><div class="empty-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="empty-text">Loading faculty…</div></div></td></tr>
             </tbody>
           </table>
         </div>
@@ -1359,8 +1613,8 @@
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Student</th><th>ID</th><th>Grade/Section</th><th>Category</th><th>Item Title</th><th>Code</th><th>Date</th><th>Actions</th></tr></thead>
-              <tbody id="pending-borrows-table"><tr><td colspan="8" style="text-align:center; color:var(--text-mute)">Loading…</td></tr></tbody>
+              <thead><tr><th>Student</th><th>ID</th><th>Grade/Section</th><th>Category</th><th>Item Title</th><th>Code</th><th>Borrowed</th><th>Due Date</th><th>Actions</th></tr></thead>
+              <tbody id="pending-borrows-table"><tr><td colspan="9" style="text-align:center; color:var(--text-mute)">Loading…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -1387,10 +1641,29 @@
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Student</th><th>ID</th><th>Item Title</th><th>Code</th><th>Category</th><th>Borrowed</th><th>Returned</th><th>Status</th><th>Verified</th><th>Action</th></tr></thead>
-              <tbody id="all-records-table"><tr><td colspan="10" style="text-align:center; color:var(--text-mute)">Loading…</td></tr></tbody>
+              <thead><tr><th>Student</th><th>ID</th><th>Item Title</th><th>Code</th><th>Category</th><th>Borrowed</th><th>Returned</th><th>Due Date</th><th>Status</th><th>Verified</th><th>Action</th></tr></thead>
+              <tbody id="all-records-table"><tr><td colspan="11" style="text-align:center; color:var(--text-mute)">Loading…</td></tr></tbody>
             </table>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="active-borrowers" class="content-section">
+      <div class="page-header">
+        <h2>Current Borrowers</h2>
+        <p>List of students and items currently out on loan.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><div class="card-title-icon"><i class="fas fa-user-clock"></i></div> Active Borrowers</div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Student</th><th>ID</th><th>Item Title</th><th>Code</th><th>Borrowed</th><th>Due Date</th><th>Status</th></tr></thead>
+            <tbody id="active-borrowers-table"><tr><td colspan="7" style="text-align:center; color:var(--text-mute)">Loading…</td></tr></tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -1581,6 +1854,10 @@
       <div class="form-group"><label>Full Name</label><input type="text" id="edit_student_name"></div>
       <div class="form-group"><label>Grade</label><input type="text" id="edit_student_grade"></div>
       <div class="form-group"><label>Section</label><input type="text" id="edit_student_section"></div>
+      <div class="form-group"><label>Session</label><input type="text" id="edit_student_session"></div>
+      <div class="form-group"><label>Adviser</label><input type="text" id="edit_student_adviser"></div>
+      <div class="form-group"><label>Address</label><input type="text" id="edit_student_address"></div>
+      <div class="form-group"><label>Contact No.</label><input type="text" id="edit_student_contact"></div>
       <div class="form-group"><label>Sex</label><select id="edit_student_sex"><option value="">-- Select --</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
       <div class="form-group"><label>Birthdate</label><input type="date" id="edit_student_birthdate"></div>
       <div class="form-group"><label>Age</label><input type="number" id="edit_student_age" min="0" max="120"></div>
@@ -1600,10 +1877,13 @@
       <button class="modal-close" onclick="closeModal('edit-faculty-modal')"><i class="fas fa-xmark"></i></button>
     </div>
     <div class="modal-form">
-      <div class="form-group"><label>Faculty ID</label><input type="text" id="edit_faculty_id" disabled style="opacity:.5; cursor:not-allowed;"></div>
+      <div class="form-group"><label>Employee No.</label><input type="text" id="edit_faculty_id" disabled style="opacity:.5; cursor:not-allowed;"></div>
       <div class="form-group"><label>Full Name</label><input type="text" id="edit_faculty_name"></div>
       <div class="form-group"><label>Position</label><input type="text" id="edit_faculty_position"></div>
       <div class="form-group"><label>Sex</label><select id="edit_faculty_sex"><option value="">-- Select --</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
+      <div class="form-group"><label>Address</label><input type="text" id="edit_faculty_address"></div>
+      <div class="form-group"><label>Contact No.</label><input type="text" id="edit_faculty_contact_number"></div>
+      <div class="form-group"><label>Email Address</label><input type="email" id="edit_faculty_email"></div>
       <div class="form-group"><label>Birthdate</label><input type="date" id="edit_faculty_birthdate"></div>
       <div class="form-group"><label>Age</label><input type="number" id="edit_faculty_age" min="0" max="120"></div>
     </div>
@@ -1682,11 +1962,42 @@
   </div>
 </div>
 
+<!-- Library Card Print Template -->
+<div id="library-card-print-container" style="display: none;">
+  <div id="library-card-content" class="library-card-template">
+    <!-- Template will be populated by JavaScript -->
+  </div>
+</div>
+
+<!-- Library Card Modal Preview -->
+<div id="library-card-modal" class="modal">
+  <div class="modal-box" style="max-width: 950px; max-height: 90vh; overflow-y: auto;">
+    <div class="modal-head">
+      <h2>Student Library Card Preview</h2>
+      <button class="modal-close" onclick="closeModal('library-card-modal')"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="modal-form" id="library-card-preview" style="background: white; padding: 20px; color: #000; font-family: Arial, sans-serif; border: 1px solid #ccc;">
+      <!-- Card preview will be generated here -->
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('library-card-modal')">Close</button>
+      <button class="btn btn-primary" onclick="saveLibraryCardAsPdf()"><i class="fas fa-file-pdf"></i> Save as PDF</button>
+      <button class="btn btn-primary" onclick="printLibraryCardNow()"><i class="fas fa-print"></i> Print Card</button>
+    </div>
+  </div>
+</div>
+
 <!-- ─── SCRIPTS ──────────────────────────────────── -->
 <script>
+  // PDF generation library
+  const script = document.createElement('script');
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+  script.async = true;
+  document.head.appendChild(script);
   /* ── State ─────────────────────────────────── */
   let allStudents = [], allLogs = [], allBooks = [], allNonPrintResources = [], allFaculty = [];
   let currentEditId = null, currentEditBookId = null, currentEditResourceId = null, currentEditFacultyId = null;
+  let currentLibraryCardName = 'learner-library-card';
 
   const PAGE_TITLES = {
     dashboard: ['fa-chart-line','Dashboard'],
@@ -1695,6 +2006,7 @@
     books:     ['fa-book-open','Print Resources'],
     'non-print': ['fa-toolbox','Non-print Resources'],
     borrowing: ['fa-arrows-rotate','Borrowing Management'],
+    'active-borrowers': ['fa-user-clock','Active Borrowers'],
     analytics: ['fa-book-bookmark','Book Analytics'],
     reports:   ['fa-chart-column','Reports & Analytics'],
   };
@@ -1722,6 +2034,7 @@
 
     if (id === 'reports') loadReports();
     if (id === 'borrowing') loadPendingBorrows();
+    if (id === 'active-borrowers') loadActiveBorrowers();
     if (id === 'analytics') loadBookAnalytics();
   }
 
@@ -1858,26 +2171,51 @@
       const r = await fetch('/api/admin/students');
       const d = await r.json();
       allStudents = d.students || [];
+      populateSectionFilter();
       updateStudentsTable();
     } catch(e) { console.error(e); }
   }
 
-  function updateStudentsTable() {
+  function populateSectionFilter() {
+    const select = document.getElementById('student-section-filter');
+    if (!select) return;
+    const sections = [...new Set(allStudents.map(s => (s.section || '').trim()).filter(Boolean))].sort();
+    const options = ['all', ...sections];
+    select.innerHTML = options.map(opt => `
+      <option value="${opt}">${opt === 'all' ? 'All Students' : opt}</option>
+    `).join('');
+  }
+
+  function filterStudentsBySection() {
+    const select = document.getElementById('student-section-filter');
+    const section = select ? select.value : 'all';
+    updateStudentsTable(section);
+  }
+
+  function updateStudentsTable(filterSection = 'all') {
     const tbody = document.getElementById('students-table');
-    if (!allStudents.length) {
-      tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="empty-icon"><i class="fas fa-user-slash"></i></div><div class="empty-text">No students found</div></div></td></tr>`;
+    const filtered = filterSection === 'all'
+      ? allStudents
+      : allStudents.filter(s => (s.section || '').trim() === filterSection);
+
+    if (!filtered.length) {
+      tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon"><i class="fas fa-user-slash"></i></div><div class="empty-text">No students found</div></div></td></tr>`;
       return;
     }
-    tbody.innerHTML = allStudents.map(s => `
+    tbody.innerHTML = filtered.map(s => `
       <tr>
         <td><code>${s.student_id}</code></td>
         <td><strong>${s.name||'—'}</strong></td>
         <td>${s.section||'—'}</td>
+        <td>${s.session||'—'}</td>
+        <td>${s.contact_number||'—'}</td>
+        <td>${s.address||'—'}</td>
         <td>${s.sex||'—'}</td>
         <td>${s.birthdate||'—'}</td>
         <td>${s.age||'—'}</td>
         <td>
           <div class="action-group">
+            <button class="btn btn-ghost btn-sm" onclick="exportLibraryCard(${s.id},'${s.student_id}','${s.name}','${s.grade}','${s.section}')"><i class="fas fa-download"></i></button>
             <button class="btn btn-ghost btn-sm" onclick="openEditModal(${s.id})"><i class="fas fa-pen"></i></button>
             <button class="btn btn-danger btn-sm" onclick="deleteStudent(${s.id},'${s.student_id}')"><i class="fas fa-trash"></i></button>
           </div>
@@ -1890,16 +2228,20 @@
     const name = document.getElementById('student_name').value.trim();
     const grade = document.getElementById('student_grade').value.trim();
     const section = document.getElementById('student_section').value.trim();
+    const session = document.getElementById('student_session').value.trim();
+    const adviser = document.getElementById('student_adviser').value.trim();
+    const address = document.getElementById('student_address').value.trim();
+    const contact_number = document.getElementById('student_contact').value.trim();
     const sex = document.getElementById('student_sex').value.trim();
     const birthdate = document.getElementById('student_birthdate').value;
     const age = document.getElementById('student_age').value;
     if (!student_id || !name) { showMessage('add-student-message','SLRC ID and Name are required','error'); return; }
     try {
-      const res = await fetch('/api/admin/add-student',{ method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id,name,grade,section,sex,birthdate,age:parseInt(age)||null}) });
+      const res = await fetch('/api/admin/add-student',{ method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id,name,grade,section,session,adviser,address,contact_number,sex,birthdate,age:parseInt(age)||null}) });
       const data = await res.json();
       if (res.ok) {
         Swal.fire({ icon:'success', title:'Student Added!', text:'Student has been registered.', confirmButtonColor:'#5b6ef5', background:'#1a1e2b', color:'#e8eaf0' });
-        ['student_id','student_name','student_grade','student_section','student_sex','student_birthdate','student_age'].forEach(id => document.getElementById(id).value='');
+        ['student_id','student_name','student_grade','student_section','student_session','student_adviser','student_address','student_contact','student_sex','student_birthdate','student_age'].forEach(id => document.getElementById(id).value='');
         loadStudents(); loadDashboard();
       } else { Swal.fire({ icon:'error', title:'Error', text:data.error||'Could not add student', confirmButtonColor:'#f43f5e', background:'#1a1e2b', color:'#e8eaf0' }); }
     } catch(e) { Swal.fire({ icon:'error', title:'Connection Error', text:'Cannot reach server.', confirmButtonColor:'#f43f5e', background:'#1a1e2b', color:'#e8eaf0' }); }
@@ -1912,6 +2254,10 @@
     document.getElementById('edit_student_name').value = s.name||'';
     document.getElementById('edit_student_grade').value = s.grade||'';
     document.getElementById('edit_student_section').value = s.section||'';
+    document.getElementById('edit_student_session').value = s.session||'';
+    document.getElementById('edit_student_adviser').value = s.adviser||'';
+    document.getElementById('edit_student_address').value = s.address||'';
+    document.getElementById('edit_student_contact').value = s.contact_number||'';
     document.getElementById('edit_student_sex').value = s.sex||'';
     document.getElementById('edit_student_birthdate').value = s.birthdate||'';
     document.getElementById('edit_student_age').value = s.age||'';
@@ -1922,12 +2268,16 @@
     const name = document.getElementById('edit_student_name').value.trim();
     const grade = document.getElementById('edit_student_grade').value.trim();
     const section = document.getElementById('edit_student_section').value.trim();
+    const session = document.getElementById('edit_student_session').value.trim();
+    const adviser = document.getElementById('edit_student_adviser').value.trim();
+    const address = document.getElementById('edit_student_address').value.trim();
+    const contact_number = document.getElementById('edit_student_contact').value.trim();
     const sex = document.getElementById('edit_student_sex').value.trim();
     const birthdate = document.getElementById('edit_student_birthdate').value;
     const age = document.getElementById('edit_student_age').value;
     if (!name) { Swal.fire({icon:'warning',title:'Name required',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); return; }
     try {
-      const res = await fetch(`/api/admin/students/${currentEditId}`,{ method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,grade,section,sex,birthdate,age:parseInt(age)||null}) });
+      const res = await fetch(`/api/admin/students/${currentEditId}`,{ method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,grade,section,session,adviser,address,contact_number,sex,birthdate,age:parseInt(age)||null}) });
       if (res.ok) {
         Swal.fire({icon:'success',title:'Updated!',text:'Student info updated.',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}).then(()=>{ closeModal('edit-modal'); loadStudents(); });
       } else { Swal.fire({icon:'error',title:'Error',text:'Could not update.',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
@@ -1950,26 +2300,51 @@
       const r = await fetch('/api/admin/faculty');
       const d = await r.json();
       allFaculty = d.faculty || [];
+      populateFacultyFilter();
       updateFacultyTable();
     } catch(e) { console.error(e); }
   }
 
-  function updateFacultyTable() {
+  function populateFacultyFilter() {
+    const select = document.getElementById('faculty-position-filter');
+    if (!select) return;
+    const positions = [...new Set(allFaculty.map(f => (f.position || '').trim()).filter(Boolean))].sort();
+    select.innerHTML = [`
+      <option value="all">All Faculty</option>
+    `].concat(positions.map(pos => `
+      <option value="${pos}">${pos}</option>
+    `)).join('');
+  }
+
+  function filterFacultyByPosition() {
+    const select = document.getElementById('faculty-position-filter');
+    const position = select ? select.value : 'all';
+    updateFacultyTable(position);
+  }
+
+  function updateFacultyTable(filterPosition = 'all') {
     const tbody = document.getElementById('faculty-table');
-    if (!allFaculty.length) {
-      tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="empty-icon"><i class="fas fa-user-slash"></i></div><div class="empty-text">No faculty found</div></div></td></tr>`;
+    const filtered = filterPosition === 'all'
+      ? allFaculty
+      : allFaculty.filter(f => (f.position || '').trim() === filterPosition);
+    if (!filtered.length) {
+      tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon"><i class="fas fa-user-slash"></i></div><div class="empty-text">No faculty found</div></div></td></tr>`;
       return;
     }
-    tbody.innerHTML = allFaculty.map(f => `
+    tbody.innerHTML = filtered.map(f => `
       <tr>
         <td><code>${f.faculty_id}</code></td>
         <td><strong>${f.name||'—'}</strong></td>
         <td>${f.position||'—'}</td>
         <td>${f.sex||'—'}</td>
+        <td>${f.contact_number||'—'}</td>
+        <td>${f.address||'—'}</td>
+        <td>${f.email||'—'}</td>
         <td>${f.birthdate||'—'}</td>
         <td>${f.age||'—'}</td>
         <td>
           <div class="action-group">
+            <button class="btn btn-ghost btn-sm" onclick="exportTeacherLibraryCard(${f.id})"><i class="fas fa-download"></i></button>
             <button class="btn btn-ghost btn-sm" onclick="openEditFacultyModal(${f.id})"><i class="fas fa-pen"></i></button>
             <button class="btn btn-danger btn-sm" onclick="deleteFaculty(${f.id},'${f.faculty_id}')"><i class="fas fa-trash"></i></button>
           </div>
@@ -1982,15 +2357,18 @@
     const name = document.getElementById('faculty_name').value.trim();
     const position = document.getElementById('faculty_position').value.trim();
     const sex = document.getElementById('faculty_sex').value.trim();
+    const address = document.getElementById('faculty_address').value.trim();
+    const contact_number = document.getElementById('faculty_contact_number').value.trim();
+    const email = document.getElementById('faculty_email').value.trim();
     const birthdate = document.getElementById('faculty_birthdate').value;
     const age = document.getElementById('faculty_age').value;
-    if (!faculty_id || !name) { showMessage('add-faculty-message','Faculty ID and Name are required','error'); return; }
+    if (!faculty_id || !name) { showMessage('add-faculty-message','Employee No. and Name are required','error'); return; }
     try {
-      const res = await fetch('/api/admin/add-faculty',{ method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({faculty_id,name,position,sex,birthdate,age:parseInt(age)||null}) });
+      const res = await fetch('/api/admin/add-faculty',{ method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({faculty_id,name,position,sex,address,contact_number,email,birthdate,age:parseInt(age)||null}) });
       const data = await res.json();
       if (res.ok) {
         Swal.fire({ icon:'success', title:'Faculty Added!', text:'Faculty member has been registered.', confirmButtonColor:'#5b6ef5', background:'#1a1e2b', color:'#e8eaf0' });
-        ['faculty_id','faculty_name','faculty_position','faculty_sex','faculty_birthdate','faculty_age'].forEach(id => document.getElementById(id).value='');
+        ['faculty_id','faculty_name','faculty_position','faculty_sex','faculty_address','faculty_contact_number','faculty_email','faculty_birthdate','faculty_age'].forEach(id => document.getElementById(id).value='');
         loadFaculty(); loadDashboard();
       } else { Swal.fire({ icon:'error', title:'Error', text:data.error||'Could not add faculty', confirmButtonColor:'#f43f5e', background:'#1a1e2b', color:'#e8eaf0' }); }
     } catch(e) { Swal.fire({ icon:'error', title:'Connection Error', text:'Cannot reach server.', confirmButtonColor:'#f43f5e', background:'#1a1e2b', color:'#e8eaf0' }); }
@@ -2003,6 +2381,9 @@
     document.getElementById('edit_faculty_name').value = f.name||'';
     document.getElementById('edit_faculty_position').value = f.position||'';
     document.getElementById('edit_faculty_sex').value = f.sex||'';
+    document.getElementById('edit_faculty_address').value = f.address||'';
+    document.getElementById('edit_faculty_contact_number').value = f.contact_number||'';
+    document.getElementById('edit_faculty_email').value = f.email||'';
     document.getElementById('edit_faculty_birthdate').value = f.birthdate||'';
     document.getElementById('edit_faculty_age').value = f.age||'';
     document.getElementById('edit-faculty-modal').classList.add('active');
@@ -2012,11 +2393,14 @@
     const name = document.getElementById('edit_faculty_name').value.trim();
     const position = document.getElementById('edit_faculty_position').value.trim();
     const sex = document.getElementById('edit_faculty_sex').value.trim();
+    const address = document.getElementById('edit_faculty_address').value.trim();
+    const contact_number = document.getElementById('edit_faculty_contact_number').value.trim();
+    const email = document.getElementById('edit_faculty_email').value.trim();
     const birthdate = document.getElementById('edit_faculty_birthdate').value;
     const age = document.getElementById('edit_faculty_age').value;
     if (!name) { Swal.fire({icon:'warning',title:'Name required',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); return; }
     try {
-      const res = await fetch(`/api/admin/faculty/${currentEditFacultyId}`,{ method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,position,sex,birthdate,age:parseInt(age)||null}) });
+      const res = await fetch(`/api/admin/faculty/${currentEditFacultyId}`,{ method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,position,sex,address,contact_number,email,birthdate,age:parseInt(age)||null}) });
       if (res.ok) {
         Swal.fire({icon:'success',title:'Updated!',text:'Faculty info updated.',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}).then(()=>{ closeModal('edit-faculty-modal'); loadFaculty(); });
       } else { Swal.fire({icon:'error',title:'Error',text:'Could not update.',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
@@ -2333,11 +2717,41 @@
     } catch(e) { console.error(e); }
   }
 
+  async function loadActiveBorrowers() {
+    try {
+      const r = await fetch('/api/admin/active-borrowers');
+      const d = await r.json();
+      updateActiveBorrowersTable(d.records);
+    } catch(e) { console.error(e); }
+  }
+
+  function updateActiveBorrowersTable(records) {
+    const tbody = document.getElementById('active-borrowers-table');
+    if (!records || !records.length) {
+      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-text">No active borrowers</div></div></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = records.map(rec => {
+      const bd = new Date(rec.borrow_date).toLocaleDateString();
+      const due = rec.due_date ? new Date(rec.due_date).toLocaleDateString() : '—';
+      const status = rec.admin_verified
+        ? '<span class="badge badge-success">Active</span>'
+        : '<span class="badge badge-warning">Pending Verification</span>';
+      return `<tr>
+        <td><strong>${rec.student_name}</strong></td><td><code>${rec.student_id}</code></td>
+        <td>${rec.item_title}</td><td><code>${rec.item_code}</code></td>
+        <td>${bd}</td><td>${due}</td><td>${status}</td>
+      </tr>`;
+    }).join('');
+  }
+
   function updatePendingBorrowsTable(records) {
     const tbody = document.getElementById('pending-borrows-table');
     if (!records||!records.length) { tbody.innerHTML=`<tr><td colspan="9"><div class="empty-state"><div class="empty-text">No pending borrows</div></div></td></tr>`; return; }
     tbody.innerHTML = records.map(rec => {
       const bd = new Date(rec.borrow_date).toLocaleDateString();
+      const due = rec.due_date ? new Date(rec.due_date).toLocaleDateString() : '—';
       const gs = rec.grade + (rec.section?` - ${rec.section}`:'');
       const cat = rec.item_category==='print'
         ? '<span class="badge badge-blue">📖 Print</span>'
@@ -2345,7 +2759,7 @@
       return `<tr>
         <td><strong>${rec.student_name}</strong></td><td><code>${rec.student_id}</code></td>
         <td>${gs}</td><td>${cat}</td><td>${rec.item_title}</td>
-        <td><code>${rec.item_code}</code></td><td>${bd}</td>
+        <td><code>${rec.item_code}</code></td><td>${bd}</td><td>${due}</td>
         <td><button class="btn btn-success btn-sm" onclick="verifyBorrow('${rec.id}')"><i class="fas fa-check"></i> Verify</button> <button class="btn btn-danger btn-sm" onclick="deleteBorrowRecord('${rec.id}','pending-borrow')"><i class="fas fa-trash"></i></button></td>
       </tr>`;
     }).join('');
@@ -2388,6 +2802,7 @@
     tbody.innerHTML = records.map(rec=>{
       const bd = new Date(rec.borrow_date).toLocaleDateString();
       const rd = rec.return_date ? new Date(rec.return_date).toLocaleDateString() : '—';
+      const due = rec.due_date ? new Date(rec.due_date).toLocaleDateString() : '—';
       const status = rec.status==='borrowed'? '<span class="badge badge-warning">Borrowed</span>'
                    : rec.status==='returned'? '<span class="badge badge-success">Returned</span>'
                    : '<span class="badge badge-danger">Overdue</span>';
@@ -2398,20 +2813,76 @@
         <td><strong>${rec.student_name}</strong></td><td><code>${rec.student_id}</code></td>
         <td>${rec.item_title}</td><td><code>${rec.item_code}</code></td>
         <td>${rec.item_category==='print'?'📖 Print':'🎮 Non-Print'}</td>
-        <td>${bd}</td><td>${rd}</td><td>${status}</td><td>${verified}</td>
+        <td>${bd}</td><td>${rd}</td><td>${due}</td><td>${status}</td><td>${verified}</td>
         <td><button class="btn btn-danger btn-sm" onclick="deleteBorrowRecord('${rec.id}','all-records')"><i class="fas fa-trash"></i> Delete</button></td>
       </tr>`;
     }).join('');
   }
 
   async function verifyBorrow(id) {
-    const res = await fetch(`/api/admin/verify-borrow/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'}});
-    if(res.ok){Swal.fire({icon:'success',title:'Verified!',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}).then(()=>loadPendingBorrows());}
+    const { value: dueDate, isConfirmed } = await Swal.fire({
+      title: 'Set Due Date',
+      text: 'Choose the due date for this borrowed item.',
+      icon: 'calendar',
+      input: 'date',
+      inputAttributes: { required: 'true' },
+      showCancelButton: true,
+      confirmButtonColor: '#5b6ef5',
+      cancelButtonColor: '#3d4260',
+      background: '#1a1e2b',
+      color: '#e8eaf0',
+      confirmButtonText: 'Confirm Borrow'
+    });
+
+    if (!isConfirmed || !dueDate) return;
+
+    const res = await fetch(`/api/admin/verify-borrow/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ due_date: dueDate })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      Swal.fire({icon:'success',title:'Verified!',text:'The borrow was verified and the due date was saved.',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}).then(()=>loadPendingBorrows());
+    } else {
+      Swal.fire({icon:'error',title:'Error',text:data.error || 'Could not verify borrow',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'});
+    }
   }
 
   async function verifyReturn(id) {
-    const res = await fetch(`/api/admin/verify-return/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'}});
-    if(res.ok){Swal.fire({icon:'success',title:'Return Verified!',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}).then(()=>loadPendingReturns());}
+    const { value: condition, isConfirmed } = await Swal.fire({
+      title: 'Verify Return',
+      text: 'Select the item condition received by the library.',
+      icon: 'question',
+      input: 'select',
+      inputOptions: {
+        'Good Condition': 'Good Condition',
+        'Damaged': 'Damaged'
+      },
+      inputPlaceholder: 'Choose condition',
+      showCancelButton: true,
+      confirmButtonColor: '#5b6ef5',
+      cancelButtonColor: '#3d4260',
+      background: '#1a1e2b',
+      color: '#e8eaf0',
+      confirmButtonText: 'Confirm Return'
+    });
+
+    if (!isConfirmed || !condition) return;
+
+    const res = await fetch(`/api/admin/verify-return/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ return_condition: condition })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      Swal.fire({icon:'success',title:'Return Verified!',text:'The return has been confirmed with the selected condition.',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}).then(()=>loadPendingReturns());
+    } else {
+      Swal.fire({icon:'error',title:'Error',text:data.error || 'Could not verify return',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'});
+    }
   }
 
   async function deleteBorrowRecord(id, type) {
@@ -2464,9 +2935,601 @@
     Swal.fire({icon:'info',title:'Coming Soon',text:'PDF export will be available in the next update.',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'});
   }
 
+  // Download helper
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  async function exportStudents() {
+    try {
+      const r = await fetch('/api/admin/export/students');
+      if (!r.ok) { const e = await r.json(); throw new Error(e.error||'Export failed'); }
+      const blob = await r.blob();
+      downloadBlob(blob, 'students.csv');
+    } catch (e) { Swal.fire({icon:'error',title:'Export Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+  }
+
+  async function exportBorrowersLog() {
+    try {
+      const r = await fetch('/api/admin/export/borrowers-log');
+      if (!r.ok) { const e = await r.json(); throw new Error(e.error||'Export failed'); }
+      const blob = await r.blob();
+      downloadBlob(blob, 'borrowers_log.csv');
+    } catch (e) { Swal.fire({icon:'error',title:'Export Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+  }
+
+  async function exportTeacherBorrowersLog() {
+    try {
+      const r = await fetch('/api/admin/export/teacher-borrowers-log');
+      if (!r.ok) { const e = await r.json(); throw new Error(e.error||'Export failed'); }
+      const blob = await r.blob();
+      downloadBlob(blob, 'teacher_borrowers_log.csv');
+    } catch (e) { Swal.fire({icon:'error',title:'Export Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+  }
+
+  async function exportTeacherBorrowersPDF() {
+    try {
+      const r = await fetch('/api/admin/export/teacher-borrowers-json');
+      if (!r.ok) { const e = await r.json(); throw new Error(e.error||'Export failed'); }
+      const d = await r.json();
+      const records = d.records || [];
+      const container = document.createElement('div');
+      container.style.boxSizing = 'border-box';
+      container.style.width = '11.69in';
+      container.style.padding = '1in';
+      container.style.fontFamily = 'Times New Roman, serif';
+      container.style.color = '#000';
+      container.style.fontSize = '5pt';
+
+      const topEmblem = document.createElement('div');
+      topEmblem.style.textAlign = 'center';
+      topEmblem.style.marginBottom = '0px';
+      const topImg = document.createElement('img'); topImg.src = '/images/Deped-Seal.png'; topImg.style.height = '100px'; topImg.style.objectFit = 'contain'; topImg.style.marginTop = '-100px';
+      topEmblem.appendChild(topImg);
+      container.appendChild(topEmblem);
+
+      const centerBlock = document.createElement('div');
+      centerBlock.style.textAlign = 'center';
+      centerBlock.style.lineHeight = '1';
+      centerBlock.style.marginBottom = '6px';
+      centerBlock.innerHTML = `
+        <div style="font-weight:700; font-size:11px">Republic of the Philippines</div>
+        <div style="font-weight:700; font-size:11px">Department of Education</div>
+        <div style="font-size:10px; margin-top:4px">Region VII - Central Visayas</div>
+        <div style="font-size:10px">Sudlon, Lahug, Cebu City</div>
+        <div style="font-size:10px;margin-top:4px"> Division of Cebu Province</div>
+        <div style="font-size:10px; margin-top:4px">Bala National High School</div>
+        <div style="margin-top:8px; font-weight:800; font-size:16px">TEACHER BORROWER'S LOG</div>
+        <div style="font-size:10px; margin-top:4px">SY 2026-2027</div>
+      `;
+      container.appendChild(centerBlock);
+
+      const table = document.createElement('table');
+      table.style.width = '100%';
+      table.style.borderCollapse = 'collapse';
+      table.style.marginTop = '10px';
+      table.style.tableLayout = 'auto';
+
+      const thead = document.createElement('thead');
+      const cols = ['DATE BORROWED','BORROWER\'S NAME','GRADE LEVEL & SECTION','AUTHOR','TITLE','COPYRIGHT','DUE DATE','SIGNATURE','DATE RETURNED','SIGNATURE','REMARKS'];
+      const htr = document.createElement('tr');
+      cols.forEach(c=>{
+        const th = document.createElement('th');
+        th.textContent = c;
+        th.style.border = '0.5px solid #000';
+        th.style.padding = '6px 4px';
+        th.style.fontSize = '5pt';
+        th.style.fontWeight = '700';
+        th.style.textAlign = 'center';
+        th.style.background = '#e9f2ef';
+        th.style.verticalAlign = 'middle';
+        th.style.whiteSpace = 'nowrap';
+        htr.appendChild(th);
+      });
+      thead.appendChild(htr);
+      table.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      const rowsToShow = Math.max(records.length, 18);
+      for (let i = 0; i < rowsToShow; i++) {
+        const rec = records[i] || {};
+        const tr = document.createElement('tr');
+        const cells = [rec.date_borrowed||'', rec.borrower_name||'', rec.grade_section||'', rec.author||'', rec.title||'', rec.copyright||'', rec.due_date||'', '', rec.date_returned||'', '', rec.remarks||''];
+        cells.forEach(v=>{
+          const td = document.createElement('td');
+          td.textContent = v || '';
+          td.style.border = '1px solid #000';
+          td.style.color = '#000';
+          td.style.padding = '6px 4px';
+          td.style.fontSize = '7pt';
+          td.style.verticalAlign = 'middle';
+          td.style.height = '26px';
+          td.style.overflow = 'hidden';
+          td.style.whiteSpace = 'nowrap';
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      }
+
+      table.appendChild(tbody);
+      container.appendChild(table);
+      const footerLine = document.createElement('div'); footerLine.style.height = '10px'; container.appendChild(footerLine);
+      const opt = { margin:0, filename:'teacher_borrowers_log.pdf', image:{type:'jpeg',quality:0.95}, html2canvas:{scale:2, useCORS:true}, jsPDF:{unit:'in', format:'a4', orientation:'landscape'} };
+      await window.html2pdf().set(opt).from(container).save();
+    } catch (e) { Swal.fire({icon:'error',title:'Export Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+  }
+
+  async function exportBorrowersPDF() {
+    try {
+      const r = await fetch('/api/admin/export/borrowers-json');
+      if (!r.ok) { const e = await r.json(); throw new Error(e.error||'Export failed'); }
+      const d = await r.json();
+      const records = d.records || [];
+      // Create printable container matching the scanned template (A4 landscape with 1" margins)
+      const container = document.createElement('div');
+      container.style.boxSizing = 'border-box';
+      container.style.width = '11.69in'; // A4 landscape width
+      container.style.padding = '1in'; // 1in margins on all sides
+      container.style.fontFamily = 'Times New Roman, serif';
+      container.style.color = '#000';
+      container.style.fontSize = '5pt';
+
+      // Top emblem centered (small)
+      const topEmblem = document.createElement('div');
+      topEmblem.style.textAlign = 'center';
+      topEmblem.style.marginBottom = '0px';
+      const topImg = document.createElement('img'); topImg.src = '/images/Deped-Seal.png'; topImg.style.height = '100px'; topImg.style.objectFit = 'contain'; topImg.style.marginTop = '-100px';
+      topEmblem.appendChild(topImg);
+      container.appendChild(topEmblem);
+
+      // Centered header block
+      const centerBlock = document.createElement('div');
+      centerBlock.style.textAlign = 'center';
+      centerBlock.style.lineHeight = '1';
+      centerBlock.style.marginBottom = '6px';
+      centerBlock.innerHTML = `
+        <div style="font-weight:700; font-size:11px">Republic of the Philippines</div>
+        <div style="font-weight:700; font-size:11px">Department of Education</div>
+        <div style="font-size:10px; margin-top:4px">Region VII - Central Visayas</div>
+        <div style="font-size:10px">Sudlon, Lahug, Cebu City</div>
+        <div style="font-size:10px;margin-top:4px"> Division of Cebu Province</div>
+        <div style="font-size:10px; margin-top:4px">Bala National High School</div>
+        <div style="margin-top:8px; font-weight:800; font-size:16px">LEARNER BORROWER'S LOG</div>
+        <div style="font-size:10px; margin-top:4px">SY 2026-2027</div>
+      `;
+      container.appendChild(centerBlock);
+
+      // Table with fixed column widths to mirror the scanned layout
+      const table = document.createElement('table');
+      table.style.width = '100%';
+      table.style.borderCollapse = 'collapse';
+      table.style.marginTop = '10px';
+      table.style.tableLayout = 'auto'; // Allow table to auto-layout based on content
+
+
+      const thead = document.createElement('thead');
+      const cols = ['DATE BORROWED','BORROWER\'S NAME','GRADE LEVEL & SECTION','AUTHOR','TITLE','COPYRIGHT','DUE DATE','SIGNATURE','DATE RETURNED','SIGNATURE','REMARKS'];
+      const htr = document.createElement('tr');
+      cols.forEach(c=>{
+        const th = document.createElement('th');
+        th.textContent = c;
+        th.style.border = '0.5px solid #000';
+        th.style.padding = '6px 4px';
+        th.style.fontSize = '5pt';
+        th.style.fontWeight = '700';
+        th.style.textAlign = 'center';
+        th.style.background = '#e9f2ef';
+        th.style.verticalAlign = 'middle';
+        th.style.whiteSpace = 'nowrap';
+        htr.appendChild(th);
+      });
+      thead.appendChild(htr);
+      table.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      const rowsToShow = Math.max(records.length, 18);
+      for (let i = 0; i < rowsToShow; i++) {
+        const rec = records[i] || {};
+        const tr = document.createElement('tr');
+        const cells = [rec.date_borrowed||'', rec.borrower_name||'', rec.grade_section||'', rec.author||'', rec.title||'', rec.copyright||'', rec.due_date||'', '', rec.date_returned||'', '', rec.remarks||''];
+        cells.forEach(v=>{
+          const td = document.createElement('td');
+          td.textContent = v || '';
+          td.style.border = '1px solid #000';
+          td.style.color = '#000';
+          td.style.padding = '6px 4px';
+          td.style.fontSize = '7pt';
+          td.style.verticalAlign = 'middle';
+          td.style.height = '26px';
+          td.style.overflow = 'hidden';
+          td.style.whiteSpace = 'nowrap';
+          tr.appendChild(td);
+          
+        });
+        tbody.appendChild(tr);
+      }
+
+      table.appendChild(tbody);
+      container.appendChild(table);
+
+      // Small footer note spacing
+      const footerLine = document.createElement('div'); footerLine.style.height = '10px'; container.appendChild(footerLine);
+
+      // export with html2pdf: rely on container's 1" padding; set jsPDF/html2pdf margin to 0 to avoid double margins
+      const opt = { margin:0, filename:'borrowers_log.pdf', image:{type:'jpeg',quality:0.95}, html2canvas:{scale:2, useCORS:true}, jsPDF:{unit:'in', format:'a4', orientation:'landscape'} };
+      await window.html2pdf().set(opt).from(container).save();
+    } catch (e) { Swal.fire({icon:'error',title:'Export Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+  }
+
+  async function exportBorrowersExcel() {
+    try {
+      // load sheetjs if not present
+      if (typeof XLSX === 'undefined') {
+        await new Promise((res,rej)=>{ const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; s.onload=res; s.onerror=rej; document.head.appendChild(s); });
+      }
+
+      const r = await fetch('/api/admin/export/borrowers-json');
+      if (!r.ok) { const e = await r.json(); throw new Error(e.error||'Export failed'); }
+      const d = await r.json();
+      const records = d.records || [];
+
+      const wb = XLSX.utils.book_new();
+      const cols = ['Date Borrowed','Borrower\'s Name','Grade Level & Section','Author','Title','Copyright','Due Date','Date Returned','Remarks'];
+      const data = [cols].concat(records.map(rw=>[rw.date_borrowed, rw.borrower_name, rw.grade_section, rw.author, rw.title, rw.copyright, rw.due_date, rw.date_returned, rw.remarks]));
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      XLSX.utils.book_append_sheet(wb, ws, 'BorrowersLog');
+      XLSX.writeFile(wb, 'borrowers_log.xlsx');
+    } catch (e) { Swal.fire({icon:'error',title:'Export Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+  }
+
+  async function exportTeacherBorrowersExcel() {
+    try {
+      if (typeof XLSX === 'undefined') {
+        await new Promise((res,rej)=>{ const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; s.onload=res; s.onerror=rej; document.head.appendChild(s); });
+      }
+
+      const r = await fetch('/api/admin/export/teacher-borrowers-json');
+      if (!r.ok) { const e = await r.json(); throw new Error(e.error||'Export failed'); }
+      const d = await r.json();
+      const records = d.records || [];
+
+      const wb = XLSX.utils.book_new();
+      const cols = ['Date Borrowed','Borrower\'s Name','Grade Level & Section','Author','Title','Copyright','Due Date','Date Returned','Remarks'];
+      const data = [cols].concat(records.map(rw=>[rw.date_borrowed, rw.borrower_name, rw.grade_section, rw.author, rw.title, rw.copyright, rw.due_date, rw.date_returned, rw.remarks]));
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      XLSX.utils.book_append_sheet(wb, ws, 'TeacherBorrowersLog');
+      XLSX.writeFile(wb, 'teacher_borrowers_log.xlsx');
+    } catch (e) { Swal.fire({icon:'error',title:'Export Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+  }
+
   /* ── Modals ─────────────────────────────────── */
   function closeModal(id) { document.getElementById(id).classList.remove('active'); }
   document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if(e.target===m) m.classList.remove('active'); }));
+
+  /* ── Library Card Export ─────────────────────── */
+  async function exportLibraryCard(studentId, studentCode, studentName, grade, section) {
+    try {
+      // Fetch student details using database id
+      const studentRes = await fetch(`/api/admin/students/${studentId}`);
+      if (!studentRes.ok) throw new Error('Failed to load student');
+      
+      const studentData = await studentRes.json();
+      if (!studentData || !studentData.student) {
+        alert('Error loading student data');
+        return;
+      }
+
+      const student = studentData.student;
+
+      // Fetch borrowing records using student_id (the ID code like "2026-0001")
+      let borrowRecords = [];
+      try {
+        const borrowRes = await fetch(`/api/admin/student-borrow-records/${encodeURIComponent(studentCode)}`);
+        if (borrowRes.ok) {
+          const borrowData = await borrowRes.json();
+          borrowRecords = borrowData.records || [];
+        }
+      } catch (e) {
+        console.log('Could not fetch borrowing records:', e);
+      }
+
+      // Generate table rows (ensure at least 10 rows for the card)
+      const tableRows = [];
+      for (let i = 0; i < Math.max(10, borrowRecords.length); i++) {
+        const record = borrowRecords[i];
+        if (record) {
+          const borrowDate = record.borrow_date ? new Date(record.borrow_date).toLocaleDateString() : '';
+          const dueDate = record.return_date ? new Date(record.return_date).toLocaleDateString() : '';
+          tableRows.push(`
+            <tr>
+              <td>${borrowDate}</td>
+              <td>${record.call_number || ''}</td>
+              <td>${record.item_code || ''}</td>
+              <td>${record.author || ''}</td>
+              <td>${record.item_title || ''}</td>
+              <td>${record.due_date || dueDate}</td>
+              <td>${record.remarks || ''}</td>
+            </tr>
+          `);
+        } else {
+          tableRows.push(`
+            <tr>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+          `);
+        }
+      }
+
+      // Build the card HTML
+      const cardHTML = `
+        <div class="library-card-template">
+          <!-- Header Section -->
+          <div class="card-header-deped">
+            <div class="logo-area">
+              <img src="images/Deped-Seal.png" alt="DepEd Seal" style="height: 100px; width: auto;">
+            </div>
+            <div class="org-name">Republic of the Philippines</div>
+            <div class="org-sub">Department of Education</div>
+            <div class="org-sub" style="font-weight: bold;">Region VII - Central Visayas</div>
+            <div class="org-location">Sudlon, Lahug, Cebu City</div>
+            <div class="card-subtitle">Division of Cebu Province </div>
+            <div class="card-subtitle">Bala National High School</div>
+            <div class="card-title1">LEARNER LIBRARY CARD</div>
+            <div class="card-subtitle">SY 2026-2027 </div>
+          </div>
+
+          <!-- School Information -->
+
+          <!-- Student Information -->
+          <div class="card-student-info">
+            <div class="card-student-column">
+              <div class="card-student-field">
+                <label>NAME:</label>
+                <div class="value">${escapeHtml(student.name || '')}</div>
+              </div>
+              <div class="card-student-field">
+                <label>ADDRESS:</label>
+                <div class="value">${escapeHtml(student.address || '')}</div>
+              </div>
+            </div>
+            <div class="card-student-column">
+              <div class="card-student-field">
+                <label>CONTACT NO.:</label>
+                <div class="value">${escapeHtml(student.contact_number || '')}</div>
+              </div>
+              <div class="card-student-field">
+                <label>GR. & SEC.:</label>
+                <div class="value">${escapeHtml((student.grade || '') + (student.section ? ' - ' + student.section : ''))}</div>
+              </div>
+              <div class="card-student-field">
+                <label>ADVISER:</label>
+                <div class="value">${escapeHtml(student.adviser || '')}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Borrowing History Table -->
+          <div class="card-table-wrapper">
+            <table class="card-borrow-table">
+              <thead>
+                <tr>
+                  <th style="width: 11%;">DATE<br>BORROWED</th>
+                  <th style="width: 11%;">CALL<br>NO.</th>
+                  <th style="width: 11%;">ACC.<br>NO.</th>
+                  <th style="width: 13%;">AUTHOR</th>
+                  <th style="width: 25%;">TITLE</th>
+                  <th style="width: 14%;">DUE<br>DATE</th>
+                  <th style="width: 15%;">REMARKS</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRows.join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Footer -->
+          <div class="card-footer">
+            <div style="margin-top: 10px;">School Learning Resources Center - Cebu City</div>
+          </div>
+        </div>
+      `;
+
+      currentLibraryCardName = (student.name || 'learner-library-card').replace(/[^a-z0-9]+/gi, '_').toLowerCase();
+
+      // Display in preview modal
+      document.getElementById('library-card-preview').innerHTML = cardHTML;
+      document.getElementById('library-card-content').innerHTML = cardHTML;
+      document.getElementById('library-card-modal').classList.add('active');
+
+    } catch (error) {
+      console.error('Error exporting library card:', error);
+      alert('Error loading library card: ' + error.message);
+    }
+  }
+
+  async function exportTeacherLibraryCard(facultyId) {
+    try {
+      const faculty = allFaculty.find(f => f.id === facultyId || String(f.id) === String(facultyId));
+      if (!faculty) {
+        throw new Error('Teacher not found');
+      }
+
+      let borrowRecords = [];
+      try {
+        const borrowRes = await fetch(`/api/admin/student-borrow-records/${encodeURIComponent(faculty.faculty_id)}`);
+        if (borrowRes.ok) {
+          const borrowData = await borrowRes.json();
+          borrowRecords = borrowData.records || [];
+        }
+      } catch (borrowError) {
+        console.warn('Could not fetch teacher borrow records:', borrowError);
+      }
+
+      const tableRows = [];
+      for (let i = 0; i < Math.max(10, borrowRecords.length); i++) {
+        const record = borrowRecords[i];
+        if (record) {
+          const borrowDate = record.borrow_date ? new Date(record.borrow_date).toLocaleDateString() : '';
+          const dueDate = record.return_date ? new Date(record.return_date).toLocaleDateString() : '';
+          tableRows.push(`
+            <tr>
+              <td>${borrowDate}</td>
+              <td>${record.call_number || ''}</td>
+              <td>${record.item_code || ''}</td>
+              <td>${record.author || ''}</td>
+              <td>${record.item_title || ''}</td>
+              <td>${record.due_date || dueDate}</td>
+              <td>${record.remarks || ''}</td>
+            </tr>
+          `);
+        } else {
+          tableRows.push(`
+            <tr>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+          `);
+        }
+      }
+
+      const cardHTML = `
+        <div class="library-card-template">
+          <div class="card-header-deped">
+            <div class="logo-area">
+              <img src="images/Deped-Seal.png" alt="DepEd Seal" style="height: 100px; width: auto;">
+            </div>
+            <div class="org-name">Republic of the Philippines</div>
+            <div class="org-sub">Department of Education</div>
+            <div class="org-sub" style="font-weight: bold;">Region VII - Central Visayas</div>
+            <div class="org-location">Sudlon, Lahug, Cebu City</div>
+            <div class="card-subtitle">Division of Cebu Province</div>
+            <div class="card-subtitle">Bala National High School</div>
+            <div class="card-title1">TEACHER LIBRARY CARD</div>
+            <div class="card-subtitle">SY 2026-2027</div>
+          </div>
+
+          <div class="card-student-info">
+            <div class="card-student-column">
+              <div class="card-student-field">
+                <label>NAME:</label>
+                <div class="value">${escapeHtml(faculty.name || '')}</div>
+              </div>
+              <div class="card-student-field">
+                <label>EMPLOYEE NO.:</label>
+                <div class="value">${escapeHtml(faculty.faculty_id || '')}</div>
+              </div>
+              <div class="card-student-field">
+                <label>ADDRESS:</label>
+                <div class="value">${escapeHtml(faculty.address || '')}</div>
+              </div>
+            </div>
+            <div class="card-student-column">
+              <div class="card-student-field">
+                <label>CONTACT NO.:</label>
+                <div class="value">${escapeHtml(faculty.contact_number || '')}</div>
+              </div>
+              <div class="card-student-field">
+                <label>EMAIL ADDRESS:</label>
+                <div class="value">${escapeHtml(faculty.email || '')}</div>
+              </div>
+             
+            </div>
+          </div>
+
+          <div class="card-table-wrapper">
+            <table class="card-borrow-table">
+              <thead>
+                <tr>
+                  <th style="width: 11%;">DATE<br>BORROWED</th>
+                  <th style="width: 11%;">CALL<br>NO.</th>
+                  <th style="width: 11%;">ACC.<br>NO.</th>
+                  <th style="width: 13%;">AUTHOR</th>
+                  <th style="width: 25%;">TITLE</th>
+                  <th style="width: 14%;">DUE<br>DATE</th>
+                  <th style="width: 15%;">REMARKS</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRows.join('')}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card-footer">
+            <div style="margin-top: 10px;">School Learning Resources Center - Cebu City</div>
+          </div>
+        </div>
+      `;
+
+      currentLibraryCardName = (faculty.name || 'teacher-library-card').replace(/[^a-z0-9]+/gi, '_').toLowerCase();
+      document.getElementById('library-card-preview').innerHTML = cardHTML;
+      document.getElementById('library-card-content').innerHTML = cardHTML;
+      document.getElementById('library-card-modal').classList.add('active');
+    } catch (error) {
+      console.error('Error exporting teacher library card:', error);
+      alert('Error loading teacher library card: ' + error.message);
+    }
+  }
+
+  function escapeHtml(text) {
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+    return String(text).replace(/[&<>"']/g, m => map[m]);
+  }
+
+  function saveLibraryCardAsPdf() {
+    const preview = document.getElementById('library-card-preview');
+    if (!preview || !preview.innerHTML.trim()) {
+      Swal.fire({ icon: 'warning', title: 'No card to export', text: 'Please open a learner library card first.', confirmButtonColor: '#5b6ef5', background: '#1a1e2b', color: '#e8eaf0' });
+      return;
+    }
+
+    if (typeof window.html2pdf !== 'function') {
+      Swal.fire({ icon: 'error', title: 'PDF library not ready', text: 'Please try again in a moment.', confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0' });
+      return;
+    }
+
+    const opt = {
+      margin: [1, 1, 1, 1],
+      filename: `${currentLibraryCardName || 'learner-library-card'}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, logging: false },
+      jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+    };
+
+    window.html2pdf().set(opt).from(preview).save();
+  }
+
+  function printLibraryCardNow() {
+    // Move card content to print container
+    const cardContent = document.getElementById('library-card-preview').innerHTML;
+    document.getElementById('library-card-print-container').style.display = 'block';
+    document.getElementById('library-card-content').innerHTML = cardContent;
+    
+    // Trigger print
+    setTimeout(() => {
+      window.print();
+      
+      // Reset after print dialog closes
+      setTimeout(() => {
+        document.getElementById('library-card-print-container').style.display = 'none';
+      }, 500);
+    }, 300);
+  }
 
   /* ── Logout ─────────────────────────────────── */
   function logout() {
