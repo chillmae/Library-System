@@ -1051,6 +1051,7 @@
                                 <select id="user_type" onchange="updateLoginBadge()" required>
                                     <option value="student">👨‍🎓 Student</option>
                                     <option value="faculty">👨‍🏫 Faculty</option>
+                                    <option value="stakeholder">🤝 Stakeholder</option>
                                 </select>
                             </div>
                         </div>
@@ -1139,9 +1140,14 @@
                             <i class="input-icon fas fa-list"></i>
                             <select id="visit_reason" required>
                                 <option value="">Choose a reason...</option>
+                                <option value="Attend SLRC">🏫 Attend SLRC</option>
+                                <option value="Activity/Event">🎉 Activity / Event</option>
+                                <option value="Project Making">🛠️ Project Making</option>
                                 <option value="Borrow">📚 Borrow Item</option>
                                 <option value="Computer Use">💻 Computer Use</option>
                                 <option value="Group Work">👥 Group Study</option>
+                                <option value="Lesson Preparation">📝 Lesson Preparation</option>
+                                <option value="Conduct/Attend Remedial Class">🎒 Conduct/Attend Remedial Class</option>
                                 <option value="Meeting (Book Club, LRMT, SLRComm, etc.)">🫂 Meeting (Book Club, LRMT, SLRComm, etc.)</option>
                                 <option value="Reading Remediation">📘 Reading Remediation</option>
                                 <option value="Research">🔍 Research / Thesis</option>
@@ -1254,25 +1260,43 @@
                 <label for="borrow_category">Item Category *</label>
                 <div class="input-wrap">
                     <i class="input-icon fas fa-box"></i>
-                    <select id="borrow_category" required>
+                    <select id="borrow_category" required onchange="updateBorrowFormFields()">
                         <option value="">Select category...</option>
                         <option value="print">📖 Print Resources (Books)</option>
                         <option value="non-print">🎮 Non-print Resources (Equipment/Games)</option>
                     </select>
                 </div>
+                <div id="borrow-resource-help" style="margin-top:0.45rem; font-size:0.78rem; color:var(--text-muted);">Choose the item type to show the correct identifier.</div>
             </div>
-            <div class="form-group">
-                <label for="borrow_title">Item Title/Name *</label>
+            <div class="form-group" id="borrow-nonprint-category-group" style="display:none;">
+                <label for="borrow_nonprint_category">Non-print Category *</label>
                 <div class="input-wrap">
-                    <i class="input-icon fas fa-book"></i>
-                    <input type="text" id="borrow_title" placeholder="E.g., Introduction to Biology" required>
+                    <i class="input-icon fas fa-layer-group"></i>
+                    <select id="borrow_nonprint_category" required>
+                        <option value="">Select non-print category...</option>
+                        <option value="Computer">Computer</option>
+                        <option value="Laptop">Laptop</option>
+                        <option value="Tablet">Tablet</option>
+                        <option value="Printer">Printer</option>
+                        <option value="Project">Project</option>
+                        <option value="Globes">Globes</option>
+                        <option value="Maps">Maps</option>
+                        <option value="Other">Other</option>
+                    </select>
                 </div>
             </div>
             <div class="form-group">
-                <label for="borrow_code">Accession Number / Code *</label>
+                <label for="borrow_title" id="borrow_title_label">Item Title / Resource Name *</label>
+                <div class="input-wrap">
+                    <i class="input-icon fas fa-book"></i>
+                    <input type="text" id="borrow_title" placeholder="Enter the item title or resource name" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="borrow_code" id="borrow_code_label">Accession Number / Resource Code *</label>
                 <div class="input-wrap">
                     <i class="input-icon fas fa-barcode"></i>
-                    <input type="text" id="borrow_code" placeholder="E.g., BIO-001-2024" required>
+                    <input type="text" id="borrow_code" placeholder="Enter the accession number or resource code" required>
                 </div>
             </div>
             <div class="error-msg" id="borrow-error-msg"></div>
@@ -1351,6 +1375,11 @@
         // Load current users and refresh every 1 hour
         loadCurrentUsers();
         setInterval(loadCurrentUsers, 3600000);
+
+        const borrowCategory = document.getElementById('borrow_category');
+        if (borrowCategory) {
+            borrowCategory.addEventListener('change', updateBorrowFormFields);
+        }
     });
 
     // Load and display current users
@@ -1416,11 +1445,14 @@
             
             // Determine ID and info based on user type
             const isStudent = user.user_type === 'student';
-            const displayId = isStudent ? user.student_id : user.faculty_id;
-            const displayInfo = isStudent 
+            const isStakeholder = user.user_type === 'stakeholder';
+            const displayId = isStudent ? user.student_id : isStakeholder ? user.student_id : user.faculty_id;
+            const displayInfo = isStudent
                 ? `Section: <strong>${user.section || 'N/A'}</strong> | Sex: <strong>${user.sex || 'N/A'}</strong>`
-                : `Position: <strong>${user.position || 'N/A'}</strong> | Sex: <strong>${user.sex || 'N/A'}</strong>`;
-            const userType = isStudent ? '👨‍🎓 Student' : '👨‍🏫 Faculty';
+                : isStakeholder
+                    ? `Organization: <strong>${user.organization || user.section || 'N/A'}</strong> | Position: <strong>${user.position || user.grade || 'N/A'}</strong>`
+                    : `Position: <strong>${user.position || 'N/A'}</strong> | Sex: <strong>${user.sex || 'N/A'}</strong>`;
+            const userType = isStudent ? '👨‍🎓 Student' : isStakeholder ? '🤝 Stakeholder' : '👨‍🏫 Faculty';
             
             return `
             <div class="user-item">
@@ -1742,6 +1774,8 @@
         const badge = document.getElementById('login-badge');
         if (userType === 'faculty') {
             badge.innerHTML = '<i class="fas fa-chalkboard-user"></i> Faculty';
+        } else if (userType === 'stakeholder') {
+            badge.innerHTML = '<i class="fas fa-handshake"></i> Stakeholder';
         } else {
             badge.innerHTML = '<i class="fas fa-user-graduate"></i> Student';
         }
@@ -1767,6 +1801,9 @@
                 if (data.role === 'faculty') {
                     document.getElementById('checkin-name').textContent  = data.name;
                     document.getElementById('checkin-grade').textContent = `${data.position || 'Position'} — Faculty`;
+                } else if (data.role === 'stakeholder') {
+                    document.getElementById('checkin-name').textContent  = data.name;
+                    document.getElementById('checkin-grade').textContent = `${data.organization || 'Organization'} — Stakeholder`;
                 } else {
                     document.getElementById('checkin-name').textContent  = data.name;
                     document.getElementById('checkin-grade').textContent = `${data.grade || 'N/A'} — ${data.section || 'N/A'}`;
@@ -1776,6 +1813,9 @@
                 if (data.role === 'faculty') {
                     document.getElementById('checkout-name').textContent  = data.name;
                     document.getElementById('checkout-grade').textContent = `${data.position || 'Position'} — Faculty`;
+                } else if (data.role === 'stakeholder') {
+                    document.getElementById('checkout-name').textContent  = data.name;
+                    document.getElementById('checkout-grade').textContent = `${data.organization || 'Organization'} — Stakeholder`;
                 } else {
                     document.getElementById('checkout-name').textContent  = data.name;
                     document.getElementById('checkout-grade').textContent = `${data.grade || 'N/A'} — ${data.section || 'N/A'}`;
@@ -1834,7 +1874,7 @@
         
         // For other reasons, proceed with normal check-in
         try {
-            const userType = currentUserData.role === 'faculty' ? 'faculty' : 'student';
+            const userType = currentUserData.role === 'faculty' ? 'faculty' : currentUserData.role === 'stakeholder' ? 'stakeholder' : 'student';
             
             // Prepare check-in data
             const checkInData = { 
@@ -1981,16 +2021,59 @@
 
     // ========== BORROW/RETURN FUNCTIONS ==========
 
+    function updateBorrowFormFields() {
+        const category = document.getElementById('borrow_category')?.value || '';
+        const titleLabel = document.getElementById('borrow_title_label');
+        const codeLabel = document.getElementById('borrow_code_label');
+        const titleInput = document.getElementById('borrow_title');
+        const codeInput = document.getElementById('borrow_code');
+        const helpText = document.getElementById('borrow-resource-help');
+        const nonPrintGroup = document.getElementById('borrow-nonprint-category-group');
+        const nonPrintCategory = document.getElementById('borrow_nonprint_category');
+
+        if (!titleLabel || !codeLabel || !titleInput || !codeInput || !helpText) return;
+
+        if (nonPrintGroup) {
+            nonPrintGroup.style.display = category === 'non-print' ? 'block' : 'none';
+        }
+        if (nonPrintCategory && category !== 'non-print') {
+            nonPrintCategory.value = '';
+        }
+
+        if (category === 'non-print') {
+            titleLabel.textContent = 'Resource Name *';
+            titleInput.placeholder = 'e.g., Science Kit or Board Game';
+            codeLabel.textContent = 'Resource Code *';
+            codeInput.placeholder = 'e.g., NP-001';
+            helpText.textContent = 'Non-print resources use resource codes from the equipment inventory.';
+        } else if (category === 'print') {
+            titleLabel.textContent = 'Book Title *';
+            titleInput.placeholder = 'e.g., Introduction to Biology';
+            codeLabel.textContent = 'Accession Number *';
+            codeInput.placeholder = 'e.g., BIO-001-2024';
+            helpText.textContent = 'Print resources use book accession numbers from the library catalog.';
+        } else {
+            titleLabel.textContent = 'Item Title / Resource Name *';
+            titleInput.placeholder = 'Enter the item title or resource name';
+            codeLabel.textContent = 'Accession Number / Resource Code *';
+            codeInput.placeholder = 'Enter the accession number or resource code';
+            helpText.textContent = 'Choose the item type to show the correct identifier.';
+        }
+    }
+
     function openBorrowModal() {
         document.getElementById('borrow-modal').classList.add('active');
+        updateBorrowFormFields();
     }
 
     function closeBorrowModal() {
         document.getElementById('borrow-modal').classList.remove('active');
         // Clear form
         document.getElementById('borrow_category').value = '';
+        document.getElementById('borrow_nonprint_category').value = '';
         document.getElementById('borrow_title').value = '';
         document.getElementById('borrow_code').value = '';
+        updateBorrowFormFields();
     }
 
     function openReturnModal() {
@@ -2012,6 +2095,26 @@
         const category = document.getElementById('borrow_category').value.trim();
         const title = document.getElementById('borrow_title').value.trim();
         const code = document.getElementById('borrow_code').value.trim();
+        const nonPrintCategory = document.getElementById('borrow_nonprint_category')?.value.trim() || '';
+
+        if (!category || !title || !code) {
+            showError('borrow-error-msg', '❌ Please fill in all required fields');
+            return;
+        }
+
+        if (category === 'non-print' && !nonPrintCategory) {
+            showError('borrow-error-msg', '❌ Please select a non-print category');
+            return;
+        }
+
+        if (category === 'non-print' && nonPrintCategory === 'Other') {
+            showError('borrow-error-msg', '❌ Please specify a more detailed non-print category');
+            return;
+        }
+
+        if (category === 'non-print' && nonPrintCategory) {
+            // keep the selected category for the backend payload
+        }
 
         if (!category || !title || !code) {
             showError('borrow-error-msg', '❌ Please fill in all required fields');
@@ -2033,6 +2136,7 @@
                     student_name: currentUserData.name,
                     section: currentUserData.section || '',
                     item_category: category,
+                    item_subcategory: category === 'non-print' ? nonPrintCategory : '',
                     item_title: title,
                     item_code: code
                 })
@@ -2043,7 +2147,8 @@
             if (response.ok) {
                 closeBorrowModal();
                 document.getElementById('success-title').textContent = 'Borrow Recorded!';
-                document.getElementById('success-subtitle').textContent = `${title} has been recorded for borrowing. Admin will verify it shortly.`;
+                const resourceType = category === 'non-print' ? 'non-print resource' : 'print resource';
+                document.getElementById('success-subtitle').textContent = `${title} has been recorded as a ${resourceType}. Admin will verify it shortly.`;
                 showScreen('success');
             } else {
                 showError('borrow-error-msg', `❌ ${data.error || 'Error recording borrow'}`);

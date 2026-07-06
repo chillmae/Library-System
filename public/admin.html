@@ -517,6 +517,25 @@
 
     .btn-ghost:hover { border-color: var(--border-hi); color: var(--text); }
 
+    /* Exquisite export button for Monthly Statistics */
+    .btn-exquisite {
+      background: linear-gradient(90deg,#5eead4 0%,#60a5fa 50%,#a78bfa 100%);
+      color: #082032;
+      border: none;
+      box-shadow: 0 6px 18px rgba(59,130,246,0.18), 0 2px 6px rgba(16,24,40,0.06) inset;
+      padding: 12px 18px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .btn-exquisite:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(59,130,246,0.22); }
+    .btn-exquisite .fa-file-pdf { color: rgba(255,255,255,0.95); font-size:1.05rem }
+
     .btn-sm {
       padding: 6px 12px;
       font-size: 0.8rem;
@@ -1111,9 +1130,11 @@
     <div class="nav-section-label" style="margin-top:10px">Management</div>
     <ul style="list-style:none">
       <li class="nav-item"><a class="nav-link" onclick="showSection('students', this)"><i class="nav-icon fas fa-users"></i> Students</a></li>
+      <li class="nav-item"><a class="nav-link" onclick="showSection('stakeholders', this)"><i class="nav-icon fas fa-handshake"></i> Stakeholders</a></li>
       <li class="nav-item"><a class="nav-link" onclick="showSection('faculty', this)"><i class="nav-icon fas fa-chalkboard-user"></i> Faculty</a></li>
       <li class="nav-item"><a class="nav-link" onclick="showSection('books', this)"><i class="nav-icon fas fa-book-open"></i> Print Resources</a></li>
       <li class="nav-item"><a class="nav-link" onclick="showSection('non-print', this)"><i class="nav-icon fas fa-toolbox"></i> Non-print Resources</a></li>
+      <li class="nav-item"><a class="nav-link" onclick="showSection('inventory-weeding', this)"><i class="nav-icon fas fa-clipboard-list"></i> Inventory &amp; Weeding</a></li>
       <li class="nav-item"><a class="nav-link" onclick="showSection('borrowing', this)"><i class="nav-icon fas fa-arrows-rotate"></i> Borrowing</a></li>
       <li class="nav-item"><a class="nav-link" onclick="showSection('active-borrowers', this)"><i class="nav-icon fas fa-user-clock"></i> Active Borrowers</a></li>
     </ul>
@@ -1182,6 +1203,16 @@
           <div class="stat-label">Monthly Visits</div>
           <div class="stat-value" id="month-visits">—</div>
           <div class="stat-sub">this month</div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin:14px 0;">
+        <div style="font-size:0.95rem; color:var(--text-mute);">Monthly summary & quick actions</div>
+        <div>
+          <button id="export-monthly-stats-btn" class="btn-exquisite" title="Export School Library Monthly Statistics (Attendance)" onclick="exportMonthlyStatisticsPDF()">
+            <i class="fas fa-file-pdf"></i>
+            Export Monthly Statistics (Attendance)
+          </button>
         </div>
       </div>
 
@@ -1302,24 +1333,125 @@
             <button class="btn btn-secondary" onclick="exportBorrowersPDF()"><i class="fas fa-file-pdf"></i> Export Borrower's Log (PDF)</button>
           </div>
         </div>
+        <div class="table-wrap" style="overflow:auto;">
+          <table style="min-width: 980px;">
+            <thead>
+              <tr>
+                <th style="width:90px; white-space:nowrap;">SLRC ID</th>
+                <th style="width:180px; white-space:nowrap;">Name</th>
+                <th style="width:90px; white-space:nowrap;">Section</th>
+                <th style="width:95px; white-space:nowrap;">Session</th>
+                <th style="width:120px; white-space:nowrap;">Contact</th>
+                <th style="width:180px; white-space:nowrap;">Address</th>
+                <th style="width:70px; white-space:nowrap;">Sex</th>
+                <th style="width:100px; white-space:nowrap;">Birthdate</th>
+                <th style="width:60px; white-space:nowrap;">Age</th>
+                <th style="width:110px; white-space:nowrap;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="students-table">
+              <tr><td colspan="10"><div class="empty-state"><div class="empty-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="empty-text">Loading students…</div></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── STAKEHOLDERS ─────────────────────── -->
+    <section id="stakeholders" class="content-section">
+      <div class="page-header">
+        <h2>Stakeholder Management</h2>
+        <p>Create stakeholder profiles so they can visit the library and borrow materials.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-title-icon"><i class="fas fa-handshake"></i></div>
+            Register New Stakeholder
+          </div>
+        </div>
+        <div id="add-stakeholder-message" class="msg"></div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Stakeholder ID *</label>
+            <input type="text" id="stakeholder_id" placeholder="e.g., STK-001">
+          </div>
+          <div class="form-group">
+            <label>Full Name *</label>
+            <input type="text" id="stakeholder_name" placeholder="e.g., Maria Santos">
+          </div>
+          <div class="form-group">
+            <label>Organization</label>
+            <input type="text" id="stakeholder_organization" placeholder="e.g., PTA / Alumni / Partner">
+          </div>
+          <div class="form-group">
+            <label>Position</label>
+            <input type="text" id="stakeholder_position" placeholder="e.g., Parent / Alumni / Partner">
+          </div>
+          <div class="form-group">
+            <label>Contact No.</label>
+            <input type="text" id="stakeholder_contact" placeholder="e.g., 09171234567">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="stakeholder_email" placeholder="e.g., stakeholder@example.com">
+          </div>
+          <div class="form-group">
+            <label>Sex</label>
+            <select id="stakeholder_sex">
+              <option value="">-- Select --</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Address</label>
+            <input type="text" id="stakeholder_address" placeholder="e.g., 123 Cebu St.">
+          </div>
+          <div class="form-group">
+            <label>Birthdate</label>
+            <input type="date" id="stakeholder_birthdate">
+          </div>
+          <div class="form-group">
+            <label>Age</label>
+            <input type="number" id="stakeholder_age" placeholder="e.g., 38" min="0" max="120">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="addStakeholder()">
+          <i class="fas fa-plus"></i> Add Stakeholder
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="card-header" style="align-items: flex-start; gap: 12px; flex-wrap: wrap;">
+          <div class="card-title">
+            <div class="card-title-icon"><i class="fas fa-list-ul"></i></div>
+            All Stakeholders
+          </div>
+          <div style="margin-left:auto; display:flex; gap:8px; align-items:center; flex-wrap: wrap;">
+            <button class="btn btn-secondary" onclick="exportStakeholdersCSV()"><i class="fas fa-file-csv"></i> Export CSV</button>
+          </div>
+        </div>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>SLRC ID</th>
+                <th>ID</th>
                 <th>Full Name</th>
-                <th>Section</th>
-                <th>Session</th>
+                <th>Organization</th>
+                <th>Position</th>
                 <th>Contact</th>
-                <th>Address</th>
+                <th>Email</th>
                 <th>Sex</th>
+                <th>Address</th>
                 <th>Birthdate</th>
                 <th>Age</th>
                 <th>Actions</th>
               </tr>
             </thead>
-            <tbody id="students-table">
-              <tr><td colspan="5"><div class="empty-state"><div class="empty-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="empty-text">Loading students…</div></div></td></tr>
+            <tbody id="stakeholders-table">
+              <tr><td colspan="11"><div class="empty-state"><div class="empty-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="empty-text">Loading stakeholders…</div></div></td></tr>
             </tbody>
           </table>
         </div>
@@ -1343,8 +1475,12 @@
         <div id="add-faculty-message" class="msg"></div>
         <div class="form-grid">
           <div class="form-group">
-            <label>Employee No. *</label>
-            <input type="text" id="faculty_id" placeholder="e.g., EMP-001">
+            <label>Faculty Library ID *</label>
+            <input type="text" id="faculty_id" placeholder="e.g., FAC001">
+          </div>
+          <div class="form-group">
+            <label>Employee Number</label>
+            <input type="text" id="faculty_employee_no" placeholder="e.g., EMP-001">
           </div>
           <div class="form-group">
             <label>Full Name *</label>
@@ -1353,6 +1489,14 @@
           <div class="form-group">
             <label>Position</label>
             <input type="text" id="faculty_position" placeholder="e.g., English Teacher">
+          </div>
+          <div class="form-group">
+            <label>Subject Area</label>
+            <input type="text" id="faculty_subject_area" placeholder="e.g., English, Science">
+          </div>
+          <div class="form-group">
+            <label>Grade Level</label>
+            <input type="text" id="faculty_grade_level" placeholder="e.g., Grade 10">
           </div>
           <div class="form-group">
             <label>Sex</label>
@@ -1416,13 +1560,14 @@
                 <th>Contact</th>
                 <th>Address</th>
                 <th>Email</th>
+                <th>Employee No.</th>
                 <th>Birthdate</th>
                 <th>Age</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody id="faculty-table">
-              <tr><td colspan="10"><div class="empty-state"><div class="empty-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="empty-text">Loading faculty…</div></div></td></tr>
+              <tr><td colspan="11"><div class="empty-state"><div class="empty-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="empty-text">Loading faculty…</div></div></td></tr>
             </tbody>
           </table>
         </div>
@@ -1474,6 +1619,39 @@
             </select>
           </div>
           <div class="form-group">
+            <label>Date Received (optional)</label>
+            <input type="date" id="book_date_received">
+            <div style="font-size:0.8rem; color:var(--text-dim); margin-top:4px;">Leave blank for old books. They will stay in the catalogue, but only books with a received date will appear in the accession PDF export.</div>
+          </div>
+          <div class="form-group">
+            <label>DDC No.</label>
+            <input type="text" id="book_ddc_no" placeholder="e.g., 823.8">
+          </div>
+          <div class="form-group">
+            <label>Edition</label>
+            <input type="text" id="book_edition" placeholder="e.g., 2nd Edition">
+          </div>
+          <div class="form-group">
+            <label>Volumes</label>
+            <input type="text" id="book_volumes" placeholder="e.g., 1 vol.">
+          </div>
+          <div class="form-group">
+            <label>Pages</label>
+            <input type="text" id="book_pages" placeholder="e.g., 250 pages">
+          </div>
+          <div class="form-group">
+            <label>Source of Found</label>
+            <input type="text" id="book_source_of_fund" placeholder="e.g., Donation">
+          </div>
+          <div class="form-group">
+            <label>Price</label>
+            <input type="number" id="book_price" placeholder="e.g., 350" step="0.01" min="0">
+          </div>
+          <div class="form-group">
+            <label>Publisher</label>
+            <input type="text" id="book_publisher" placeholder="e.g., Pearson">
+          </div>
+          <div class="form-group">
             <label>Copyright Year</label>
             <input type="number" id="book_copyright" placeholder="e.g., 2020" min="1000" max="2099">
           </div>
@@ -1481,35 +1659,83 @@
             <label>ISBN</label>
             <input type="text" id="book_isbn" placeholder="e.g., 978-0743273565">
           </div>
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label>Remarks</label>
+            <textarea id="book_remarks" rows="3" placeholder="Optional notes or remarks"></textarea>
+          </div>
         </div>
         <button class="btn btn-primary" onclick="addBook()">
           <i class="fas fa-plus"></i> Add Book
         </button>
+        <div style="margin-top:10px;">
+          <label style="display:block;font-size:0.95rem;margin-bottom:6px;color:var(--text-dim)">Bulk Entry Table — paste rows from Excel into the cells or type directly</label>
+          <div class="table-wrap" style="border:1px solid var(--border);padding:8px;background:transparent">
+            <table id="books_bulk_table" style="width:100%;border-collapse:collapse; min-width: 1800px;">
+              <thead>
+                <tr>
+                  <th style="width:8%;text-align:left;padding:6px">Accession #</th>
+                  <th style="width:8%;text-align:left;padding:6px">Call No.</th>
+                  <th style="width:16%;text-align:left;padding:6px">Title</th>
+                  <th style="width:12%;text-align:left;padding:6px">Author</th>
+                  <th style="width:10%;text-align:left;padding:6px">Category</th>
+                  <th style="width:8%;text-align:left;padding:6px">Date Received</th>
+                  <th style="width:8%;text-align:left;padding:6px">DDC No.</th>
+                  <th style="width:8%;text-align:left;padding:6px">Edition</th>
+                  <th style="width:6%;text-align:left;padding:6px">Volumes</th>
+                  <th style="width:6%;text-align:left;padding:6px">Pages</th>
+                  <th style="width:10%;text-align:left;padding:6px">Source of Found</th>
+                  <th style="width:6%;text-align:left;padding:6px">Price</th>
+                  <th style="width:10%;text-align:left;padding:6px">Publisher</th>
+                  <th style="width:6%;text-align:left;padding:6px">Year</th>
+                  <th style="width:10%;text-align:left;padding:6px">ISBN</th>
+                  <th style="width:12%;text-align:left;padding:6px">Remarks</th>
+                </tr>
+              </thead>
+              <tbody id="books_bulk_tbody">
+              </tbody>
+            </table>
+          </div>
+          <div style="margin-top:8px; display:flex; gap:8px;">
+            <button class="btn btn-secondary" onclick="addBulkBookRow()"><i class="fas fa-plus"></i> Add Row</button>
+            <button class="btn btn-ghost" onclick="removeBulkBookRow()"><i class="fas fa-trash"></i> Remove Last</button>
+            <button class="btn btn-primary" onclick="saveBulkBooks()"><i class="fas fa-save"></i> Save Books</button>
+          </div>
+        </div>
       </div>
 
       <div class="card">
-        <div class="card-header">
+        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
           <div class="card-title">
             <div class="card-title-icon"><i class="fas fa-books"></i></div>
             Library Catalogue
           </div>
+          <button class="btn btn-secondary" onclick="exportAccessionRecordPDF()"><i class="fas fa-file-pdf"></i> Export Accession Record (PDF)</button>
         </div>
-        <div class="table-wrap">
-          <table>
+        <div class="table-wrap" style="overflow:auto;">
+          <table class="book-sheet" style="min-width: 1800px; border-collapse: collapse; width: 100%;">
             <thead>
               <tr>
-                <th>Accession #</th>
-                <th>Call No.</th>
-                <th>Title</th>
-                <th>Author</th>
-                <th>Category</th>
-                <th>Year</th>
-                <th>ISBN</th>
-                <th>Actions</th>
+                <th style="min-width:120px; white-space:nowrap;">Accession #</th>
+                <th style="min-width:120px; white-space:nowrap;">Call No.</th>
+                <th style="min-width:220px; white-space:nowrap;">Title</th>
+                <th style="min-width:180px; white-space:nowrap;">Author</th>
+                <th style="min-width:140px; white-space:nowrap;">Category</th>
+                <th style="min-width:110px; white-space:nowrap;">Date Received</th>
+                <th style="min-width:110px; white-space:nowrap;">DDC No.</th>
+                <th style="min-width:120px; white-space:nowrap;">Edition</th>
+                <th style="min-width:100px; white-space:nowrap;">Volumes</th>
+                <th style="min-width:100px; white-space:nowrap;">Pages</th>
+                <th style="min-width:140px; white-space:nowrap;">Source of Found</th>
+                <th style="min-width:100px; white-space:nowrap;">Price</th>
+                <th style="min-width:140px; white-space:nowrap;">Publisher</th>
+                <th style="min-width:110px; white-space:nowrap;">Year</th>
+                <th style="min-width:180px; white-space:nowrap;">ISBN</th>
+                <th style="min-width:220px; white-space:nowrap;">Remarks</th>
+                <th style="min-width:110px; white-space:nowrap;">Actions</th>
               </tr>
             </thead>
             <tbody id="books-table">
-              <tr><td colspan="8"><div class="empty-state"><div class="empty-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="empty-text">Loading books…</div></div></td></tr>
+              <tr><td colspan="17"><div class="empty-state"><div class="empty-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="empty-text">Loading books…</div></div></td></tr>
             </tbody>
           </table>
         </div>
@@ -1548,9 +1774,14 @@
             <label>Category *</label>
             <select id="resource_category">
               <option value="">Select Category</option>
-              <option value="Science Tool/Equipment">Science Tool / Equipment</option>
-              <option value="Math Tool/Equipment">Math Tool / Equipment</option>
-              <option value="Table Top Games">Table Top Games</option>
+              <option value="Computer">Computer</option>
+              <option value="Laptop">Laptop</option>
+              <option value="Tablet">Tablet</option>
+              <option value="Printer">Printer</option>
+              <option value="Project">Project</option>
+              <option value="Globes">Globes</option>
+              <option value="Maps">Maps</option>
+              <option value="Other">Other</option>
             </select>
           </div>
           <div class="form-group">
@@ -1565,6 +1796,35 @@
         <button class="btn btn-primary" onclick="addNonPrintResource()">
           <i class="fas fa-plus"></i> Add Resource
         </button>
+        <div style="margin-top:10px;">
+          <label style="display:block;font-size:0.95rem;margin-bottom:6px;color:var(--text-dim)">Bulk Entry Table — paste rows from Excel into the cells or type directly</label>
+          <div class="table-wrap" style="border:1px solid var(--border);padding:8px;background:transparent">
+            <table id="resources_bulk_table" style="width:100%;border-collapse:collapse">
+              <thead>
+                <tr>
+                  <th style="width:12%;text-align:left;padding:6px">Code</th>
+                  <th style="width:10%;text-align:left;padding:6px">Units</th>
+                  <th style="width:30%;text-align:left;padding:6px">Name</th>
+                  <th style="width:16%;text-align:left;padding:6px">Category</th>
+                  <th style="width:12%;text-align:left;padding:6px">Condition</th>
+                  <th style="width:20%;text-align:left;padding:6px">Description</th>
+                </tr>
+              </thead>
+              <tbody id="resources_bulk_tbody">
+              </tbody>
+            </table>
+          </div>
+          <div style="margin-top:8px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-secondary" onclick="addBulkResourceRow()"><i class="fas fa-plus"></i> Add Row</button>
+              <button class="btn btn-ghost" onclick="removeBulkResourceRow()"><i class="fas fa-trash"></i> Remove Last</button>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <button class="btn btn-primary" onclick="saveBulkResources()"><i class="fas fa-save"></i> Save Resources</button>
+              <button class="btn btn-secondary" onclick="exportNonPrintBorrowersPDF()"><i class="fas fa-file-pdf"></i> Export Borrower's Log (PDF)</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="card">
@@ -1581,6 +1841,88 @@
             </thead>
             <tbody id="resources-table">
               <tr><td colspan="6"><div class="empty-state"><div class="empty-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="empty-text">Loading resources…</div></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── INVENTORY & WEEDING ─────────────────── -->
+    <section id="inventory-weeding" class="content-section">
+      <div class="page-header">
+        <h2>Inventory &amp; Weeding Report</h2>
+        <p>Record inventory checks and decide which print resources should be kept or weeded.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div class="card-title">
+            <div class="card-title-icon"><i class="fas fa-clipboard-list"></i></div>
+            Add Inventory / Weeding Record
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn btn-secondary" onclick="exportInventoryWeedingPDF()"><i class="fas fa-file-pdf"></i> Export PDF</button>
+          </div>
+        </div>
+        <div id="inventory-weeding-message" class="msg"></div>
+        <div class="form-grid">
+          <div class="form-group"><label>Accession No. *</label><input type="text" id="inventory_accession_no" placeholder="e.g., ACC-001"></div>
+          <div class="form-group"><label>Date Received</label><input type="date" id="inventory_date_received"></div>
+          <div class="form-group"><label>DDC No.</label><input type="text" id="inventory_ddc_no" placeholder="e.g., 000.1"></div>
+          <div class="form-group"><label>Author</label><input type="text" id="inventory_author" placeholder="e.g., Juan Dela Cruz"></div>
+          <div class="form-group"><label>Title *</label><input type="text" id="inventory_title" placeholder="e.g., History of Cebu"></div>
+          <div class="form-group"><label>Condition</label>
+            <select id="inventory_condition">
+              <option value="">-- Select --</option>
+              <option value="Good">Good</option>
+              <option value="Worn-out">Worn-out</option>
+              <option value="Damaged">Damaged</option>
+              <option value="Obsolete">Obsolete</option>
+              <option value="Missing">Missing</option>
+              <option value="Needs Repair">Needs Repair</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Action Taken</label>
+            <select id="inventory_action_taken">
+              <option value="">-- Select --</option>
+              <option value="Keep">Keep</option>
+              <option value="Weed">Weed</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Date of Inventory *</label><input type="date" id="inventory_date_of_inventory"></div>
+          <div class="form-group" style="grid-column: 1 / -1;"><label>Remarks</label><textarea id="inventory_remarks" rows="3" placeholder="Optional note or justification"></textarea></div>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">
+          <button class="btn btn-primary" onclick="saveInventoryWeedingReport()"><i class="fas fa-save"></i> Save Report</button>
+          <button class="btn btn-ghost" onclick="resetInventoryWeedingForm()"><i class="fas fa-rotate-left"></i> Clear</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-title-icon"><i class="fas fa-table"></i></div>
+            Inventory &amp; Weeding Catalogue
+          </div>
+        </div>
+        <div class="table-wrap" style="overflow:auto;">
+          <table style="min-width: 1500px;">
+            <thead>
+              <tr>
+                <th style="width:110px; white-space:nowrap;">Accession No.</th>
+                <th style="width:110px; white-space:nowrap;">Date Received</th>
+                <th style="width:95px; white-space:nowrap;">DDC No.</th>
+                <th style="width:170px; white-space:nowrap;">Author</th>
+                <th style="width:220px; white-space:nowrap;">Title</th>
+                <th style="width:120px; white-space:nowrap;">Condition</th>
+                <th style="width:100px; white-space:nowrap;">Action Taken</th>
+                <th style="width:220px; white-space:nowrap;">Remarks</th>
+                <th style="width:115px; white-space:nowrap;">Date of Inventory</th>
+                <th style="width:110px; white-space:nowrap;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="inventory-weeding-table">
+              <tr><td colspan="10"><div class="empty-state"><div class="empty-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="empty-text">Loading inventory reports…</div></div></td></tr>
             </tbody>
           </table>
         </div>
@@ -1676,12 +2018,17 @@
       </div>
 
       <div class="card">
-        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
           <h3 style="margin: 0;">Most Read Books</h3>
-          <button id="refresh-analytics-btn" class="btn-secondary" onclick="refreshBookAnalyticsWithFeedback()" style="display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: var(--radius-sm); background: var(--accent-glow); border: 1px solid var(--accent); color: var(--accent); transition: var(--transition); cursor: pointer; font-weight: 500;" title="Click to refresh analytics data">
-            <i class="fas fa-sync-alt" id="refresh-icon" style="font-size: 1rem; transition: transform 0.3s ease;"></i>
-            <span id="refresh-text">Refresh Data</span>
-          </button>
+          <div style="display:flex; gap:12px; align-items:center;">
+            <button id="refresh-analytics-btn" class="btn-secondary" onclick="refreshBookAnalyticsWithFeedback()" style="display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: var(--radius-sm); background: var(--accent-glow); border: 1px solid var(--accent); color: var(--accent); transition: var(--transition); cursor: pointer; font-weight: 500;" title="Click to refresh analytics data">
+              <i class="fas fa-sync-alt" id="refresh-icon" style="font-size: 1rem; transition: transform 0.3s ease;"></i>
+              <span id="refresh-text">Refresh Data</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="exportBookAnalyticsExcel()" style="white-space:nowrap;">
+              <i class="fas fa-file-excel"></i> Export Excel
+            </button>
+          </div>
         </div>
         <div class="card-body">
           <div id="analytics-loading" style="text-align: center; padding: 40px;">
@@ -1730,11 +2077,36 @@
 
       <!-- Visitor Analytics -->
       <div class="card">
-        <div class="card-header">
+        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+          <div class="card-title">
+            <div class="card-title-icon"><i class="fas fa-user-check"></i></div>
+            Most Frequent Library User
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="exportMostFrequentUserExcel()" style="white-space:nowrap;">
+            <i class="fas fa-file-excel"></i> Export Excel
+          </button>
+        </div>
+        <div class="table-wrap">
+          <div id="top-user-summary" style="font-size:0.9rem; padding:16px; background:rgba(91,110,245,0.05); border:1px solid rgba(255,255,255,0.08); margin-bottom:12px; color:var(--text);"></div>
+          <table>
+            <thead>
+              <tr><th>Rank</th><th>Name</th><th>Type</th><th>Total Visits</th></tr>
+            </thead>
+            <tbody id="top-user-table">
+              <tr><td colspan="4" style="text-align:center; color:var(--text-mute)">Loading top users…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
           <div class="card-title">
             <div class="card-title-icon"><i class="fas fa-users"></i></div>
             👥 Visitor Analytics — By Grade Level
           </div>
+          <button class="btn btn-secondary btn-sm" onclick="exportVisitorsByGradeExcel()" style="white-space:nowrap;">
+            <i class="fas fa-file-excel"></i> Export Excel
+          </button>
         </div>
         <div class="table-wrap">
           <table>
@@ -1750,11 +2122,14 @@
 
       <!-- Visitor Purpose Analytics -->
       <div class="card">
-        <div class="card-header">
+        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
           <div class="card-title">
             <div class="card-title-icon"><i class="fas fa-list"></i></div>
             📋 Visitor Analytics — By Purpose
           </div>
+          <button class="btn btn-secondary btn-sm" onclick="exportVisitorsByPurposeExcel()" style="white-space:nowrap;">
+            <i class="fas fa-file-excel"></i> Export Excel
+          </button>
         </div>
         <div class="table-wrap">
           <table>
@@ -1770,11 +2145,14 @@
 
       <!-- Visitor Gender Analytics -->
       <div class="card">
-        <div class="card-header">
+        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
           <div class="card-title">
             <div class="card-title-icon"><i class="fas fa-venus-mars"></i></div>
             ⚧ Visitor Analytics — By Gender
           </div>
+          <button class="btn btn-secondary btn-sm" onclick="exportVisitorsByGenderExcel()" style="white-space:nowrap;">
+            <i class="fas fa-file-excel"></i> Export Excel
+          </button>
         </div>
         <div class="table-wrap">
           <table>
@@ -1789,11 +2167,14 @@
       </div>
 
       <div class="card">
-        <div class="card-header">
+        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
           <div class="card-title">
             <div class="card-title-icon"><i class="fas fa-chart-bar"></i></div>
             Library Visits — This Month
           </div>
+          <button class="btn btn-secondary btn-sm" onclick="exportVisitsChartExcel()" style="white-space:nowrap;">
+            <i class="fas fa-file-excel"></i> Export Excel
+          </button>
         </div>
         <div class="chart-area" id="visits-chart">
           <div style="color:var(--text-mute); font-size:0.8rem; margin:auto;">Loading chart data…</div>
@@ -1810,10 +2191,49 @@
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>Student</th><th>Date</th><th>Check-in</th><th>Check-out</th><th>Reason</th><th>Actions</th></tr>
+              <tr><th>Student/Teacher</th><th>Date</th><th>Check-in</th><th>Check-out</th><th>Reason</th><th>Actions</th></tr>
             </thead>
             <tbody id="activity-table">
               <tr><td colspan="6" style="text-align:center; color:var(--text-mute)">Loading activity…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+          <div class="card-title">
+            <div class="card-title-icon"><i class="fas fa-calendar-check"></i></div>
+            School Library Daily Attendance
+          </div>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <select id="attendance-history-select" class="form-control" style="max-width:180px;" onchange="loadDailyAttendance(this.value)">
+              <option value="">Recent Dates</option>
+            </select>
+            <input type="date" id="attendance-date-picker" class="form-control" style="max-width:180px;" onchange="loadDailyAttendance(this.value)">
+            <button class="btn btn-primary btn-sm" onclick="exportDailyAttendancePDF()">
+              <i class="fas fa-file-pdf"></i> Export PDF
+            </button>
+          </div>
+        </div>
+        <div style="padding:0 0 12px; color:var(--text-dim); font-size:0.9rem;" id="daily-attendance-note">Loading daily attendance…</div>
+        <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+          <button class="btn btn-secondary btn-sm" onclick="openAttendanceModal()"><i class="fas fa-plus"></i> Add Attendance</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:55px;">No.</th>
+                <th style="width:110px;">Date</th>
+                <th style="width:220px;">Name</th>
+                <th style="width:180px;">Grade Level &amp; Section</th>
+                <th>Purpose</th>
+                <th style="width:120px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="daily-attendance-tbody">
+              <tr><td colspan="6" style="text-align:center; color:var(--text-mute); padding:40px;">Loading daily attendance…</td></tr>
             </tbody>
           </table>
         </div>
@@ -1830,9 +2250,7 @@
           <button class="btn btn-success" onclick="generateCSVReport()">
             <i class="fas fa-file-csv"></i> Export CSV
           </button>
-          <button class="btn btn-primary" onclick="generatePDFReport()">
-            <i class="fas fa-file-pdf"></i> Export PDF
-          </button>
+          <!-- Monthly statistics removed -->
         </div>
       </div>
     </section>
@@ -1841,6 +2259,31 @@
 </div>
 
 <!-- ─── MODALS ───────────────────────────────────── -->
+
+<!-- Attendance Modal -->
+<div id="attendance-modal" class="modal">
+  <div class="modal-box" style="max-width:520px;">
+    <div class="modal-head">
+      <h2 id="attendance-modal-title">Add Attendance</h2>
+      <button class="modal-close" onclick="closeModal('attendance-modal')"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="modal-form">
+      <input type="hidden" id="attendance-log-id">
+      <div class="form-group"><label>Name</label><input type="text" id="attendance-name"></div>
+      <div class="form-group"><label>Grade / Section</label><input type="text" id="attendance-grade-section"></div>
+      <div class="form-group"><label>Purpose</label><input type="text" id="attendance-purpose"></div>
+      <div class="form-group"><label>Date</label><input type="date" id="attendance-date"></div>
+      <div class="form-group"><label>Check-in Time</label><input type="time" id="attendance-checkin"></div>
+      <div class="form-group"><label>Check-out Time</label><input type="time" id="attendance-checkout"></div>
+      <div class="form-group"><label>User Type</label><select id="attendance-user-type"><option value="student">Student</option><option value="faculty">Faculty</option><option value="stakeholder">Stakeholder</option></select></div>
+      <div class="form-group"><label>User ID</label><input type="number" id="attendance-user-id" min="1"></div>
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
+        <button class="btn btn-ghost" onclick="closeModal('attendance-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveAttendanceRecord()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Edit Student -->
 <div id="edit-modal" class="modal">
@@ -1877,9 +2320,12 @@
       <button class="modal-close" onclick="closeModal('edit-faculty-modal')"><i class="fas fa-xmark"></i></button>
     </div>
     <div class="modal-form">
-      <div class="form-group"><label>Employee No.</label><input type="text" id="edit_faculty_id" disabled style="opacity:.5; cursor:not-allowed;"></div>
+      <div class="form-group"><label>Faculty Library ID</label><input type="text" id="edit_faculty_id" disabled style="opacity:.5; cursor:not-allowed;"></div>
+      <div class="form-group"><label>Employee Number</label><input type="text" id="edit_faculty_employee_no"></div>
       <div class="form-group"><label>Full Name</label><input type="text" id="edit_faculty_name"></div>
       <div class="form-group"><label>Position</label><input type="text" id="edit_faculty_position"></div>
+      <div class="form-group"><label>Subject Area</label><input type="text" id="edit_faculty_subject_area"></div>
+      <div class="form-group"><label>Grade Level</label><input type="text" id="edit_faculty_grade_level"></div>
       <div class="form-group"><label>Sex</label><select id="edit_faculty_sex"><option value="">-- Select --</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
       <div class="form-group"><label>Address</label><input type="text" id="edit_faculty_address"></div>
       <div class="form-group"><label>Contact No.</label><input type="text" id="edit_faculty_contact_number"></div>
@@ -1917,8 +2363,17 @@
             <option value="Learning Activity Sheets">Learning Activity Sheets</option>
           </select>
         </div>
+        <div class="form-group"><label>Date Received (optional)</label><input type="date" id="edit_book_date_received"><div style="font-size:0.8rem; color:var(--text-dim); margin-top:4px;">Leave blank for old books. The accession PDF export will ignore them until a received date is added.</div></div>
+        <div class="form-group"><label>DDC No.</label><input type="text" id="edit_book_ddc_no"></div>
+        <div class="form-group"><label>Edition</label><input type="text" id="edit_book_edition"></div>
+        <div class="form-group"><label>Volumes</label><input type="text" id="edit_book_volumes"></div>
+        <div class="form-group"><label>Pages</label><input type="text" id="edit_book_pages"></div>
+        <div class="form-group"><label>Source of Found</label><input type="text" id="edit_book_source_of_fund"></div>
+        <div class="form-group"><label>Price</label><input type="number" id="edit_book_price" step="0.01" min="0"></div>
+        <div class="form-group"><label>Publisher</label><input type="text" id="edit_book_publisher"></div>
         <div class="form-group"><label>Copyright Year</label><input type="number" id="edit_book_copyright" min="1000" max="2099"></div>
         <div class="form-group"><label>ISBN</label><input type="text" id="edit_book_isbn"></div>
+        <div class="form-group" style="grid-column: 1 / -1;"><label>Remarks</label><textarea id="edit_book_remarks" rows="3"></textarea></div>
       </div>
     </div>
     <div class="modal-footer">
@@ -1993,18 +2448,27 @@
   const script = document.createElement('script');
   script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
   script.async = true;
+  window.html2pdfReady = new Promise((resolve, reject) => {
+    script.onload = resolve;
+    script.onerror = () => reject(new Error('Failed to load the PDF export library.'));
+  });
   document.head.appendChild(script);
   /* ── State ─────────────────────────────────── */
-  let allStudents = [], allLogs = [], allBooks = [], allNonPrintResources = [], allFaculty = [];
-  let currentEditId = null, currentEditBookId = null, currentEditResourceId = null, currentEditFacultyId = null;
+  let allStudents = [], allLogs = [], allBooks = [], allNonPrintResources = [], allFaculty = [], allStakeholders = [];
+  let inventoryWeedingReports = [];
+  let currentEditId = null, currentEditBookId = null, currentEditResourceId = null, currentEditFacultyId = null, currentInventoryWeedingId = null;
   let currentLibraryCardName = 'learner-library-card';
+  let attendanceDates = [];
+  let currentAttendanceDate = '';
 
   const PAGE_TITLES = {
     dashboard: ['fa-chart-line','Dashboard'],
     students:  ['fa-users','Students'],
     faculty:   ['fa-chalkboard-user','Faculty'],
+    stakeholders: ['fa-handshake','Stakeholders'],
     books:     ['fa-book-open','Print Resources'],
     'non-print': ['fa-toolbox','Non-print Resources'],
+    'inventory-weeding': ['fa-clipboard-list','Inventory & Weeding Report'],
     borrowing: ['fa-arrows-rotate','Borrowing Management'],
     'active-borrowers': ['fa-user-clock','Active Borrowers'],
     analytics: ['fa-book-bookmark','Book Analytics'],
@@ -2015,10 +2479,12 @@
   document.addEventListener('DOMContentLoaded', () => {
     loadDashboard();
     loadStudents();
+    loadStakeholders();
     loadFaculty();
     loadActivityLogs();
     loadBooks();
     loadNonPrintResources();
+    loadInventoryWeedingReports();
   });
 
   /* ── Navigation ────────────────────────────── */
@@ -2033,6 +2499,7 @@
       `<i class="page-icon fas ${icon}"></i><span>${title}</span>`;
 
     if (id === 'reports') loadReports();
+    if (id === 'inventory-weeding') loadInventoryWeedingReports();
     if (id === 'borrowing') loadPendingBorrows();
     if (id === 'active-borrowers') loadActiveBorrowers();
     if (id === 'analytics') loadBookAnalytics();
@@ -2204,16 +2671,16 @@
     }
     tbody.innerHTML = filtered.map(s => `
       <tr>
-        <td><code>${s.student_id}</code></td>
-        <td><strong>${s.name||'—'}</strong></td>
-        <td>${s.section||'—'}</td>
-        <td>${s.session||'—'}</td>
-        <td>${s.contact_number||'—'}</td>
-        <td>${s.address||'—'}</td>
-        <td>${s.sex||'—'}</td>
-        <td>${s.birthdate||'—'}</td>
-        <td>${s.age||'—'}</td>
-        <td>
+        <td style="white-space:nowrap;"><code>${s.student_id}</code></td>
+        <td style="white-space:nowrap;"><strong>${s.name||'—'}</strong></td>
+        <td style="white-space:nowrap;">${s.section||'—'}</td>
+        <td style="white-space:nowrap;">${s.session||'—'}</td>
+        <td style="white-space:nowrap;">${s.contact_number||'—'}</td>
+        <td style="white-space:nowrap;">${s.address||'—'}</td>
+        <td style="white-space:nowrap;">${s.sex||'—'}</td>
+        <td style="white-space:nowrap;">${s.birthdate||'—'}</td>
+        <td style="white-space:nowrap;">${s.age||'—'}</td>
+        <td style="white-space:nowrap;">
           <div class="action-group">
             <button class="btn btn-ghost btn-sm" onclick="exportLibraryCard(${s.id},'${s.student_id}','${s.name}','${s.grade}','${s.section}')"><i class="fas fa-download"></i></button>
             <button class="btn btn-ghost btn-sm" onclick="openEditModal(${s.id})"><i class="fas fa-pen"></i></button>
@@ -2294,6 +2761,113 @@
     });
   }
 
+  /* ── Stakeholder Management ─────────────────── */
+  async function loadStakeholders() {
+    try {
+      const res = await fetch('/api/admin/stakeholders');
+      const data = await res.json();
+      allStakeholders = data.stakeholders || [];
+      updateStakeholdersTable();
+    } catch (e) { console.error(e); }
+  }
+
+  function updateStakeholdersTable() {
+    const tbody = document.getElementById('stakeholders-table');
+    if (!tbody) return;
+    if (!allStakeholders.length) {
+      tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><div class="empty-icon"><i class="fas fa-inbox"></i></div><div class="empty-text">No stakeholders registered yet.</div></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = allStakeholders.map(s => `
+      <tr>
+        <td><code>${s.student_id || s.stakeholder_id || '—'}</code></td>
+        <td><strong>${s.name || '—'}</strong></td>
+        <td>${s.section || s.organization || '—'}</td>
+        <td>${s.grade || s.position || '—'}</td>
+        <td>${s.contact_number || '—'}</td>
+        <td>${s.email || '—'}</td>
+        <td>${s.sex || '—'}</td>
+        <td>${s.address || '—'}</td>
+        <td>${s.birthdate || '—'}</td>
+        <td>${s.age || '—'}</td>
+        <td>
+          <div class="action-group">
+            <button class="btn btn-danger btn-sm" onclick="deleteStakeholder('${s.id}', '${(s.student_id || s.stakeholder_id || '').replace(/'/g, "\\'")}')"><i class="fas fa-trash"></i></button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  async function addStakeholder() {
+    const stakeholder_id = document.getElementById('stakeholder_id').value.trim();
+    const name = document.getElementById('stakeholder_name').value.trim();
+    const organization = document.getElementById('stakeholder_organization').value.trim();
+    const position = document.getElementById('stakeholder_position').value.trim();
+    const contact_number = document.getElementById('stakeholder_contact').value.trim();
+    const email = document.getElementById('stakeholder_email').value.trim();
+    const sex = document.getElementById('stakeholder_sex').value.trim();
+    const address = document.getElementById('stakeholder_address').value.trim();
+    const birthdate = document.getElementById('stakeholder_birthdate').value;
+    const age = document.getElementById('stakeholder_age').value;
+
+    if (!stakeholder_id || !name) {
+      showMessage('add-stakeholder-message', 'Stakeholder ID and name are required.', 'error');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/admin/add-stakeholder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stakeholder_id, name, organization, position, contact_number, email, sex, address, birthdate, age })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not add stakeholder');
+      showMessage('add-stakeholder-message', data.message || 'Stakeholder added successfully.', 'success');
+      document.getElementById('stakeholder_id').value = '';
+      document.getElementById('stakeholder_name').value = '';
+      document.getElementById('stakeholder_organization').value = '';
+      document.getElementById('stakeholder_position').value = '';
+      document.getElementById('stakeholder_contact').value = '';
+      document.getElementById('stakeholder_email').value = '';
+      document.getElementById('stakeholder_sex').value = '';
+      document.getElementById('stakeholder_address').value = '';
+      document.getElementById('stakeholder_birthdate').value = '';
+      document.getElementById('stakeholder_age').value = '';
+      await loadStakeholders();
+    } catch (e) {
+      showMessage('add-stakeholder-message', e.message, 'error');
+    }
+  }
+
+  async function deleteStakeholder(id, code) {
+    if (!confirm(`Delete stakeholder ${code || 'this profile'}?`)) return;
+    try {
+      const res = await fetch(`/api/admin/stakeholders/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not delete stakeholder');
+      await loadStakeholders();
+      showMessage('add-stakeholder-message', 'Stakeholder deleted successfully.', 'success');
+    } catch (e) {
+      showMessage('add-stakeholder-message', e.message, 'error');
+    }
+  }
+
+  function exportStakeholdersCSV() {
+    if (!allStakeholders.length) return;
+    const header = ['ID', 'Full Name', 'Organization', 'Position', 'Contact', 'Email', 'Sex', 'Address', 'Birthdate', 'Age'];
+    const rows = allStakeholders.map(s => [s.student_id || s.stakeholder_id || '', s.name || '', s.section || s.organization || '', s.grade || s.position || '', s.contact_number || '', s.email || '', s.sex || '', s.address || '', s.birthdate || '', s.age || '']);
+    const csv = [header.join(','), ...rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'stakeholders.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
   /* ── Faculty Management ─────────────────────── */
   async function loadFaculty() {
     try {
@@ -2327,8 +2901,8 @@
     const filtered = filterPosition === 'all'
       ? allFaculty
       : allFaculty.filter(f => (f.position || '').trim() === filterPosition);
-    if (!filtered.length) {
-      tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon"><i class="fas fa-user-slash"></i></div><div class="empty-text">No faculty found</div></div></td></tr>`;
+      if (!filtered.length) {
+      tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><div class="empty-icon"><i class="fas fa-user-slash"></i></div><div class="empty-text">No faculty found</div></div></td></tr>`;
       return;
     }
     tbody.innerHTML = filtered.map(f => `
@@ -2340,6 +2914,7 @@
         <td>${f.contact_number||'—'}</td>
         <td>${f.address||'—'}</td>
         <td>${f.email||'—'}</td>
+        <td>${f.employee_no||'—'}</td>
         <td>${f.birthdate||'—'}</td>
         <td>${f.age||'—'}</td>
         <td>
@@ -2354,21 +2929,24 @@
 
   async function addFaculty() {
     const faculty_id = document.getElementById('faculty_id').value.trim();
+    const employee_no = document.getElementById('faculty_employee_no').value.trim();
     const name = document.getElementById('faculty_name').value.trim();
     const position = document.getElementById('faculty_position').value.trim();
+    const subject_area = document.getElementById('faculty_subject_area').value.trim();
+    const grade_level = document.getElementById('faculty_grade_level').value.trim();
     const sex = document.getElementById('faculty_sex').value.trim();
     const address = document.getElementById('faculty_address').value.trim();
     const contact_number = document.getElementById('faculty_contact_number').value.trim();
     const email = document.getElementById('faculty_email').value.trim();
     const birthdate = document.getElementById('faculty_birthdate').value;
     const age = document.getElementById('faculty_age').value;
-    if (!faculty_id || !name) { showMessage('add-faculty-message','Employee No. and Name are required','error'); return; }
+    if (!faculty_id || !employee_no || !name) { showMessage('add-faculty-message','Faculty Library ID, Employee Number, and Name are required','error'); return; }
     try {
-      const res = await fetch('/api/admin/add-faculty',{ method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({faculty_id,name,position,sex,address,contact_number,email,birthdate,age:parseInt(age)||null}) });
+      const res = await fetch('/api/admin/add-faculty',{ method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({faculty_id,employee_no,name,position,subject_area,grade_level,sex,address,contact_number,email,birthdate,age:parseInt(age)||null}) });
       const data = await res.json();
       if (res.ok) {
         Swal.fire({ icon:'success', title:'Faculty Added!', text:'Faculty member has been registered.', confirmButtonColor:'#5b6ef5', background:'#1a1e2b', color:'#e8eaf0' });
-        ['faculty_id','faculty_name','faculty_position','faculty_sex','faculty_address','faculty_contact_number','faculty_email','faculty_birthdate','faculty_age'].forEach(id => document.getElementById(id).value='');
+        ['faculty_id','faculty_employee_no','faculty_name','faculty_position','faculty_subject_area','faculty_grade_level','faculty_sex','faculty_address','faculty_contact_number','faculty_email','faculty_birthdate','faculty_age'].forEach(id => document.getElementById(id).value='');
         loadFaculty(); loadDashboard();
       } else { Swal.fire({ icon:'error', title:'Error', text:data.error||'Could not add faculty', confirmButtonColor:'#f43f5e', background:'#1a1e2b', color:'#e8eaf0' }); }
     } catch(e) { Swal.fire({ icon:'error', title:'Connection Error', text:'Cannot reach server.', confirmButtonColor:'#f43f5e', background:'#1a1e2b', color:'#e8eaf0' }); }
@@ -2378,8 +2956,11 @@
     const f = allFaculty.find(x=>x.id===id); if (!f) return;
     currentEditFacultyId = id;
     document.getElementById('edit_faculty_id').value = f.faculty_id;
+    document.getElementById('edit_faculty_employee_no').value = f.employee_no || '';
     document.getElementById('edit_faculty_name').value = f.name||'';
     document.getElementById('edit_faculty_position').value = f.position||'';
+    document.getElementById('edit_faculty_subject_area').value = f.subject_area||'';
+    document.getElementById('edit_faculty_grade_level').value = f.grade_level||'';
     document.getElementById('edit_faculty_sex').value = f.sex||'';
     document.getElementById('edit_faculty_address').value = f.address||'';
     document.getElementById('edit_faculty_contact_number').value = f.contact_number||'';
@@ -2390,8 +2971,11 @@
   }
 
   async function updateFaculty() {
+    const employee_no = document.getElementById('edit_faculty_employee_no').value.trim();
     const name = document.getElementById('edit_faculty_name').value.trim();
     const position = document.getElementById('edit_faculty_position').value.trim();
+    const subject_area = document.getElementById('edit_faculty_subject_area').value.trim();
+    const grade_level = document.getElementById('edit_faculty_grade_level').value.trim();
     const sex = document.getElementById('edit_faculty_sex').value.trim();
     const address = document.getElementById('edit_faculty_address').value.trim();
     const contact_number = document.getElementById('edit_faculty_contact_number').value.trim();
@@ -2400,7 +2984,7 @@
     const age = document.getElementById('edit_faculty_age').value;
     if (!name) { Swal.fire({icon:'warning',title:'Name required',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); return; }
     try {
-      const res = await fetch(`/api/admin/faculty/${currentEditFacultyId}`,{ method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,position,sex,address,contact_number,email,birthdate,age:parseInt(age)||null}) });
+      const res = await fetch(`/api/admin/faculty/${currentEditFacultyId}`,{ method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({employee_no,name,position,subject_area,grade_level,sex,address,contact_number,email,birthdate,age:parseInt(age)||null}) });
       if (res.ok) {
         Swal.fire({icon:'success',title:'Updated!',text:'Faculty info updated.',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}).then(()=>{ closeModal('edit-faculty-modal'); loadFaculty(); });
       } else { Swal.fire({icon:'error',title:'Error',text:'Could not update.',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
@@ -2431,8 +3015,8 @@
     const tbody = document.getElementById('activity-table');
     if (!allLogs.length) { tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-icon"><i class="fas fa-inbox"></i></div><div class="empty-text">No activity yet</div></div></td></tr>`; return; }
     tbody.innerHTML = allLogs.slice(0,20).map(log => {
-      const ci = log.check_in_time  ? new Date(log.check_in_time).toLocaleTimeString() : '—';
-      const co = log.check_out_time ? new Date(log.check_out_time).toLocaleTimeString() : '<span class="badge badge-success">Active</span>';
+      const ci = log.check_in_time ? log.check_in_time : '—';
+      const co = log.check_out_time ? log.check_out_time : '<span class="badge badge-success">Active</span>';
       return `<tr>
         <td><strong>${log.student_name||'Unknown'}</strong></td>
         <td>${log.action_date}</td>
@@ -2459,14 +3043,254 @@
     try {
       const res = await fetch('/api/admin/analytics');
       const d = await res.json();
+      if (!allLogs.length) await loadActivityLogs();
       updateActivityTable();
       generateMiniChart(d.chart_data, 'visits-chart');
+      const frequentUserStats = await getMostFrequentLibraryUsers();
+      updateTopUserCard(frequentUserStats);
       
       // Load visitor analytics
       await loadVisitorAnalytics();
+      await loadDailyAttendance();
     } catch(e) {
       console.error('Analytics error:', e);
       c.innerHTML = `<div style="margin:auto;color:#f43f5e;font-size:.8rem"><i class="fas fa-exclamation-triangle"></i> Cannot connect to server</div>`;
+    }
+  }
+
+  async function loadDailyAttendance(selectedDate = '') {
+    try {
+      const dateSelect = document.getElementById('attendance-history-select');
+      const dateInput = document.getElementById('attendance-date-picker');
+      const note = document.getElementById('daily-attendance-note');
+      const tbody = document.getElementById('daily-attendance-tbody');
+
+      const datesRes = await fetch('/api/admin/attendance-dates');
+      const datesData = await datesRes.json();
+      attendanceDates = datesData.dates || [];
+
+      dateSelect.innerHTML = `<option value="">Recent Dates</option>` + attendanceDates.map(d => `<option value="${d}">${d}</option>`).join('');
+
+      let date = selectedDate || dateInput.value || attendanceDates[0] || new Date().toLocaleDateString('sv');
+      dateInput.value = date;
+      dateSelect.value = date;
+      currentAttendanceDate = date;
+
+      const res = await fetch(`/api/admin/daily-attendance?date=${encodeURIComponent(date)}`);
+      const data = await res.json();
+      const records = data.attendance_records || [];
+
+      note.textContent = `Showing daily attendance for ${date}`;
+
+      tbody.innerHTML = records.map((record, index) => `
+        <tr>
+          <td style="padding:12px;">${record.no || index + 1}</td>
+          <td style="padding:12px;">${record.date || date}</td>
+          <td style="padding:12px;">${record.name || ''}</td>
+          <td style="padding:12px;">${record.grade_section || ''}</td>
+          <td style="padding:12px;">${record.purpose || ''}</td>
+          <td style="padding:12px;">
+            <div class="action-group">
+              <button class="btn btn-ghost btn-sm" onclick="editAttendanceRecord('${record.id || ''}')"><i class="fas fa-pen"></i></button>
+              <button class="btn btn-danger btn-sm" onclick="deleteAttendanceRecord('${record.id || ''}')"><i class="fas fa-trash"></i></button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    } catch (e) {
+      console.error('Daily attendance error:', e);
+      const note = document.getElementById('daily-attendance-note');
+      note.textContent = 'Error loading daily attendance. Please try again.';
+      document.getElementById('daily-attendance-tbody').innerHTML = `<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--text-dim);">Unable to load attendance data</td></tr>`;
+    }
+  }
+
+  function openAttendanceModal() {
+    document.getElementById('attendance-log-id').value = '';
+    document.getElementById('attendance-modal-title').textContent = 'Add Attendance';
+    document.getElementById('attendance-name').value = '';
+    document.getElementById('attendance-grade-section').value = '';
+    document.getElementById('attendance-purpose').value = '';
+    document.getElementById('attendance-date').value = currentAttendanceDate || new Date().toLocaleDateString('sv');
+    document.getElementById('attendance-checkin').value = '';
+    document.getElementById('attendance-checkout').value = '';
+    document.getElementById('attendance-user-type').value = 'student';
+    document.getElementById('attendance-user-id').value = '';
+    document.getElementById('attendance-modal').classList.add('active');
+  }
+
+  async function editAttendanceRecord(id) {
+    try {
+      const res = await fetch(`/api/admin/attendance/${encodeURIComponent(id)}`);
+      const data = await res.json();
+      if (!res.ok || !data.record) throw new Error(data.error || 'Attendance record not found');
+      const record = data.record;
+      document.getElementById('attendance-log-id').value = record.id;
+      document.getElementById('attendance-modal-title').textContent = 'Edit Attendance';
+      document.getElementById('attendance-name').value = record.name || '';
+      document.getElementById('attendance-grade-section').value = record.grade_section || '';
+      document.getElementById('attendance-purpose').value = record.visit_reason || '';
+      document.getElementById('attendance-date').value = record.action_date || '';
+      document.getElementById('attendance-checkin').value = record.check_in_time || '';
+      document.getElementById('attendance-checkout').value = record.check_out_time || '';
+      document.getElementById('attendance-user-type').value = record.user_type || 'student';
+      document.getElementById('attendance-user-id').value = record.user_id || '';
+      document.getElementById('attendance-modal').classList.add('active');
+    } catch (e) {
+      Swal.fire({ icon: 'error', title: 'Load Error', text: e.message || e, confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0' });
+    }
+  }
+
+  async function saveAttendanceRecord() {
+    try {
+      const id = document.getElementById('attendance-log-id').value;
+      const payload = {
+        name: document.getElementById('attendance-name').value.trim(),
+        grade_section: document.getElementById('attendance-grade-section').value.trim(),
+        visit_reason: document.getElementById('attendance-purpose').value.trim(),
+        action_date: document.getElementById('attendance-date').value,
+        check_in_time: document.getElementById('attendance-checkin').value,
+        check_out_time: document.getElementById('attendance-checkout').value || null,
+        user_type: document.getElementById('attendance-user-type').value,
+        user_id: document.getElementById('attendance-user-id').value
+      };
+      const res = await fetch(id ? `/api/admin/attendance/${encodeURIComponent(id)}` : '/api/admin/attendance', {
+        method: id ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not save attendance record.');
+      closeModal('attendance-modal');
+      await loadDailyAttendance(currentAttendanceDate || payload.action_date);
+      Swal.fire({ icon: 'success', title: id ? 'Attendance updated' : 'Attendance added', confirmButtonColor: '#5b6ef5', background: '#1a1e2b', color: '#e8eaf0' });
+    } catch (e) {
+      Swal.fire({ icon: 'error', title: 'Save Error', text: e.message || e, confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0' });
+    }
+  }
+
+  async function deleteAttendanceRecord(id) {
+    if (!id) return;
+    const result = await Swal.fire({ icon: 'warning', title: 'Delete attendance record?', text: 'This action cannot be undone.', showCancelButton: true, confirmButtonColor: '#f43f5e' });
+    if (!result.isConfirmed) return;
+    try {
+      const res = await fetch(`/api/admin/attendance/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not delete attendance record.');
+      await loadDailyAttendance(currentAttendanceDate);
+      Swal.fire({ icon: 'success', title: 'Attendance deleted', confirmButtonColor: '#5b6ef5', background: '#1a1e2b', color: '#e8eaf0' });
+    } catch (e) {
+      Swal.fire({ icon: 'error', title: 'Delete Error', text: e.message || e, confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0' });
+    }
+  }
+
+  async function exportDailyAttendancePDF() {
+    try {
+      if (!window.html2pdfReady) throw new Error('PDF export loader is not initialized.');
+      await window.html2pdfReady;
+      if (typeof window.html2pdf !== 'function') throw new Error('PDF export library is not loaded yet.');
+      const date = currentAttendanceDate || document.getElementById('attendance-date-picker').value || new Date().toISOString().slice(0, 10);
+      const res = await fetch(`/api/admin/daily-attendance?date=${encodeURIComponent(date)}`);
+      if (!res.ok) throw new Error('Failed to fetch daily attendance.');
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      const records = data.attendance_records || [];
+
+  
+      const container = document.createElement('div');
+      container.style.background = '#fff';
+      container.style.color = '#000';
+      container.style.padding = '24px';
+      container.style.width = '100%';
+      container.style.maxWidth = '100%';
+
+      const header = document.createElement('div');
+      header.style.textAlign = 'center';
+      header.style.marginBottom = '10px';
+      const logo = document.createElement('img');
+      logo.src = '/images/Deped-Seal.png';
+      logo.style.height = '90px';
+      logo.style.objectFit = 'contain';
+      logo.style.marginBottom = '6px';
+      header.appendChild(logo);
+      header.innerHTML += `
+        <div style="font-weight:700; font-size:12px; margin-top:4px;">Republic of the Philippines</div>
+        <div style="font-weight:700; font-size:12px;">Department of Education</div>
+        <div style="font-size:10px; margin-top:4px;">Region VII - Central Visayas</div>
+        <div style="font-size:10px;">Sudlon, Lahug, Cebu City</div>
+        <div style="font-size:10px; margin-top:4px;">Division of Cebu Province</div>
+        <div style="font-size:10px; margin-top:4px;">Bala National High School</div>
+        <div style="font-size:16px; font-weight:800; margin-top:12px;">SCHOOL LIBRARY DAILY ATTENDANCE</div>
+        <div style="font-size:10px; margin-top:2px;">SY 2026-2027</div>
+      `;
+      container.appendChild(header);
+
+     
+
+      const table = document.createElement('table');
+      table.style.width = '100%';
+      table.style.borderCollapse = 'collapse';
+      table.style.tableLayout = 'fixed';
+
+      const thead = document.createElement('thead');
+      const headRow = document.createElement('tr');
+      ['NO.', 'DATE', 'NAME', 'GRADE LEVEL & SECTION', 'PURPOSE'].forEach(text => {
+        const th = document.createElement('th');
+        th.textContent = text;
+        th.style.border = '0.5px solid #000';
+        th.style.padding = '8px 6px';
+        th.style.fontSize = '9px';
+        th.style.fontWeight = '700';
+        th.style.textAlign = 'center';
+        th.style.background = '#f5f5f5';
+        th.style.verticalAlign = 'middle';
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      for (let i = 0; i < 30; i++) {
+        const record = records[i] || {};
+        const row = document.createElement('tr');
+        const fields = [
+          record.no || i + 1,
+          record.date || date,
+          record.name || '',
+          record.grade_section || '',
+          record.purpose || ''
+        ];
+        fields.forEach((value, idx) => {
+          const td = document.createElement('td');
+          td.textContent = value;
+          td.style.color = '#000';
+          td.style.border = '0.5px solid #000';
+          td.style.padding = '8px 6px';
+          td.style.fontSize = '9px';
+          td.style.verticalAlign = 'top';
+          td.style.height = '22px';
+          if (idx === 0) td.style.textAlign = 'center';
+          if (idx === 4) td.style.whiteSpace = 'normal';
+          row.appendChild(td);
+        });
+        tbody.appendChild(row);
+      }
+      table.appendChild(tbody);
+      container.appendChild(table);
+      document.body.appendChild(container);
+
+      const opt = {
+        margin: 0,
+        filename: `daily_attendance_${date}.pdf`,
+        image: { type: 'jpeg', quality: 0.95 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+      };
+
+      await window.html2pdf().set(opt).from(container).save();
+      document.body.removeChild(container);
+    } catch (e) {
+      Swal.fire({ icon: 'error', title: 'Export Error', text: e.message || e, confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0' });
     }
   }
 
@@ -2536,18 +3360,96 @@
     } catch(e) { console.error(e); }
   }
 
+  function escapeHtml(value='') {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function getBookFieldValue(book, field) {
+    if (field === 'copyright_year') return book.copyright_year ?? '';
+    if (field === 'price') return book.price ?? '';
+    return book[field] ?? '';
+  }
+
+  function normalizeBookCellValue(field, value) {
+    if (value === null || value === undefined) return null;
+    const text = String(value).trim();
+    if (!text) return null;
+    if (field === 'copyright_year') return Number(text);
+    if (field === 'price') return parseFloat(text);
+    return text;
+  }
+
+  async function saveBookCellValue(cell) {
+    const bookId = cell.getAttribute('data-book-id');
+    const field = cell.getAttribute('data-field');
+    const book = allBooks.find(item => item.id === bookId);
+    if (!book) return;
+
+    const newValue = normalizeBookCellValue(field, cell.innerText.replace(/\u00a0/g, ' ').trim());
+    const oldValue = getBookFieldValue(book, field);
+    if (String(oldValue).trim() === String(newValue ?? '').trim()) return;
+
+    const payload = {
+      accession_number: book.accession_number || '',
+      call_number: book.call_number || '',
+      title: book.title || '',
+      author: book.author || '',
+      category: book.category || '',
+      date_received: book.date_received || null,
+      ddc_no: book.ddc_no || null,
+      edition: book.edition || null,
+      volumes: book.volumes || null,
+      pages: book.pages || null,
+      source_of_fund: book.source_of_fund || null,
+      price: book.price ?? null,
+      publisher: book.publisher || null,
+      copyright_year: book.copyright_year ?? null,
+      isbn: book.isbn || null,
+      remarks: book.remarks || null,
+      [field]: newValue
+    };
+
+    try {
+      const res = await fetch(`/api/admin/books/${bookId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error('Could not save book change.');
+      allBooks = allBooks.map(item => item.id === bookId ? { ...item, [field]: newValue } : item);
+      updateBooksTable();
+    } catch (e) {
+      console.error(e);
+      Swal.fire({ icon: 'error', title: 'Save Error', text: e.message || 'Could not save change.', confirmButtonColor: '#f43f5e' });
+    }
+  }
+
   function updateBooksTable() {
     const tbody = document.getElementById('books-table');
-    if (!allBooks.length) { tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon"><i class="fas fa-book-open"></i></div><div class="empty-text">No books found</div></div></td></tr>`; return; }
+    if (!allBooks.length) { tbody.innerHTML = `<tr><td colspan="17"><div class="empty-state"><div class="empty-icon"><i class="fas fa-book-open"></i></div><div class="empty-text">No books found</div></div></td></tr>`; return; }
     tbody.innerHTML = allBooks.map(b => `
       <tr>
-        <td><code>${b.accession_number}</code></td>
-        <td><code>${b.call_number}</code></td>
-        <td><strong>${b.title}</strong></td>
-        <td>${b.author}</td>
-        <td><span class="badge badge-blue">${b.category||'—'}</span></td>
-        <td>${b.copyright_year||'—'}</td>
-        <td>${b.isbn||'—'}</td>
+        <td class="book-cell" contenteditable="true" data-book-id="${b.id}" data-field="accession_number" style="min-width:120px; white-space:nowrap;">${escapeHtml(b.accession_number || '')}</td>
+        <td class="book-cell" contenteditable="true" data-book-id="${b.id}" data-field="call_number" style="min-width:120px; white-space:nowrap;">${escapeHtml(b.call_number || '')}</td>
+        <td class="book-cell" contenteditable="true" data-book-id="${b.id}" data-field="title" style="min-width:220px; white-space:nowrap;">${escapeHtml(b.title || '')}</td>
+        <td class="book-cell" contenteditable="true" data-book-id="${b.id}" data-field="author" style="min-width:180px; white-space:nowrap;">${escapeHtml(b.author || '')}</td>
+        <td class="book-cell" contenteditable="true" data-book-id="${b.id}" data-field="category" style="min-width:140px; white-space:nowrap;">${escapeHtml(b.category || '')}</td>
+        <td class="book-cell" contenteditable="true" data-book-id="${b.id}" data-field="date_received" style="min-width:110px; white-space:nowrap;">${escapeHtml(b.date_received || '')}</td>
+        <td class="book-cell" contenteditable="true" data-book-id="${b.id}" data-field="ddc_no" style="min-width:110px; white-space:nowrap;">${escapeHtml(b.ddc_no || '')}</td>
+        <td class="book-cell" contenteditable="true" data-book-id="${b.id}" data-field="edition" style="min-width:120px; white-space:nowrap;">${escapeHtml(b.edition || '')}</td>
+        <td class="book-cell" contenteditable="true" data-book-id="${b.id}" data-field="volumes" style="min-width:100px; white-space:nowrap;">${escapeHtml(b.volumes || '')}</td>
+        <td class="book-cell" contenteditable="true" data-book-id="${b.id}" data-field="pages" style="min-width:100px; white-space:nowrap;">${escapeHtml(b.pages || '')}</td>
+        <td class="book-cell" contenteditable="true" data-book-id="${b.id}" data-field="source_of_fund" style="min-width:140px; white-space:nowrap;">${escapeHtml(b.source_of_fund || '')}</td>
+        <td class="book-cell" contenteditable="true" data-book-id="${b.id}" data-field="price" style="min-width:100px; white-space:nowrap;">${escapeHtml(b.price || '')}</td>
+        <td class="book-cell" contenteditable="true" data-book-id="${b.id}" data-field="publisher" style="min-width:140px; white-space:nowrap;">${escapeHtml(b.publisher || '')}</td>
+        <td class="book-cell" contenteditable="true" data-book-id="${b.id}" data-field="copyright_year" style="min-width:110px; white-space:nowrap;">${escapeHtml(b.copyright_year || '')}</td>
+        <td class="book-cell" contenteditable="true" data-book-id="${b.id}" data-field="isbn" style="min-width:180px; white-space:nowrap;">${escapeHtml(b.isbn || '')}</td>
+        <td class="book-cell" contenteditable="true" data-book-id="${b.id}" data-field="remarks" style="min-width:220px; white-space:nowrap;">${escapeHtml(b.remarks || '')}</td>
         <td>
           <div class="action-group">
             <button class="btn btn-ghost btn-sm" onclick="openEditBookModal('${b.id}')"><i class="fas fa-pen"></i></button>
@@ -2555,6 +3457,16 @@
           </div>
         </td>
       </tr>`).join('');
+
+    tbody.querySelectorAll('.book-cell').forEach(cell => {
+      cell.addEventListener('keydown', event => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          cell.blur();
+        }
+      });
+      cell.addEventListener('blur', () => saveBookCellValue(cell));
+    });
   }
 
   async function addBook() {
@@ -2565,13 +3477,22 @@
     const category = document.getElementById('book_category').value.trim();
     const copyright_year = document.getElementById('book_copyright').value.trim();
     const isbn = document.getElementById('book_isbn').value.trim();
+    const date_received = document.getElementById('book_date_received').value.trim();
+    const ddc_no = document.getElementById('book_ddc_no').value.trim();
+    const edition = document.getElementById('book_edition').value.trim();
+    const volumes = document.getElementById('book_volumes').value.trim();
+    const pages = document.getElementById('book_pages').value.trim();
+    const source_of_fund = document.getElementById('book_source_of_fund').value.trim();
+    const price = document.getElementById('book_price').value.trim();
+    const publisher = document.getElementById('book_publisher').value.trim();
+    const remarks = document.getElementById('book_remarks').value.trim();
     if (!accession_number||!call_number||!title||!author||!category) { showMessage('add-book-message','Fill in all required fields','error'); return; }
     try {
-      const res = await fetch('/api/admin/add-book',{ method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accession_number,call_number,title,author,category,copyright_year:copyright_year||null,isbn:isbn||null}) });
+      const res = await fetch('/api/admin/add-book',{ method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accession_number,call_number,title,author,category,copyright_year:copyright_year||null,isbn:isbn||null,date_received:date_received||null,ddc_no:ddc_no||null,edition:edition||null,volumes:volumes||null,pages:pages||null,source_of_fund:source_of_fund||null,price:price||null,publisher:publisher||null,remarks:remarks||null}) });
       const d = await res.json();
       if (res.ok) {
         Swal.fire({icon:'success',title:'Book Added!',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'});
-        ['book_accession','book_call_number','book_title','book_author','book_copyright','book_isbn'].forEach(id=>document.getElementById(id).value='');
+        ['book_accession','book_call_number','book_title','book_author','book_copyright','book_isbn','book_date_received','book_ddc_no','book_edition','book_volumes','book_pages','book_source_of_fund','book_price','book_publisher','book_remarks'].forEach(id=>document.getElementById(id).value='');
         document.getElementById('book_category').value='';
         loadBooks();
       } else { Swal.fire({icon:'error',title:'Error',text:d.error,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
@@ -2586,8 +3507,17 @@
     document.getElementById('edit_book_title').value = b.title;
     document.getElementById('edit_book_author').value = b.author;
     document.getElementById('edit_book_category').value = b.category||'';
+    document.getElementById('edit_book_date_received').value = b.date_received || '';
+    document.getElementById('edit_book_ddc_no').value = b.ddc_no || '';
+    document.getElementById('edit_book_edition').value = b.edition || '';
+    document.getElementById('edit_book_volumes').value = b.volumes || '';
+    document.getElementById('edit_book_pages').value = b.pages || '';
+    document.getElementById('edit_book_source_of_fund').value = b.source_of_fund || '';
+    document.getElementById('edit_book_price').value = b.price || '';
+    document.getElementById('edit_book_publisher').value = b.publisher || '';
     document.getElementById('edit_book_copyright').value = b.copyright_year||'';
     document.getElementById('edit_book_isbn').value = b.isbn||'';
+    document.getElementById('edit_book_remarks').value = b.remarks || '';
     document.getElementById('edit-book-modal').classList.add('active');
   }
 
@@ -2599,9 +3529,18 @@
     const category = document.getElementById('edit_book_category').value.trim();
     const copyright_year = document.getElementById('edit_book_copyright').value.trim();
     const isbn = document.getElementById('edit_book_isbn').value.trim();
+    const date_received = document.getElementById('edit_book_date_received').value.trim();
+    const ddc_no = document.getElementById('edit_book_ddc_no').value.trim();
+    const edition = document.getElementById('edit_book_edition').value.trim();
+    const volumes = document.getElementById('edit_book_volumes').value.trim();
+    const pages = document.getElementById('edit_book_pages').value.trim();
+    const source_of_fund = document.getElementById('edit_book_source_of_fund').value.trim();
+    const price = document.getElementById('edit_book_price').value.trim();
+    const publisher = document.getElementById('edit_book_publisher').value.trim();
+    const remarks = document.getElementById('edit_book_remarks').value.trim();
     if(!accession_number||!call_number||!title||!author||!category){Swal.fire({icon:'warning',title:'Required fields missing',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'});return;}
     try {
-      const res = await fetch(`/api/admin/books/${currentEditBookId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({accession_number,call_number,title,author,category,copyright_year:copyright_year||null,isbn:isbn||null})});
+      const res = await fetch(`/api/admin/books/${currentEditBookId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({accession_number,call_number,title,author,category,copyright_year:copyright_year||null,isbn:isbn||null,date_received:date_received||null,ddc_no:ddc_no||null,edition:edition||null,volumes:volumes||null,pages:pages||null,source_of_fund:source_of_fund||null,price:price||null,publisher:publisher||null,remarks:remarks||null})});
       if(res.ok){Swal.fire({icon:'success',title:'Updated!',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}).then(()=>{closeModal('edit-book-modal');loadBooks();});}
       else{Swal.fire({icon:'error',title:'Error',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'});}
     }catch(e){Swal.fire({icon:'error',title:'Connection Error',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'});}
@@ -2626,34 +3565,240 @@
     } catch(e) { console.error(e); }
   }
 
+  async function loadInventoryWeedingReports() {
+    try {
+      const res = await fetch('/api/admin/inventory-weeding');
+      const data = await res.json();
+      inventoryWeedingReports = Array.isArray(data.reports) ? data.reports : [];
+      updateInventoryWeedingTable();
+    } catch (e) {
+      console.error(e);
+      inventoryWeedingReports = [];
+      updateInventoryWeedingTable();
+    }
+  }
+
+  function updateInventoryWeedingTable() {
+    const tbody = document.getElementById('inventory-weeding-table');
+    if (!tbody) return;
+    if (!inventoryWeedingReports.length) {
+      tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon"><i class="fas fa-clipboard-list"></i></div><div class="empty-text">No inventory reports found</div></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = inventoryWeedingReports.map(report => `
+      <tr>
+        <td style="white-space:nowrap;">${escapeHtml(report.accession_no || '—')}</td>
+        <td style="white-space:nowrap;">${escapeHtml(report.date_received || '—')}</td>
+        <td style="white-space:nowrap;">${escapeHtml(report.ddc_no || '—')}</td>
+        <td style="white-space:nowrap;">${escapeHtml(report.author || '—')}</td>
+        <td style="white-space:nowrap;">${escapeHtml(report.title || '—')}</td>
+        <td style="white-space:nowrap;">${escapeHtml(report.condition || '—')}</td>
+        <td style="white-space:nowrap;">${escapeHtml(report.action_taken || '—')}</td>
+        <td style="white-space:nowrap;">${escapeHtml(report.remarks || '—')}</td>
+        <td style="white-space:nowrap;">${escapeHtml(report.date_of_inventory || '—')}</td>
+        <td style="white-space:nowrap;">
+          <div class="action-group">
+            <button class="btn btn-ghost btn-sm" onclick="editInventoryWeedingReport('${report.id}')"><i class="fas fa-pen"></i></button>
+            <button class="btn btn-danger btn-sm" onclick="deleteInventoryWeedingReport('${report.id}')"><i class="fas fa-trash"></i></button>
+          </div>
+        </td>
+      </tr>`).join('');
+  }
+
+  function resetInventoryWeedingForm() {
+    currentInventoryWeedingId = null;
+    document.getElementById('inventory_accession_no').value = '';
+    document.getElementById('inventory_date_received').value = '';
+    document.getElementById('inventory_ddc_no').value = '';
+    document.getElementById('inventory_author').value = '';
+    document.getElementById('inventory_title').value = '';
+    document.getElementById('inventory_condition').value = '';
+    document.getElementById('inventory_action_taken').value = '';
+    document.getElementById('inventory_date_of_inventory').value = '';
+    document.getElementById('inventory_remarks').value = '';
+    const message = document.getElementById('inventory-weeding-message');
+    if (message) { message.innerHTML = ''; message.className = 'msg'; }
+  }
+
+  function editInventoryWeedingReport(id) {
+    const report = inventoryWeedingReports.find(item => item.id === id);
+    if (!report) return;
+    currentInventoryWeedingId = id;
+    document.getElementById('inventory_accession_no').value = report.accession_no || '';
+    document.getElementById('inventory_date_received').value = report.date_received || '';
+    document.getElementById('inventory_ddc_no').value = report.ddc_no || '';
+    document.getElementById('inventory_author').value = report.author || '';
+    document.getElementById('inventory_title').value = report.title || '';
+    document.getElementById('inventory_condition').value = report.condition || '';
+    document.getElementById('inventory_action_taken').value = report.action_taken || '';
+    document.getElementById('inventory_date_of_inventory').value = report.date_of_inventory || '';
+    document.getElementById('inventory_remarks').value = report.remarks || '';
+    document.getElementById('inventory-weeding-message').innerHTML = '<i class="fas fa-pencil"></i> Editing selected record.';
+    document.getElementById('inventory-weeding-message').className = 'msg show';
+  }
+
+  async function saveInventoryWeedingReport() {
+    const accession_no = document.getElementById('inventory_accession_no').value.trim();
+    const date_received = document.getElementById('inventory_date_received').value;
+    const ddc_no = document.getElementById('inventory_ddc_no').value.trim();
+    const author = document.getElementById('inventory_author').value.trim();
+    const title = document.getElementById('inventory_title').value.trim();
+    const condition = document.getElementById('inventory_condition').value;
+    const action_taken = document.getElementById('inventory_action_taken').value;
+    const date_of_inventory = document.getElementById('inventory_date_of_inventory').value;
+    const remarks = document.getElementById('inventory_remarks').value.trim();
+
+    if (!accession_no || !title || !date_of_inventory) {
+      showMessage('inventory-weeding-message', 'Accession No., Title, and Date of Inventory are required.', 'error');
+      return;
+    }
+
+    try {
+      const payload = { accession_no, date_received: date_received || null, ddc_no, author, title, condition, action_taken, remarks, date_of_inventory };
+      const url = currentInventoryWeedingId ? `/api/admin/inventory-weeding/${currentInventoryWeedingId}` : '/api/admin/inventory-weeding';
+      const method = currentInventoryWeedingId ? 'PUT' : 'POST';
+      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not save inventory report.');
+      showMessage('inventory-weeding-message', currentInventoryWeedingId ? 'Inventory report updated.' : 'Inventory report saved.', 'success');
+      resetInventoryWeedingForm();
+      await loadInventoryWeedingReports();
+    } catch (e) {
+      Swal.fire({ icon: 'error', title: 'Save Error', text: e.message || e, confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0' });
+    }
+  }
+
+  async function deleteInventoryWeedingReport(id) {
+    const result = await Swal.fire({ icon: 'warning', title: 'Delete this report?', text: 'This record will be removed permanently.', showCancelButton: true, confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0' });
+    if (!result.isConfirmed) return;
+    try {
+      const res = await fetch(`/api/admin/inventory-weeding/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not delete report.');
+      await loadInventoryWeedingReports();
+      Swal.fire({ icon: 'success', title: 'Deleted', confirmButtonColor: '#5b6ef5', background: '#1a1e2b', color: '#e8eaf0' });
+    } catch (e) {
+      Swal.fire({ icon: 'error', title: 'Delete Error', text: e.message || e, confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0' });
+    }
+  }
+
+  async function exportInventoryWeedingPDF() {
+    try {
+      if (!inventoryWeedingReports.length) {
+        Swal.fire({ icon: 'info', title: 'No reports to export', text: 'Add at least one inventory report before exporting.', confirmButtonColor: '#5b6ef5', background: '#1a1e2b', color: '#e8eaf0' });
+        return;
+      }
+      if (!window.html2pdfReady) throw new Error('PDF export loader is not initialized.');
+      await window.html2pdfReady;
+      if (typeof window.html2pdf !== 'function') throw new Error('PDF export library is not loaded yet.');
+
+      const container = document.createElement('div');
+      container.style.background = '#fff';
+      container.style.color = '#000';
+      container.style.padding = '24px';
+      container.style.width = '100%';
+      container.style.fontFamily = 'Arial, sans-serif';
+
+      const header = document.createElement('div');
+      header.style.textAlign = 'center';
+      header.style.marginBottom = '10px';
+      header.innerHTML = `
+        <img src="/images/Deped-Seal.png" style="height:76px; object-fit:contain; margin-bottom:6px;" />
+        <div style="font-weight:700; font-size:12px;">Republic of the Philippines</div>
+        <div style="font-weight:700; font-size:12px;">Department of Education</div>
+        <div style="font-size:10px; margin-top:4px;">Region VII - Central Visayas</div>
+        <div style="font-size:10px;">Sudlon, Lahug, Cebu City</div>
+        <div style="font-size:10px; margin-top:4px;">Division of Cebu Province</div>
+        <div style="font-size:10px; margin-top:4px;">Bala National High School</div>
+        <div style="font-size:16px; font-weight:800; margin-top:12px;">INVENTORY AND WEEDING REPORT</div>
+        <div style="font-size:10px; margin-top:2px;">SY 2026-2027</div>
+      `;
+      container.appendChild(header);
+
+      const table = document.createElement('table');
+      table.style.width = '100%';
+      table.style.borderCollapse = 'collapse';
+      table.style.tableLayout = 'fixed';
+      table.style.fontSize = '9px';
+
+      const thead = document.createElement('thead');
+      const headRow = document.createElement('tr');
+      ['ACCESSION NO.','DATE RECEIVED','DDC NO.','AUTHOR','TITLE','CONDITION','ACTION TAKEN','REMARKS','DATE OF INVENTORY'].forEach(text => {
+        const th = document.createElement('th');
+        th.textContent = text;
+        th.style.border = '0.5px solid #000';
+        th.style.padding = '6px';
+        th.style.fontWeight = '700';
+        th.style.background = '#f5f5f5';
+        th.style.textAlign = 'center';
+        th.style.verticalAlign = 'middle';
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      inventoryWeedingReports.forEach(report => {
+        const tr = document.createElement('tr');
+        const values = [report.accession_no || '', report.date_received || '', report.ddc_no || '', report.author || '', report.title || '', report.condition || '', report.action_taken || '', report.remarks || '', report.date_of_inventory || ''];
+        values.forEach(value => {
+          const td = document.createElement('td');
+          td.style.color = '#000';
+          td.textContent = value;
+          td.style.border = '0.5px solid #000';
+          td.style.padding = '6px';
+          td.style.verticalAlign = 'top';
+          td.style.wordBreak = 'break-word';
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      container.appendChild(table);
+      document.body.appendChild(container);
+
+      const opt = {
+        margin: [0.2, 0.2, 0.2, 0.2],
+        filename: `inventory_weeding_report_${new Date().toISOString().slice(0, 10)}.pdf`,
+        image: { type: 'jpeg', quality: 0.95 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+      };
+      await window.html2pdf().set(opt).from(container).save();
+      document.body.removeChild(container);
+    } catch (e) {
+      Swal.fire({ icon: 'error', title: 'Export Error', text: e.message || e, confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0' });
+    }
+  }
+
   function updateNonPrintResourcesTable() {
     const tbody = document.getElementById('resources-table');
     if (!allNonPrintResources.length) { tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-icon"><i class="fas fa-cubes"></i></div><div class="empty-text">No resources found</div></div></td></tr>`; return; }
     tbody.innerHTML = allNonPrintResources.map(r => `
       <tr>
-        <td><code>${r.code}</code></td>
-        <td>${r.unit}</td>
-        <td><strong>${r.name}</strong></td>
-        <td><span class="badge badge-purple">${r.category||'—'}</span></td>
-        <td><span class="badge ${r.condition==='Usable'?'badge-success':'badge-danger'}">${r.condition||'—'}</span></td>
+        <td><code>${r.resource_code || r.code || '—'}</code></td>
+        <td>${r.unit || r.units || '—'}</td>
+        <td><strong>${r.name || r.title || '—'}</strong></td>
+        <td><span class="badge badge-purple">${r.category || r.resource_type || '—'}</span></td>
+        <td><span class="badge ${r.condition==='Usable'?'badge-success':'badge-danger'}">${r.condition || r.status || '—'}</span></td>
         <td>
           <div class="action-group">
             <button class="btn btn-ghost btn-sm" onclick="openEditResourceModal('${r.id}')"><i class="fas fa-pen"></i></button>
-            <button class="btn btn-danger btn-sm" onclick="deleteNonPrintResource('${r.id}','${r.code}')"><i class="fas fa-trash"></i></button>
+            <button class="btn btn-danger btn-sm" onclick="deleteNonPrintResource('${r.id}','${r.resource_code || r.code || '—'}')"><i class="fas fa-trash"></i></button>
           </div>
         </td>
       </tr>`).join('');
   }
 
   async function addNonPrintResource() {
-    const code = document.getElementById('resource_code').value.trim();
+    const resource_code = document.getElementById('resource_code').value.trim();
     const unit = document.getElementById('resource_unit').value.trim();
     const name = document.getElementById('resource_name').value.trim();
     const category = document.getElementById('resource_category').value.trim();
     const condition = document.getElementById('resource_condition').value.trim();
-    if (!code||!unit||!name||!category||!condition) { showMessage('add-resource-message','All fields are required','error'); return; }
+    if (!resource_code||!unit||!name||!category||!condition) { showMessage('add-resource-message','All fields are required','error'); return; }
     try {
-      const res = await fetch('/api/admin/add-non-print-resource',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,unit,name,category,condition})});
+      const res = await fetch('/api/admin/add-non-print-resource',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({resource_code,unit,name,category,condition})});
       const d = await res.json();
       if(res.ok){
         Swal.fire({icon:'success',title:'Resource Added!',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'});
@@ -2667,7 +3812,7 @@
   function openEditResourceModal(id) {
     const r = allNonPrintResources.find(x=>x.id===id); if(!r) return;
     currentEditResourceId = id;
-    document.getElementById('edit_resource_code').value = r.code;
+    document.getElementById('edit_resource_code').value = r.resource_code || r.code || '';
     document.getElementById('edit_resource_unit').value = r.unit;
     document.getElementById('edit_resource_name').value = r.name;
     document.getElementById('edit_resource_category').value = r.category||'';
@@ -2676,14 +3821,14 @@
   }
 
   async function updateNonPrintResource() {
-    const code = document.getElementById('edit_resource_code').value.trim();
+    const resource_code = document.getElementById('edit_resource_code').value.trim();
     const unit = document.getElementById('edit_resource_unit').value.trim();
     const name = document.getElementById('edit_resource_name').value.trim();
     const category = document.getElementById('edit_resource_category').value.trim();
     const condition = document.getElementById('edit_resource_condition').value.trim();
-    if(!code||!unit||!name||!category||!condition){Swal.fire({icon:'warning',title:'All fields required',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'});return;}
+    if(!resource_code||!unit||!name||!category||!condition){Swal.fire({icon:'warning',title:'All fields required',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'});return;}
     try{
-      const res = await fetch(`/api/admin/non-print-resources/${currentEditResourceId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,unit,name,category,condition})});
+      const res = await fetch(`/api/admin/non-print-resources/${currentEditResourceId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({resource_code,unit,name,category,condition})});
       if(res.ok){Swal.fire({icon:'success',title:'Updated!',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}).then(()=>{closeModal('edit-resource-modal');loadNonPrintResources();});}
       else{Swal.fire({icon:'error',title:'Error',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'});}
     }catch(e){Swal.fire({icon:'error',title:'Connection Error',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'});}
@@ -2697,6 +3842,302 @@
       if(res.ok){Swal.fire({icon:'success',title:'Deleted',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}).then(()=>loadNonPrintResources());}
     });
   }
+
+  // Excel import helpers
+  async function ensureXLSX() {
+    if (typeof XLSX === 'undefined') {
+      await new Promise((res, rej) => { const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; s.onload=res; s.onerror=rej; document.head.appendChild(s); });
+    }
+  }
+
+  function parseSheetToJson(workbook) {
+    const firstSheet = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[firstSheet];
+    const json = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+    return json;
+  }
+
+  async function importBooksFromExcel() {
+    const input = document.getElementById('books_excel_input');
+    if (!input.files || !input.files[0]) { Swal.fire({icon:'warning',title:'Select a file',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); return; }
+    try {
+      await ensureXLSX();
+      const file = input.files[0];
+      const data = await file.arrayBuffer();
+      const wb = XLSX.read(data, { type: 'array' });
+      const rows = parseSheetToJson(wb);
+      if (!rows.length) { Swal.fire({icon:'warning',title:'No rows found',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); return; }
+
+      // map expected columns
+      const records = rows.map(r => ({
+        accession_number: r['Accession Number'] || r['accession_number'] || r['accession'] || r['Accession'] || r['accessionNumber'] || '',
+        call_number: r['Call Number'] || r['call_number'] || r['call'] || r['CallNo'] || '',
+        title: r['Title'] || r['title'] || r['Name'] || '',
+        author: r['Author'] || r['author'] || '',
+        category: r['Category'] || r['category'] || '',
+        copyright_year: r['Copyright Year'] || r['copyright_year'] || r['Year'] || '',
+        isbn: r['ISBN'] || r['isbn'] || '',
+        remarks: r['Remarks'] || r['remarks'] || ''
+      }));
+
+      const res = await fetch('/api/admin/import-books', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ records }) });
+      const d = await res.json();
+      if (res.ok) { Swal.fire({icon:'success',title:d.message || 'Imported',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); loadBooks(); input.value=''; }
+      else { Swal.fire({icon:'error',title:'Import failed',text:d.error||d.message,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+    } catch(e) { Swal.fire({icon:'error',title:'Import Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+  }
+
+  async function importNonPrintFromExcel() {
+    const input = document.getElementById('nonprint_excel_input');
+    if (!input.files || !input.files[0]) { Swal.fire({icon:'warning',title:'Select a file',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); return; }
+    try {
+      await ensureXLSX();
+      const file = input.files[0];
+      const data = await file.arrayBuffer();
+      const wb = XLSX.read(data, { type: 'array' });
+      const rows = parseSheetToJson(wb);
+      if (!rows.length) { Swal.fire({icon:'warning',title:'No rows found',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); return; }
+
+      const records = rows.map(r => ({
+        resource_code: r['Code'] || r['code'] || r['Resource Code'] || r['resource_code'] || '',
+        unit: r['Unit'] || r['unit'] || r['Units'] || r['Quantity'] || '',
+        title: r['Name'] || r['Title'] || r['name'] || r['title'] || '',
+        category: r['Category'] || r['category'] || '',
+        condition: r['Condition'] || r['condition'] || r['Status'] || '',
+        description: r['Description'] || r['description'] || ''
+      }));
+
+      const res = await fetch('/api/admin/import-non-print-resources', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ records }) });
+      const d = await res.json();
+      if (res.ok) { Swal.fire({icon:'success',title:d.message || 'Imported',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); loadNonPrintResources(); input.value=''; }
+      else { Swal.fire({icon:'error',title:'Import failed',text:d.error||d.message,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+    } catch(e) { Swal.fire({icon:'error',title:'Import Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+  }
+
+  // Paste parsing & saving for quick Excel copy-paste
+  function splitRow(line) {
+    // Try tab first, then comma
+    if (line.indexOf('\t') !== -1) return line.split('\t');
+    return line.split(',');
+  }
+
+  function normalizeHeader(h) { return (h||'').toString().trim().toLowerCase().replace(/\s+/g,' ').replace(/[^a-z0-9 ]/g,''); }
+
+  function mapRowToBook(headers, cols) {
+    const hmap = {};
+    headers.forEach((h,i)=>hmap[normalizeHeader(h)]=i);
+    const get = keys => { for (const k of keys) { const idx=hmap[k]; if (idx!==undefined) return (cols[idx]||'').toString().trim(); } return ''; };
+    return {
+      accession_number: get(['accession number','accession_number','accession','accessionnumber']),
+      call_number: get(['call number','call_number','call no','callno','call']),
+      title: get(['title','name']),
+      author: get(['author','authors']),
+      category: get(['category']),
+      copyright_year: get(['copyright year','copyright_year','year']),
+      isbn: get(['isbn']),
+      remarks: get(['remarks','remark'])
+    };
+  }
+
+  async function pasteBooksParse() {
+    const txt = document.getElementById('books_paste_area').value.trim();
+    if (!txt) { Swal.fire({icon:'warning',title:'Nothing to parse',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); return; }
+    const lines = txt.split(/\r?\n/).filter(l=>l.trim());
+    const headers = splitRow(lines[0]).map(h=>h.trim());
+    const rows = lines.slice(1).map(l=>splitRow(l));
+    const records = rows.map(cols=>mapRowToBook(headers, cols));
+    // filter out invalid
+    const valid = records.filter(r=>r.accession_number && r.call_number && r.title && r.author && r.category);
+    if (!valid.length) { Swal.fire({icon:'error',title:'No valid rows found',text:'Ensure header row present and required columns available',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); return; }
+    try {
+      const res = await fetch('/api/admin/import-books',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({records: valid})});
+      const d = await res.json();
+      if (res.ok) { Swal.fire({icon:'success',title:d.message||'Imported',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); loadBooks(); document.getElementById('books_paste_area').value=''; }
+      else Swal.fire({icon:'error',title:'Import failed',text:d.error||d.message,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'});
+    } catch(e) { Swal.fire({icon:'error',title:'Import Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+  }
+
+  // ---------- Bulk table handlers for books ----------
+  function makeCellInput(value, placeholder, type = 'text') {
+    const inp = document.createElement('input');
+    inp.type = type;
+    inp.value = value || '';
+    inp.placeholder = placeholder || '';
+    inp.style.width = '100%';
+    inp.style.padding = '6px';
+    inp.style.border = '1px solid var(--border)';
+    inp.style.background = 'transparent';
+    inp.style.color = 'var(--text)';
+    inp.style.minHeight = '32px';
+    inp.setAttribute('autocomplete', 'off');
+    if (type === 'number') {
+      inp.style.webkitAppearance = 'none';
+      inp.style.mozAppearance = 'textfield';
+    }
+    return inp;
+  }
+
+  function addBulkBookRow(data={}) {
+    const tbody = document.getElementById('books_bulk_tbody');
+    const tr = document.createElement('tr');
+    const cols = [
+      { key: 'accession_number', placeholder: 'ACC-001' },
+      { key: 'call_number', placeholder: 'FIC-100' },
+      { key: 'title', placeholder: 'Title' },
+      { key: 'author', placeholder: 'Author' },
+      { key: 'category', placeholder: 'Category' },
+      { key: 'date_received', placeholder: 'YYYY-MM-DD', type: 'date' },
+      { key: 'ddc_no', placeholder: 'DDC No.' },
+      { key: 'edition', placeholder: 'Edition' },
+      { key: 'volumes', placeholder: 'Volumes' },
+      { key: 'pages', placeholder: 'Pages' },
+      { key: 'source_of_fund', placeholder: 'Source of Found' },
+      { key: 'price', placeholder: 'Price' },
+      { key: 'publisher', placeholder: 'Publisher' },
+      { key: 'copyright_year', placeholder: 'Year', type: 'number' },
+      { key: 'isbn', placeholder: 'ISBN' },
+      { key: 'remarks', placeholder: 'Remarks' }
+    ];
+    cols.forEach(c=>{
+      const td = document.createElement('td'); td.style.padding='4px'; td.style.verticalAlign='middle';
+      const inp = makeCellInput(data[c.key]||'', c.placeholder, c.type || 'text');
+      inp.dataset.key = c.key;
+      inp.addEventListener('paste', (event) => {
+        const clip = (event.clipboardData || window.clipboardData).getData('text');
+        if (!clip) return;
+        event.preventDefault();
+        const rows = clip.replace(/\r/g, '').split('\n').filter(r => r.length);
+        const cells = rows.map(r => r.split('\t'));
+        const targetRow = tr;
+        const targetInputs = Array.from(targetRow.querySelectorAll('input'));
+        const startIndex = targetInputs.indexOf(inp);
+        if (cells.length === 1 && cells[0].length === 1) {
+          inp.value = cells[0][0];
+          return;
+        }
+        cells.forEach((row, rowIndex) => {
+          const rowTarget = tbody.children[Array.from(tbody.children).indexOf(targetRow) + rowIndex];
+          if (!rowTarget) return;
+          row.forEach((cellValue, colIndex) => {
+            const input = rowTarget.querySelectorAll('input')[startIndex + colIndex];
+            if (input) input.value = cellValue;
+          });
+        });
+      });
+      td.appendChild(inp);
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  }
+
+  function removeBulkBookRow() {
+    const tbody = document.getElementById('books_bulk_tbody');
+    if (!tbody.lastElementChild) return;
+    tbody.removeChild(tbody.lastElementChild);
+  }
+
+  function gatherBulkBookRows() {
+    const tbody = document.getElementById('books_bulk_tbody');
+    const rows = Array.from(tbody.children || []);
+    return rows.map(tr=>{
+      const obj = {};
+      Array.from(tr.querySelectorAll('input')).forEach(inp=>{ obj[inp.dataset.key]=inp.value.trim(); });
+      return obj;
+    });
+  }
+
+  async function saveBulkBooks() {
+    const rows = gatherBulkBookRows();
+    const valid = rows.filter(r=>r.accession_number && r.call_number && r.title && r.author && r.category);
+    if (!valid.length) { Swal.fire({icon:'warning',title:'No valid rows',text:'Each row requires Accession, Call No, Title, Author, and Category',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); return; }
+    try {
+      const res = await fetch('/api/admin/import-books',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ records: valid }) });
+      let d = null;
+      try { d = await res.json(); } catch (e) { d = {}; }
+      if (res.ok) { Swal.fire({icon:'success',title:d?.message || 'Imported',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); loadBooks(); document.getElementById('books_bulk_tbody').innerHTML=''; for(let i=0;i<3;i++) addBulkBookRow(); }
+      else { Swal.fire({icon:'error',title:'Import failed',text:d?.error || d?.message || 'Unknown import error',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+    } catch(e) { Swal.fire({icon:'error',title:'Import Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+  }
+
+  // initialize with 3 blank rows
+  (function(){ try{ if(document.getElementById('books_bulk_tbody')){ for(let i=0;i<3;i++) addBulkBookRow(); } }catch(e){} })();
+
+  function mapRowToNonPrint(headers, cols) {
+    const hmap = {};
+    headers.forEach((h,i)=>hmap[normalizeHeader(h)]=i);
+    const get = keys => { for (const k of keys) { const idx=hmap[k]; if (idx!==undefined) return (cols[idx]||'').toString().trim(); } return ''; };
+    return {
+      resource_code: get(['code','resource code','resource_code','resourcecode']),
+      unit: get(['unit','units','quantity']),
+      title: get(['name','title']),
+      category: get(['category']),
+      condition: get(['condition','status']),
+      description: get(['description'])
+    };
+  }
+
+  async function pasteNonPrintParse() {
+    const txt = document.getElementById('nonprint_paste_area').value.trim();
+    if (!txt) { Swal.fire({icon:'warning',title:'Nothing to parse',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); return; }
+    const lines = txt.split(/\r?\n/).filter(l=>l.trim());
+    const headers = splitRow(lines[0]).map(h=>h.trim());
+    const rows = lines.slice(1).map(l=>splitRow(l));
+    const records = rows.map(cols=>mapRowToNonPrint(headers, cols));
+    const valid = records.filter(r=>r.resource_code && r.unit && r.title && r.category && r.condition);
+    if (!valid.length) { Swal.fire({icon:'error',title:'No valid rows found',text:'Ensure header row present and required columns available',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); return; }
+    try {
+      const res = await fetch('/api/admin/import-non-print-resources',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({records: valid})});
+      const d = await res.json();
+      if (res.ok) { Swal.fire({icon:'success',title:d.message||'Imported',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); loadNonPrintResources(); document.getElementById('nonprint_paste_area').value=''; }
+      else Swal.fire({icon:'error',title:'Import failed',text:d.error||d.message,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'});
+    } catch(e) { Swal.fire({icon:'error',title:'Import Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+  }
+
+  // ---------- Bulk table handlers for non-print resources ----------
+  function addBulkResourceRow(data={}){
+    const tbody = document.getElementById('resources_bulk_tbody');
+    const tr = document.createElement('tr');
+    const cols = [
+      { key: 'resource_code', placeholder: 'CODE-001' },
+      { key: 'unit', placeholder: '1' },
+      { key: 'title', placeholder: 'Resource name' },
+      { key: 'category', placeholder: 'Computer' },
+      { key: 'condition', placeholder: 'Usable' },
+      { key: 'description', placeholder: 'Optional notes' }
+    ];
+    cols.forEach(c=>{
+      const td = document.createElement('td'); td.style.padding='4px'; td.style.verticalAlign='middle';
+      const inp = makeCellInput(data[c.key]||'', c.placeholder);
+      inp.dataset.key = c.key;
+      td.appendChild(inp);
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  }
+
+  function removeBulkResourceRow(){
+    const tbody = document.getElementById('resources_bulk_tbody'); if(!tbody.lastElementChild) return; tbody.removeChild(tbody.lastElementChild);
+  }
+
+  function gatherBulkResourceRows(){
+    const tbody = document.getElementById('resources_bulk_tbody'); const rows = Array.from(tbody.children||[]);
+    return rows.map(tr=>{ const obj={}; Array.from(tr.querySelectorAll('input')).forEach(inp=>obj[inp.dataset.key]=inp.value.trim()); return obj; });
+  }
+
+  async function saveBulkResources(){
+    const rows = gatherBulkResourceRows();
+    const valid = rows.filter(r=>r.resource_code && r.unit && r.title && r.category && r.condition);
+    if(!valid.length){ Swal.fire({icon:'warning',title:'No valid rows',text:'Each row requires Code, Units, Name, Category, Condition',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); return; }
+    try{
+      const res = await fetch('/api/admin/import-non-print-resources',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({records: valid})});
+      const d = await res.json();
+      if(res.ok){ Swal.fire({icon:'success',title:d.message||'Imported',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); loadNonPrintResources(); document.getElementById('resources_bulk_tbody').innerHTML=''; for(let i=0;i<3;i++) addBulkResourceRow(); }
+      else Swal.fire({icon:'error',title:'Import failed',text:d.error||d.message,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'});
+    }catch(e){ Swal.fire({icon:'error',title:'Import Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+  }
+
+  // initialize with 3 blank rows for resources
+  (function(){ try{ if(document.getElementById('resources_bulk_tbody')){ for(let i=0;i<3;i++) addBulkResourceRow(); } }catch(e){} })();
 
   /* ── Borrowing ─────────────────────────────── */
   function showBorrowingTab(tab) {
@@ -2923,16 +4364,593 @@
   function generateCSVReport() {
     let csv = 'Student ID,Name,Grade,Strand,Total Visits\n';
     allStudents.forEach(s => {
-      const visits = allLogs.filter(l=>l.user_id===s.id).length;
+      const visits = allLogs.filter(l => l.user_id === s.id).length;
       csv += `${s.student_id},${s.name},${s.grade},${s.strand},${visits}\n`;
     });
-    const blob = new Blob([csv],{type:'text/csv'});
+    const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href=url; a.download='slrc-report.csv'; a.click();
+    const a = document.createElement('a'); a.href = url; a.download = 'slrc-report.csv'; a.click();
   }
 
-  function generatePDFReport() {
-    Swal.fire({icon:'info',title:'Coming Soon',text:'PDF export will be available in the next update.',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'});
+  async function getMostFrequentLibraryUsers() {
+    if (!allLogs.length) await loadActivityLogs();
+    if (!allStudents.length) await loadStudents();
+    if (!allFaculty.length) await loadFaculty();
+
+    const studentMap = new Map(allStudents.map(s => [s.id, s]));
+    const facultyMap = new Map(allFaculty.map(f => [f.id, f]));
+    const counts = new Map();
+
+    allLogs.forEach(log => {
+      const key = `${log.user_type || 'unknown'}::${log.user_id || ''}`;
+      const existing = counts.get(key) || {
+        userType: log.user_type || 'unknown',
+        userId: log.user_id,
+        label: '',
+        count: 0,
+        lastVisit: null,
+        details: null,
+        rawLog: log
+      };
+      existing.count += 1;
+      existing.rawLog = log;
+      const logDate = new Date(log.action_date || log.date_borrowed || log.created_at || null);
+      if (!Number.isNaN(logDate.getTime())) {
+        if (!existing.lastVisit || logDate > new Date(existing.lastVisit)) {
+          existing.lastVisit = log.action_date || log.date_borrowed || log.created_at || existing.lastVisit;
+        }
+      }
+      counts.set(key, existing);
+    });
+
+    const userList = Array.from(counts.values()).map(item => {
+      let label = '';
+      let typeLabel = item.userType;
+      let details = {
+        library_id: '',
+        name: '',
+        age: '',
+        grade: '',
+        section: '',
+        session: '',
+        position: '',
+        employee_no: '',
+        subject_area: '',
+        grade_level: ''
+      };
+
+      if (item.userType === 'student') {
+        const student = studentMap.get(item.userId);
+        label = student?.name || item.rawLog?.student_name || 'Learner';
+        typeLabel = 'Learner';
+        details = {
+          library_id: student?.student_id || item.rawLog?.student_id || '',
+          name: student?.name || item.rawLog?.student_name || '',
+          age: student?.age || item.rawLog?.age || '',
+          grade: student?.grade || item.rawLog?.grade || '',
+          section: student?.section || item.rawLog?.section || '',
+          session: student?.session || item.rawLog?.session || '',
+          position: '',
+          employee_no: '',
+          subject_area: '',
+          grade_level: ''
+        };
+      } else if (item.userType === 'faculty') {
+        const faculty = facultyMap.get(item.userId);
+        label = faculty?.name || item.rawLog?.faculty_name || 'Faculty';
+        typeLabel = 'Faculty';
+        details = {
+          library_id: faculty?.faculty_id || item.rawLog?.faculty_id || '',
+          name: faculty?.name || item.rawLog?.faculty_name || '',
+          age: faculty?.age || item.rawLog?.age || '',
+          grade: '',
+          section: '',
+          session: '',
+          position: faculty?.position || item.rawLog?.position || '',
+          employee_no: faculty?.employee_no || item.rawLog?.employee_no || '',
+          subject_area: faculty?.subject_area || item.rawLog?.subject_area || '',
+          grade_level: faculty?.grade_level || item.rawLog?.grade_level || ''
+        };
+      } else {
+        label = item.rawLog?.student_name || item.rawLog?.faculty_name || item.userType || 'Unknown';
+        typeLabel = item.userType.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        details = {
+          library_id: item.rawLog?.student_id || item.rawLog?.faculty_id || '',
+          name: label,
+          age: item.rawLog?.age || '',
+          grade: item.rawLog?.grade || '',
+          section: item.rawLog?.section || '',
+          session: item.rawLog?.session || '',
+          position: item.rawLog?.position || '',
+          employee_no: item.rawLog?.employee_no || '',
+          subject_area: item.rawLog?.subject_area || '',
+          grade_level: item.rawLog?.grade_level || ''
+        };
+      }
+
+      return { ...item, label, typeLabel, details };
+    }).filter(item => item.label && item.count > 0);
+
+    userList.sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+    return {
+      topUsers: userList.slice(0, 3),
+      topUser: userList[0] || null
+    };
+  }
+
+  function updateTopUserCard(stats) {
+    const summary = document.getElementById('top-user-summary');
+    const tbody = document.getElementById('top-user-table');
+    if (!summary || !tbody) return;
+
+    if (!stats?.topUser) {
+      summary.textContent = 'No library visit data available yet.';
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-mute)">No user activity yet</td></tr>';
+      return;
+    }
+
+    summary.innerHTML = `Most frequent user: <strong>${stats.topUser.label}</strong> (${stats.topUser.typeLabel}) with <strong>${stats.topUser.count}</strong> visits.`;
+    tbody.innerHTML = stats.topUsers.map((user, index) => `
+      <tr>
+        <td style="text-align:center;">${index + 1}</td>
+        <td>${user.label}</td>
+        <td style="text-align:center;">${user.typeLabel}</td>
+        <td style="text-align:center;">${user.count}</td>
+      </tr>
+    `).join('');
+  }
+  async function exportAccessionRecordPDF() {
+    try {
+      if (!window.html2pdfReady) throw new Error('PDF export loader is not initialized.');
+      await window.html2pdfReady;
+      if (typeof window.html2pdf !== 'function') throw new Error('PDF export library is not loaded yet.');
+      if (!allBooks.length) await loadBooks();
+
+      const container = document.createElement('div');
+      container.style.boxSizing = 'border-box';
+      container.style.width = '11.69in';
+      container.style.padding = '0.6in';
+      container.style.fontFamily = 'Times New Roman, serif';
+      container.style.color = '#000';
+      container.style.fontSize = '7pt';
+      container.style.background = '#fff';
+
+      const topEmblem = document.createElement('div');
+      topEmblem.style.textAlign = 'center';
+      topEmblem.style.marginBottom = '4px';
+      const topImg = document.createElement('img');
+      topImg.src = '/images/Deped-Seal.png';
+      topImg.style.height = '80px';
+      topImg.style.objectFit = 'contain';
+      topEmblem.appendChild(topImg);
+      container.appendChild(topEmblem);
+
+      const headerBlock = document.createElement('div');
+      headerBlock.style.textAlign = 'center';
+      headerBlock.style.lineHeight = '1.2';
+      headerBlock.style.marginBottom = '10px';
+      headerBlock.innerHTML = `
+        <div style="font-weight:700; font-size:11px">Republic of the Philippines</div>
+        <div style="font-weight:700; font-size:11px">Department of Education</div>
+        <div style="font-size:9px; margin-top:3px">Region VII - Central Visayas</div>
+        <div style="font-size:9px">Sudlon, Lahug, Cebu City</div>
+        <div style="font-size:9px; margin-top:3px">Bala National High School</div>
+        <div style="margin-top:8px; font-weight:800; font-size:16px">ACCESSION RECORD</div>
+      `;
+      container.appendChild(headerBlock);
+
+      const table = document.createElement('table');
+      table.style.width = '100%';
+      table.style.borderCollapse = 'collapse';
+      table.style.tableLayout = 'fixed';
+      table.style.fontSize = '6.2pt';
+      table.style.border = '1px solid #000';
+
+      const thead = document.createElement('thead');
+      const headerRow = document.createElement('tr');
+      const headers = [
+        'ACCESSION NO.',
+        'DATE RECEIVED',
+        'DDC NO.',
+        'AUTHOR',
+        'TITLE',
+        'EDITION',
+        'VOLUMES',
+        'PAGES',
+        'SOURCE OF FOUND',
+        'PRICE',
+        'PUBLISHER',
+        'COPYRIGHT YEAR',
+        'REMARKS'
+      ];
+
+      headers.forEach(text => {
+        const th = document.createElement('th');
+        th.textContent = text;
+        th.style.border = '1px solid #000';
+        th.style.padding = '4px';
+        th.style.textAlign = 'center';
+        th.style.fontWeight = '700';
+        th.style.background = '#f3f4f6';
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      const safeValue = value => (value === null || value === undefined || value === '' ? '' : String(value));
+      const formatDate = value => {
+        if (!value) return '';
+        const d = new Date(value);
+        if (Number.isNaN(d.getTime())) return safeValue(value);
+        return d.toISOString().split('T')[0];
+      };
+      const exportBooks = (allBooks || []).filter(book => {
+        const value = book?.date_received;
+        return value !== null && value !== undefined && String(value).trim() !== '';
+      });
+
+      if (!exportBooks.length) {
+        Swal.fire({ icon: 'info', title: 'No books to export', text: 'Add a Date Received to at least one book before exporting the accession record.', confirmButtonColor: '#5b6ef5', background: '#1a1e2b', color: '#e8eaf0' });
+        if (container.parentNode) container.parentNode.removeChild(container);
+        return;
+      }
+
+      exportBooks.forEach(book => {
+        const tr = document.createElement('tr');
+        const values = [
+          book.accession_number || '',
+          formatDate(book.date_received),
+          book.ddc_no || book.call_number || '',
+          book.author || '',
+          book.title || '',
+          book.edition || '',
+          book.volumes || '',
+          book.pages || '',
+          book.source_of_fund || book.source_of_found || '',
+          book.price || '',
+          book.publisher || '',
+          book.copyright_year || '',
+          book.remarks || ''
+        ];
+
+        values.forEach(value => {
+          const td = document.createElement('td');
+          td.textContent = safeValue(value);
+          td.style.color = '#000';
+          td.style.border = '1px solid #000';
+          td.style.padding = '4px';
+          td.style.verticalAlign = 'top';
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+
+      table.appendChild(tbody);
+      container.appendChild(table);
+
+      const opts = {
+        margin: 0,
+        filename: 'accession_record.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+      };
+
+      document.body.appendChild(container);
+      try {
+        await window.html2pdf().set(opts).from(container).save();
+      } finally {
+        if (container.parentNode) container.parentNode.removeChild(container);
+      }
+    } catch (e) {
+      console.error(e);
+      Swal.fire({ icon: 'error', title: 'Export Error', text: e.message || e, confirmButtonColor: '#f43f5e' });
+    }
+  }
+
+  async function exportMonthlyStatisticsPDF() {
+    try {
+      if (!window.html2pdfReady) throw new Error('PDF export loader is not initialized.');
+      await window.html2pdfReady;
+      if (typeof window.html2pdf !== 'function') throw new Error('PDF export library is not loaded yet.');
+      if (!allLogs.length) await loadActivityLogs();
+      if (!allStudents.length) await loadStudents();
+      if (!allFaculty.length) await loadFaculty();
+      if (!allStakeholders.length) await loadStakeholders();
+
+      const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      const today = new Date();
+      const targetMonth = today.getMonth();
+      const targetYear = today.getFullYear();
+      const monthLabel = `${monthNames[targetMonth]} ${targetYear}`;
+      const weekCount = 5;
+
+      const gradeLabels = ['Gr.7','Gr.8','Gr.9','Gr.10','Gr.11','Gr.12'];
+      const gradeCounts = gradeLabels.map(() => Array(weekCount).fill(0));
+
+      const teacherBuckets = { JHS: Array(weekCount).fill(0), SHS: Array(weekCount).fill(0) };
+      const otherBuckets = { 'Non-Teaching Staff': Array(weekCount).fill(0), Stakeholders: Array(weekCount).fill(0), Total: Array(weekCount).fill(0) };
+
+      const studentMap = new Map(allStudents.map(s => [String(s.id), s]));
+      const facultyMap = new Map(allFaculty.map(f => [String(f.id), f]));
+      const stakeholderMap = new Map((allStakeholders || []).map(s => [String(s.id || s.user_id || ''), s]).filter(([k]) => k));
+
+      const getLogDate = log => new Date(log.action_date || log.checked_at || log.created_at || log.timestamp || log.date || log.actionDate || null);
+      const getWeekIndex = d => {
+        if (!(d instanceof Date) || Number.isNaN(d.getTime())) return -1;
+        if (d.getMonth() !== targetMonth || d.getFullYear() !== targetYear) return -1;
+        return Math.min(weekCount - 1, Math.floor((d.getDate() - 1) / 7));
+      };
+
+      const extractGradeNumber = str => {
+        if (!str) return null;
+        const s = String(str).toLowerCase();
+        const m = s.match(/(gr\.?|grade\s*)?(\d{1,2})/i);
+        if (m && m[2]) return Number(m[2]);
+        const num = s.match(/\b(\d{1,2})\b/);
+        return num ? Number(num[1]) : null;
+      };
+
+      const classifyTeacherLevel = faculty => {
+        const gradeLevel = (faculty?.grade_level || faculty?.gradeLevel || faculty?.grade || '').toString().trim();
+        const subjectArea = (faculty?.subject_area || faculty?.subjectArea || faculty?.subject || '').toString().trim();
+        const probe = `${gradeLevel} ${subjectArea} ${faculty?.position || ''}`.toLowerCase();
+
+        if (!gradeLevel && !subjectArea) return 'non-teaching';
+        if (/11|12|shs|senior/.test(probe)) return 'SHS';
+        if (/7|8|9|10|jhs|junior/.test(probe)) return 'JHS';
+        return 'JHS';
+      };
+
+      const formatCount = value => (value === null || value === undefined || value === '' ? '0' : String(value));
+
+      allLogs.forEach(log => {
+        const d = getLogDate(log);
+        const wi = getWeekIndex(d);
+        if (wi < 0) return;
+
+        const userType = (log.user_type || '').toString().toLowerCase();
+        const uid = String(log.user_id || log.userId || log.student_id || log.faculty_id || '');
+
+        if (userType === 'stakeholder' || stakeholderMap.has(uid)) {
+          otherBuckets.Stakeholders[wi] += 1;
+          return;
+        }
+
+        if (userType === 'faculty' || facultyMap.has(uid)) {
+          const faculty = facultyMap.get(uid) || {};
+          const bucket = classifyTeacherLevel(faculty);
+          if (bucket === 'non-teaching') otherBuckets['Non-Teaching Staff'][wi] += 1;
+          else teacherBuckets[bucket][wi] += 1;
+          return;
+        }
+
+        if (userType === 'student' || studentMap.has(uid)) {
+          const student = studentMap.get(uid) || {};
+          const gnum = extractGradeNumber(student.grade || student.section || student.session || log.grade || log.raw_grade);
+          if (gnum >= 7 && gnum <= 12) {
+            const idx = gnum - 7;
+            if (gradeCounts[idx]) gradeCounts[idx][wi] += 1;
+          }
+          return;
+        }
+
+        // Others
+        if (userType === 'non-teaching' || /non[- ]?teaching/.test(userType)) otherBuckets['Non-Teaching Staff'][wi] += 1;
+        else if (userType === 'school-governing' || /govern/.test(userType)) otherBuckets['Non-Teaching Staff'][wi] += 1;
+        else otherBuckets.Total[wi] += 1;
+      });
+
+      // compute totals
+      const learnerWeekTotals = gradeCounts.reduce((acc, row) => row.map((v,i) => acc[i] + v), Array(weekCount).fill(0));
+      const learnerGrandTotal = learnerWeekTotals.reduce((s,v) => s+v, 0);
+      const gradeTotals = gradeCounts.map(r => r.reduce((s,v) => s+v, 0));
+
+      // ensure teacher total
+      teacherBuckets.Total = teacherBuckets.Total || Array(weekCount).fill(0);
+      for (let i=0;i<weekCount;i++) teacherBuckets.Total[i] = (teacherBuckets.JHS[i]||0) + (teacherBuckets.SHS[i]||0);
+      const teacherGrand = teacherBuckets.Total.reduce((s,v)=>s+v,0);
+
+      otherBuckets.Total = otherBuckets.Total || Array(weekCount).fill(0);
+      for (let i=0;i<weekCount;i++) otherBuckets.Total[i] = (otherBuckets['Non-Teaching Staff'][i]||0) + (otherBuckets.Stakeholders[i]||0) + (otherBuckets.Total[i]||0);
+      const otherGrand = otherBuckets.Total.reduce((s,v)=>s+v,0);
+
+      const grandByWeek = learnerWeekTotals.map((v,i) => v + (teacherBuckets.Total[i]||0) + (otherBuckets.Total[i]||0));
+      const grandTotal = grandByWeek.reduce((s,v)=>s+v,0);
+
+      const container = document.createElement('div');
+      container.style.boxSizing = 'border-box';
+      container.style.width = '11.69in'; // A4 landscape width
+      container.style.padding = '1in'; // 1in margins on all sides
+      container.style.fontFamily = 'Times New Roman, serif';
+      container.style.color = '#000';
+      container.style.fontSize = '5pt';
+
+      // Top emblem centered (small)
+      const topEmblem = document.createElement('div');
+      topEmblem.style.textAlign = 'center';
+      topEmblem.style.marginBottom = '0px';
+      const topImg = document.createElement('img'); topImg.src = '/images/Deped-Seal.png'; topImg.style.height = '100px'; topImg.style.objectFit = 'contain'; topImg.style.marginTop = '-100px';
+      topEmblem.appendChild(topImg);
+      container.appendChild(topEmblem);
+
+      // Centered header block
+      const centerBlock = document.createElement('div');
+      centerBlock.style.textAlign = 'center';
+      centerBlock.style.lineHeight = '1';
+      centerBlock.style.marginBottom = '6px';
+      centerBlock.innerHTML = `
+        <div style="font-weight:700; font-size:11px">Republic of the Philippines</div>
+        <div style="font-weight:700; font-size:11px">Department of Education</div>
+        <div style="font-size:10px; margin-top:4px">Region VII - Central Visayas</div>
+        <div style="font-size:10px">Sudlon, Lahug, Cebu City</div>
+        <div style="font-size:10px;margin-top:4px"> Division of Cebu Province</div>
+        <div style="font-size:10px; margin-top:4px">Bala National High School</div>
+        <div style="margin-top:8px; font-weight:800; font-size:16px">School Library Monthly Statistics(Attendance)</div>
+        <div style="font-size:10px; margin-top:4px; display:flex; justify-content:center; gap:12px;">
+          <span>Month: ${monthLabel}</span>
+          <span>SY ${targetYear}-${targetYear + 1}</span>
+        </div>
+      `;
+      container.appendChild(centerBlock);
+
+
+
+      const createTable = (headers, rows, footerIndex=null) => {
+        const table = document.createElement('table');
+        table.style.width = '100%';
+        table.style.borderCollapse = 'collapse';
+        table.style.marginTop = '12px';
+        table.style.fontSize = '10px';
+
+        const thead = document.createElement('thead');
+        const htr = document.createElement('tr');
+        headers.forEach(h => { const th = document.createElement('th'); th.textContent = h; th.style.border='0.5px solid #000'; th.style.padding='6px'; th.style.fontWeight='700'; th.style.textAlign='center'; htr.appendChild(th); });
+        thead.appendChild(htr); table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+        rows.forEach((row, ri) => {
+          const tr = document.createElement('tr');
+          row.forEach((cell, ci) => { const td = document.createElement('td'); td.textContent = cell===0? '0' : (cell || ''); td.style.border='0.5px solid #000'; td.style.padding='6px'; td.style.textAlign = ci===0 ? 'left' : 'center'; tr.appendChild(td); });
+          if (footerIndex !== null && ri === footerIndex) { tr.style.fontWeight='700'; tr.style.background='white'; }
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        return table;
+      };
+
+      // Combined table matching the official layout: Week | Learners(Gr.7-12) | Sub Total | Teachers(JHS,SHS) | Sub Total | Others(Non-Teaching,School Governing) | Sub Total | Grand Total
+      const table = document.createElement('table');
+      table.style.color = '#000';
+      table.style.width = '100%';
+      table.style.borderCollapse = 'collapse';
+      table.style.marginTop = '12px';
+      table.style.tableLayout = 'fixed';
+      table.style.fontSize = '10px';
+
+      const thead = document.createElement('thead');
+      // Header row 1
+      const hr1 = document.createElement('tr');
+      const thWeek = document.createElement('th'); thWeek.textContent = 'WEEK'; thWeek.rowSpan = 2; thWeek.style.border = '0.5px solid #000'; thWeek.style.padding = '6px'; thWeek.style.textAlign = 'center'; thWeek.style.verticalAlign = 'middle';thWeek.style.color = '#475569'; thWeek.style.backgroundColor = '#f0f0f0'; hr1.appendChild(thWeek);
+
+      const thLearners = document.createElement('th'); thLearners.textContent = 'LEARNERS'; thLearners.colSpan = gradeLabels.length; thLearners.style.border = '0.5px solid #000'; thLearners.style.padding = '6px'; thLearners.style.textAlign = 'center'; thLearners.style.verticalAlign = 'middle'; thLearners.style.color = '#475569'; thLearners.style.fontWeight = '700'; thLearners.style.backgroundColor = '#f0f0f0'; hr1.appendChild(thLearners);
+
+      const thLearnerSub = document.createElement('th'); thLearnerSub.textContent = 'SUB TOTAL'; thLearnerSub.rowSpan = 2; thLearnerSub.style.border = '0.5px solid #000'; thLearnerSub.style.padding = '6px'; thLearnerSub.style.textAlign = 'center'; thLearnerSub.style.verticalAlign = 'middle'; thLearnerSub.style.color = '#475569'; thLearnerSub.style.fontWeight = '700'; thLearnerSub.style.backgroundColor = '#f0f0f0'; hr1.appendChild(thLearnerSub);
+
+      const thTeachers = document.createElement('th'); thTeachers.textContent = 'TEACHERS'; thTeachers.colSpan = 2; thTeachers.style.border = '0.5px solid #000'; thTeachers.style.padding = '6px'; thTeachers.style.textAlign = 'center'; thTeachers.style.verticalAlign = 'middle'; thTeachers.style.color = '#475569'; thTeachers.style.fontWeight = '700'; thTeachers.style.backgroundColor = '#f0f0f0'; hr1.appendChild(thTeachers);
+
+      const thTeacherSub = document.createElement('th'); thTeacherSub.textContent = 'SUB TOTAL'; thTeacherSub.rowSpan = 2; thTeacherSub.style.border = '0.5px solid #000'; thTeacherSub.style.padding = '6px'; thTeacherSub.style.textAlign = 'center'; thTeacherSub.style.verticalAlign = 'middle'; thTeacherSub.style.color = '#475569'; thTeacherSub.style.fontWeight = '700'; thTeacherSub.style.backgroundColor = '#f0f0f0'; hr1.appendChild(thTeacherSub);
+
+      const thOthers = document.createElement('th'); thOthers.textContent = 'OTHERS'; thOthers.colSpan = 2; thOthers.style.border = '0.5px solid #000'; thOthers.style.padding = '6px'; thOthers.style.textAlign = 'center'; thOthers.style.verticalAlign = 'middle'; thOthers.style.color = '#475569'; thOthers.style.fontWeight = '700'; thOthers.style.backgroundColor = '#f0f0f0'; hr1.appendChild(thOthers);
+
+      const thOtherSub = document.createElement('th'); thOtherSub.textContent = 'SUB TOTAL'; thOtherSub.rowSpan = 2; thOtherSub.style.border = '0.5px solid #000'; thOtherSub.style.padding = '6px'; thOtherSub.style.textAlign = 'center'; thOtherSub.style.verticalAlign = 'middle'; thOtherSub.style.color = '#475569'; thOtherSub.style.fontWeight = '700'; thOtherSub.style.backgroundColor = '#f0f0f0'; hr1.appendChild(thOtherSub);
+
+      const thGrand = document.createElement('th'); thGrand.textContent = 'GRAND TOTAL'; thGrand.rowSpan = 2; thGrand.style.border = '0.5px solid #000'; thGrand.style.padding = '6px'; thGrand.style.textAlign = 'center'; thGrand.style.verticalAlign = 'middle'; thGrand.style.color = '#475569'; thGrand.style.fontWeight = '700'; thGrand.style.backgroundColor = '#f0f0f0'; hr1.appendChild(thGrand);
+
+      thead.appendChild(hr1);
+
+      // Header row 2 (sub-columns)
+      const hr2 = document.createElement('tr');
+      gradeLabels.forEach(g => { const th = document.createElement('th'); th.textContent = g; th.style.border='0.5px solid #000'; th.style.padding='6px'; th.style.textAlign='center'; th.style.color = '#475569'; th.style.fontWeight = '700'; th.style.backgroundColor = '#f0f0f0'; hr2.appendChild(th); });
+      const tTeachJ = document.createElement('th'); tTeachJ.textContent = 'JHS'; tTeachJ.style.border='0.5px solid #000'; tTeachJ.style.padding='6px'; tTeachJ.style.textAlign='center'; tTeachJ.style.color = '#475569'; tTeachJ.style.fontWeight = '700';tTeachJ.style.backgroundColor = '#f0f0f0'; hr2.appendChild(tTeachJ);
+      const tTeachS = document.createElement('th'); tTeachS.textContent = 'SHS'; tTeachS.style.border='0.5px solid #000'; tTeachS.style.padding='6px'; tTeachS.style.textAlign='center'; tTeachS.style.color = '#475569'; tTeachS.style.fontWeight = '700'; tTeachS.style.backgroundColor = '#f0f0f0'; hr2.appendChild(tTeachS);
+      const tOther1 = document.createElement('th'); tOther1.textContent = 'Non-Teaching Staff'; tOther1.style.border='0.5px solid #000'; tOther1.style.padding='6px'; tOther1.style.textAlign='center'; tOther1.style.color = '#475569'; tOther1.style.fontWeight = '700'; tOther1.style.backgroundColor = '#f0f0f0'; hr2.appendChild(tOther1);
+      const tOther2 = document.createElement('th'); tOther2.textContent = 'Stakeholders'; tOther2.style.border='0.5px solid #000'; tOther2.style.padding='6px'; tOther2.style.textAlign='center'; tOther2.style.color = '#475569'; tOther2.style.fontWeight = '700'; tOther2.style.backgroundColor = '#f0f0f0'; hr2.appendChild(tOther2);
+      thead.appendChild(hr2);
+
+      table.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      // Week rows
+      for (let w = 0; w < weekCount; w++) {
+        const tr = document.createElement('tr');
+        const tdWeek = document.createElement('td'); tdWeek.textContent = `Week ${w+1}`; tdWeek.style.border='0.5px solid #000'; tdWeek.style.padding='6px'; tdWeek.style.textAlign='left'; tdWeek.style.color = '#000'; tr.appendChild(tdWeek);
+
+        // Learners per grade
+        for (let gi = 0; gi < gradeLabels.length; gi++) {
+          const td = document.createElement('td'); td.textContent = gradeCounts[gi][w] || '';
+          td.style.border='0.5px solid #000'; td.style.padding='6px'; td.style.textAlign='center'; td.style.color = '#000'; tr.appendChild(td);
+        }
+
+        // Learner subtotal
+        const lsub = gradeLabels.reduce((s,_,i) => s + (gradeCounts[i][w]||0), 0);
+        const tdLsub = document.createElement('td'); tdLsub.textContent = lsub || ''; tdLsub.style.border='0.5px solid #000'; tdLsub.style.padding='6px'; tdLsub.style.textAlign='center'; tdLsub.style.color = '#000'; tr.appendChild(tdLsub);
+
+        // Teachers JHS/SHS
+        const tdJHS = document.createElement('td'); tdJHS.textContent = teacherBuckets.JHS[w] || ''; tdJHS.style.border='1px solid #000'; tdJHS.style.padding='6px'; tdJHS.style.textAlign='center'; tdJHS.style.color = '#000'; tr.appendChild(tdJHS);
+        const tdSHS = document.createElement('td'); tdSHS.textContent = teacherBuckets.SHS[w] || ''; tdSHS.style.border='1px solid #000'; tdSHS.style.padding='6px'; tdSHS.style.textAlign='center'; tdSHS.style.color = '#000'; tr.appendChild(tdSHS);
+
+        // Teacher subtotal
+        const tsub = (teacherBuckets.JHS[w]||0) + (teacherBuckets.SHS[w]||0);
+        const tdTsub = document.createElement('td'); tdTsub.textContent = tsub || ''; tdTsub.style.border='1px solid #000'; tdTsub.style.padding='6px'; tdTsub.style.textAlign='center'; tdTsub.style.color = '#000'; tr.appendChild(tdTsub);
+
+        // Others
+        const tdOther1 = document.createElement('td'); tdOther1.textContent = formatCount(otherBuckets['Non-Teaching Staff'][w]); tdOther1.style.border='1px solid #000'; tdOther1.style.padding='6px'; tdOther1.style.textAlign='center'; tdOther1.style.color = '#000'; tr.appendChild(tdOther1);
+        const tdOther2 = document.createElement('td'); tdOther2.textContent = formatCount(otherBuckets.Stakeholders[w]); tdOther2.style.border='1px solid #000'; tdOther2.style.padding='6px'; tdOther2.style.textAlign='center'; tdOther2.style.color = '#000'; tr.appendChild(tdOther2);
+
+        // Other subtotal
+        const osub = (otherBuckets['Non-Teaching Staff'][w]||0) + (otherBuckets.Stakeholders[w]||0) + (otherBuckets.Total[w]||0);
+        const tdOsub = document.createElement('td'); tdOsub.textContent = osub || ''; tdOsub.style.border='1px solid #000'; tdOsub.style.padding='6px'; tdOsub.style.textAlign='center'; tdOsub.style.color = '#000'; tr.appendChild(tdOsub);
+
+        // Grand total for the week
+        const gtot = lsub + tsub + osub;
+        const tdG = document.createElement('td'); tdG.textContent = gtot || ''; tdG.style.border='1px solid #000'; tdG.style.padding='6px'; tdG.style.textAlign='center'; tdG.style.color = '#000'; tr.appendChild(tdG);
+
+        tbody.appendChild(tr);
+      }
+
+      // TOTAL row
+      const trTotal = document.createElement('tr'); trTotal.style.fontWeight = '700'; trTotal.style.background = '#f3f3f3'; trTotal.style.color = '#000';
+      const tdLabel = document.createElement('td'); tdLabel.textContent = 'TOTAL'; tdLabel.style.border='1px solid #000'; tdLabel.style.padding='6px'; tdLabel.style.color = '#000'; trTotal.appendChild(tdLabel);
+
+      // grade totals
+      for (let gi = 0; gi < gradeLabels.length; gi++) {
+        const td = document.createElement('td'); td.textContent = gradeTotals[gi] || ''; td.style.border='1px solid #000'; td.style.padding='6px'; td.style.textAlign='center'; td.style.color = '#000'; trTotal.appendChild(td);
+      }
+
+      // learners grand totalx`
+      const tdLearnerGrand = document.createElement('td'); tdLearnerGrand.textContent = learnerGrandTotal || ''; tdLearnerGrand.style.border='1px solid #000'; tdLearnerGrand.style.padding='6px'; tdLearnerGrand.style.textAlign='center'; tdLearnerGrand.style.color = '#000'; trTotal.appendChild(tdLearnerGrand);
+
+      // teacher totals
+      const jhsTotal = teacherBuckets.JHS.reduce((s,v)=>s+(v||0),0);
+      const shsTotal = teacherBuckets.SHS.reduce((s,v)=>s+(v||0),0);
+      const tdJhsT = document.createElement('td'); tdJhsT.textContent = jhsTotal || ''; tdJhsT.style.border='1px solid #000'; tdJhsT.style.padding='6px'; tdJhsT.style.textAlign='center'; tdJhsT.style.color = '#000'; trTotal.appendChild(tdJhsT);
+      const tdShsT = document.createElement('td'); tdShsT.textContent = shsTotal || ''; tdShsT.style.border='1px solid #000'; tdShsT.style.padding='6px'; tdShsT.style.textAlign='center'; tdShsT.style.color = '#000'; trTotal.appendChild(tdShsT);
+
+      // teacher subtotal grand
+      const tdTeacherGrand = document.createElement('td'); tdTeacherGrand.textContent = teacherGrand || ''; tdTeacherGrand.style.border='1px solid #000'; tdTeacherGrand.style.padding='6px'; tdTeacherGrand.style.textAlign='center'; tdTeacherGrand.style.color = '#000'; trTotal.appendChild(tdTeacherGrand);
+
+      // others totals
+      const oth1Total = otherBuckets['Non-Teaching Staff'].reduce((s,v)=>s+(v||0),0);
+      const oth2Total = otherBuckets.Stakeholders.reduce((s,v)=>s+(v||0),0);
+      const tdO1 = document.createElement('td'); tdO1.textContent = formatCount(oth1Total); tdO1.style.border='1px solid #000'; tdO1.style.padding='6px'; tdO1.style.textAlign='center'; tdO1.style.color = '#000'; trTotal.appendChild(tdO1);
+      const tdO2 = document.createElement('td'); tdO2.textContent = formatCount(oth2Total); tdO2.style.border='1px solid #000'; tdO2.style.padding='6px'; tdO2.style.textAlign='center'; tdO2.style.color = '#000'; trTotal.appendChild(tdO2);
+
+      const otherSubGrand = otherBuckets.Total.reduce((s,v)=>s+(v||0),0);
+      const tdOtherGrand = document.createElement('td'); tdOtherGrand.textContent = otherSubGrand || ''; tdOtherGrand.style.border='1px solid #000'; tdOtherGrand.style.padding='6px'; tdOtherGrand.style.textAlign='center'; tdOtherGrand.style.color = '#000'; trTotal.appendChild(tdOtherGrand);
+
+      // grand total overall
+      const tdGrandTotal = document.createElement('td'); tdGrandTotal.textContent = grandTotal || ''; tdGrandTotal.style.border='1px solid #000'; tdGrandTotal.style.padding='6px'; tdGrandTotal.style.textAlign='center'; tdGrandTotal.style.color = '#000'; trTotal.appendChild(tdGrandTotal);
+
+      tbody.appendChild(trTotal);
+      table.appendChild(tbody);
+      container.appendChild(table);
+
+      const opts = {
+        margin: 0,
+        filename: `school_library_monthly_statistics_${targetYear}_${targetMonth+1}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+      };
+      document.body.appendChild(container);
+      await window.html2pdf().set(opts).from(container).save();
+      document.body.removeChild(container);
+    } catch (e) {
+      console.error(e);
+      Swal.fire({ icon: 'error', title: 'Export Error', text: e.message || e, confirmButtonColor: '#f43f5e' });
+    }
   }
 
   // Download helper
@@ -2984,6 +5002,11 @@
       container.style.color = '#000';
       container.style.fontSize = '5pt';
 
+      // Ensure no rounded corners inside the PDF rendering container
+      const _pdfZeroRadius = document.createElement('style');
+      _pdfZeroRadius.innerHTML = '*, *::before, *::after { border-radius: 0 !important; }';
+      container.appendChild(_pdfZeroRadius);
+
       const topEmblem = document.createElement('div');
       topEmblem.style.textAlign = 'center';
       topEmblem.style.marginBottom = '0px';
@@ -3011,22 +5034,25 @@
       table.style.width = '100%';
       table.style.borderCollapse = 'collapse';
       table.style.marginTop = '10px';
-      table.style.tableLayout = 'auto';
+      table.style.tableLayout = 'fixed';
 
       const thead = document.createElement('thead');
-      const cols = ['DATE BORROWED','BORROWER\'S NAME','GRADE LEVEL & SECTION','AUTHOR','TITLE','COPYRIGHT','DUE DATE','SIGNATURE','DATE RETURNED','SIGNATURE','REMARKS'];
+      const cols = ['DATE BORROWED','BORROWER\'S NAME','SUBJECT AREA & GRADE LEVEL','AUTHOR','TITLE','COPYRIGHT','DUE DATE','SIGNATURE','DATE RETURNED','SIGNATURE','REMARKS'];
+      const colWidths = ['8%','12%','16%','12%','16%','8%','8%','8%','8%','8%','10%'];
       const htr = document.createElement('tr');
-      cols.forEach(c=>{
+      cols.forEach((c, idx)=>{
         const th = document.createElement('th');
         th.textContent = c;
+        th.style.backgroundColor = '#f0f0f0';
         th.style.border = '0.5px solid #000';
         th.style.padding = '6px 4px';
         th.style.fontSize = '5pt';
         th.style.fontWeight = '700';
         th.style.textAlign = 'center';
-        th.style.background = '#e9f2ef';
+        
         th.style.verticalAlign = 'middle';
-        th.style.whiteSpace = 'nowrap';
+        th.style.whiteSpace = 'normal';
+        th.style.width = colWidths[idx] || 'auto';
         htr.appendChild(th);
       });
       thead.appendChild(htr);
@@ -3037,10 +5063,12 @@
       for (let i = 0; i < rowsToShow; i++) {
         const rec = records[i] || {};
         const tr = document.createElement('tr');
-        const cells = [rec.date_borrowed||'', rec.borrower_name||'', rec.grade_section||'', rec.author||'', rec.title||'', rec.copyright||'', rec.due_date||'', '', rec.date_returned||'', '', rec.remarks||''];
-        cells.forEach(v=>{
+        const combinedField = `${rec.subject_area || ''}${rec.subject_area && rec.grade_level ? ' / ' : ''}${rec.grade_level || ''}`;
+        const cells = [rec.date_borrowed||'', rec.borrower_name||'', combinedField, rec.author||'', rec.title||'', rec.copyright||'', rec.due_date||'', '', rec.date_returned||'', '', rec.remarks||''];
+        cells.forEach((v, idx)=>{
           const td = document.createElement('td');
           td.textContent = v || '';
+          td.style.color = '#000';
           td.style.border = '1px solid #000';
           td.style.color = '#000';
           td.style.padding = '6px 4px';
@@ -3048,7 +5076,9 @@
           td.style.verticalAlign = 'middle';
           td.style.height = '26px';
           td.style.overflow = 'hidden';
-          td.style.whiteSpace = 'nowrap';
+          td.style.whiteSpace = 'normal';
+          td.style.wordBreak = 'break-word';
+          td.style.width = colWidths[idx] || 'auto';
           tr.appendChild(td);
         });
         tbody.appendChild(tr);
@@ -3060,6 +5090,118 @@
       const opt = { margin:0, filename:'teacher_borrowers_log.pdf', image:{type:'jpeg',quality:0.95}, html2canvas:{scale:2, useCORS:true}, jsPDF:{unit:'in', format:'a4', orientation:'landscape'} };
       await window.html2pdf().set(opt).from(container).save();
     } catch (e) { Swal.fire({icon:'error',title:'Export Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+  }
+
+  async function exportFacultyPDF(records) {
+    try {
+      const container = document.createElement('div');
+      container.style.boxSizing = 'border-box';
+      container.style.width = '100%';
+      container.style.padding = '0.5in';
+      container.style.fontFamily = 'Times New Roman, serif';
+      container.style.color = '#000';
+      container.style.fontSize = '5.5pt';
+      container.style.background = '#fff';
+
+      // Ensure no rounded corners inside the PDF rendering container
+      const _pdfZeroRadius_fac = document.createElement('style');
+      _pdfZeroRadius_fac.innerHTML = '*, *::before, *::after { border-radius: 0 !important; }';
+      container.appendChild(_pdfZeroRadius_fac);
+
+      const header = document.createElement('div');
+      header.style.textAlign = 'center';
+      header.style.lineHeight = '1.2';
+      header.style.marginBottom = '12px';
+      header.innerHTML = `
+        <div style="font-weight:700; font-size:11px">Republic of the Philippines</div>
+        <div style="font-weight:700; font-size:11px">Department of Education</div>
+        <div style="font-size:10px; margin-top:4px">Region VII - Central Visayas</div>
+        <div style="font-size:10px">Division of Cebu Province</div>
+        <div style="font-size:10px; margin-top:4px; font-weight:700">Bala National High School</div>
+        <div style="font-size:16px; font-weight:800; margin-top:10px">FACULTY & STAFF PROFILE</div>
+        <div style="font-size:10px; font-style:italic; margin-top:4px">School Year 2026-2027</div>
+      `;
+      container.appendChild(header);
+
+      const table = document.createElement('table');
+      table.style.width = '100%';
+      table.style.borderCollapse = 'collapse';
+      table.style.tableLayout = 'fixed';
+      table.style.marginTop = '8px';
+
+      const colgroup = document.createElement('colgroup');
+      ['3%','10%','18%','10%','5%','8%','4%','10%','14%','18%'].forEach(width => {
+        const col = document.createElement('col');
+        col.style.width = width;
+        colgroup.appendChild(col);
+      });
+      table.appendChild(colgroup);
+
+      const thead = document.createElement('thead');
+      const headerRow = document.createElement('tr');
+      ['No.','Faculty ID / Emp No','Full Name','Position / Title','Sex','Date of Birth','Age','Contact No','Email Address','Residential Address'].forEach(text => {
+        const th = document.createElement('th');
+        th.textContent = text;
+        th.style.border = '0.5px solid #000';
+        th.style.padding = '3px 4px';
+        th.style.fontSize = '5.5pt';
+        th.style.fontWeight = '700';
+        th.style.textAlign = 'center';
+        th.style.background = '#e9f2ef';
+        th.style.whiteSpace = 'nowrap';
+        th.style.verticalAlign = 'middle';
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      const rowCount = records && records.length ? records.length : 15;
+      for (let i = 0; i < rowCount; i++) {
+        const rec = (records && records[i]) || {};
+        const tr = document.createElement('tr');
+        const rowValues = [
+          i + 1,
+          rec.faculty_id || `${rec.faculty_id || ''}${rec.employee_no ? ' / ' + rec.employee_no : ''}`.trim(),
+          rec.name || '',
+          rec.position || '',
+          rec.sex || '',
+          rec.birthdate || '',
+          rec.age || '',
+          rec.contact_number || '',
+          rec.email || '',
+          rec.address || ''
+        ];
+        rowValues.forEach(value => {
+          const td = document.createElement('td');
+          td.textContent = value || '';
+          td.style.border = '0.5px solid #000';
+          td.style.padding = '3px 4px';
+          td.style.fontSize = '5.5pt';
+          td.style.verticalAlign = 'middle';
+          td.style.whiteSpace = 'normal';
+          td.style.wordBreak = 'break-word';
+          td.style.lineHeight = '1.1';
+          td.style.minHeight = '18px';
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      }
+      table.appendChild(tbody);
+      container.appendChild(table);
+
+      const opt = {
+        margin: 0.5,
+        filename: 'faculty_profile_report.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+      };
+
+      await window.html2pdf().set(opt).from(container).save();
+    } catch (error) {
+      Swal.fire({ icon: 'error', title: 'Export Error', text: error.message || error, confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0' });
+    }
   }
 
   async function exportBorrowersPDF() {
@@ -3111,7 +5253,7 @@
 
 
       const thead = document.createElement('thead');
-      const cols = ['DATE BORROWED','BORROWER\'S NAME','GRADE LEVEL & SECTION','AUTHOR','TITLE','COPYRIGHT','DUE DATE','SIGNATURE','DATE RETURNED','SIGNATURE','REMARKS'];
+      const cols = ['DATE BORROWED','BORROWER\'S NAME','SUBJECT AREA','GRADE LEVEL','AUTHOR','TITLE','COPYRIGHT','DUE DATE','SIGNATURE','DATE RETURNED','SIGNATURE','REMARKS'];
       const htr = document.createElement('tr');
       cols.forEach(c=>{
         const th = document.createElement('th');
@@ -3134,7 +5276,7 @@
       for (let i = 0; i < rowsToShow; i++) {
         const rec = records[i] || {};
         const tr = document.createElement('tr');
-        const cells = [rec.date_borrowed||'', rec.borrower_name||'', rec.grade_section||'', rec.author||'', rec.title||'', rec.copyright||'', rec.due_date||'', '', rec.date_returned||'', '', rec.remarks||''];
+        const cells = [rec.date_borrowed||'', rec.borrower_name||'', rec.subject_area||'', rec.grade_level||'', rec.author||'', rec.title||'', rec.copyright||'', rec.due_date||'', '', rec.date_returned||'', '', rec.remarks||''];
         cells.forEach(v=>{
           const td = document.createElement('td');
           td.textContent = v || '';
@@ -3164,6 +5306,164 @@
     } catch (e) { Swal.fire({icon:'error',title:'Export Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
   }
 
+  async function exportNonPrintBorrowersPDF() {
+    try {
+      const r = await fetch('/api/admin/export/non-print-borrowers-json');
+      if (!r.ok) { const e = await r.json(); throw new Error(e.error || 'Export failed'); }
+      const d = await r.json();
+      const records = d.records || [];
+
+      const container = document.createElement('div');
+      container.style.boxSizing = 'border-box';
+      container.style.width = '11.69in';
+      container.style.padding = '1in';
+      container.style.fontFamily = 'Times New Roman, serif';
+      container.style.color = '#000';
+      container.style.fontSize = '7pt';
+      container.style.lineHeight = '1.1';
+
+      // Ensure no rounded corners inside the PDF rendering container
+      const _pdfZeroRadius_np = document.createElement('style');
+      _pdfZeroRadius_np.innerHTML = '*, *::before, *::after { border-radius: 0 !important; }';
+      container.appendChild(_pdfZeroRadius_np);
+
+      const header = document.createElement('div');
+      header.style.textAlign = 'center';
+      header.style.marginTop = '-50px';
+      header.innerHTML = `
+       <div class="logo-area">
+              <img src="images/Deped-Seal.png" alt="DepEd Seal" style="height: 100px; width: auto;">
+            </div>
+        <div style="font-size:10pt; font-weight:700;">Republic of the Philippines</div>
+        <div style="font-size:10pt; font-weight:700;">Department of Education</div>
+        <div style="font-size:9pt;">Region VII - Central Visayas</div>
+        <div style="font-size:9pt;">Sudlon, Lahug, Cebu City</div>
+        <div style="font-size:9pt;">Division of Cebu Province</div>
+        <div style="font-size:9pt; margin-top:4px;">Bala National High School</div>
+        <div style="font-size:10pt; margin-top:8px; font-weight:800;">MULTIMEDIA AND NON-PRINT MATERIALS BORROWER'S LOG</div>
+        <div style="font-size:9pt;">SY: 2026-2027</div>
+      `;
+      container.appendChild(header);
+
+      const table = document.createElement('table');
+      table.style.width = '100%';
+      table.style.borderCollapse = 'collapse';
+      table.style.marginTop = '12px';
+      table.style.tableLayout = 'fixed';
+
+      // Helper: convert number to uppercase Roman numerals (1->I, 2->II...)
+      function toRoman(num) {
+        if (!num || num <= 0) return '';
+        const romans = [['M',1000],['CM',900],['D',500],['CD',400],['C',100],['XC',90],['L',50],['XL',40],['X',10],['IX',9],['V',5],['IV',4],['I',1]];
+        let n = Math.floor(num);
+        let res = '';
+        for (const [r, v] of romans) {
+          while (n >= v) { res += r; n -= v; }
+        }
+        return res;
+      }
+
+      const thead = document.createElement('thead');
+
+      // First header row: No., Date Borrowed, Borrower's Name, merged Multimedia header, Due Date, Signature, Date Returned, Signature, Remarks
+      const headerRow1 = document.createElement('tr');
+      const makeTh = (txt, opts={})=>{ const th=document.createElement('th'); th.textContent=txt; th.style.border='0.5px solid #000'; th.style.padding='4px 4px'; th.style.fontSize='6.5pt'; th.style.fontWeight='700'; th.style.textAlign='center'; th.style.verticalAlign='middle'; th.style.background='#f5f5f5'; th.style.whiteSpace='nowrap'; if (opts.colSpan) th.colSpan = opts.colSpan; if (opts.rowSpan) th.rowSpan = opts.rowSpan; if (opts.width) th.style.width = opts.width; return th };
+
+      headerRow1.appendChild(makeTh('No.', { rowSpan: 2, width: '3%' }));
+      headerRow1.appendChild(makeTh('DATE BORROWED', { rowSpan: 2, width: '12%' }));
+      headerRow1.appendChild(makeTh("BORROWER'S NAME", { rowSpan: 2, width: '18%' }));
+      headerRow1.appendChild(makeTh('MULTIMEDIA AND NON-PRINT MATERIALS', { colSpan: 8 }));
+      headerRow1.appendChild(makeTh('DUE DATE', { rowSpan: 2, width: '7%' }));
+      headerRow1.appendChild(makeTh('SIGNATURE', { rowSpan: 2, width: '7%' }));
+      headerRow1.appendChild(makeTh('DATE RETURNED', { rowSpan: 2, width: '7%' }));
+      headerRow1.appendChild(makeTh('SIGNATURE', { rowSpan: 2, width: '7%' }));
+      headerRow1.appendChild(makeTh('REMARKS', { rowSpan: 2, width: '12%' }));
+      thead.appendChild(headerRow1);
+
+      // Second header row: the individual multimedia columns
+      const headerRow2 = document.createElement('tr');
+      ['COMPUTER','LAPTOP','TABLET','PRINTER','PROJECT','GLOBES','MAPS','OTHERS'].forEach(text=>{
+        const th = makeTh(text);
+        th.style.fontSize = '6pt';
+        th.style.padding = '3px 4px';
+        headerRow2.appendChild(th);
+      });
+      thead.appendChild(headerRow2);
+      table.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+
+      // Aggregate records by date + borrower so multiple borrows on same day become one row
+      const grouped = {};
+      const categories = ['Computer','Laptop','Tablet','Printer','Project','Globes','Maps','Others'];
+      (records || []).forEach(rec => {
+        const key = `${rec.date_borrowed||''}||${rec.borrower_name||''}`;
+        if (!grouped[key]) {
+          grouped[key] = { date_borrowed: rec.date_borrowed || '', borrower_name: rec.borrower_name || '', counts: {}, due_date: rec.due_date || '', date_returned: rec.date_returned || '', remarks: '' };
+          categories.forEach(c => grouped[key].counts[c] = 0);
+        }
+        const cat = (rec.resource_category && categories.includes(rec.resource_category)) ? rec.resource_category : 'Others';
+        grouped[key].counts[cat] = (grouped[key].counts[cat] || 0) + 1;
+        // prefer explicit due_date if present
+        if (!grouped[key].due_date && rec.due_date) grouped[key].due_date = rec.due_date;
+        if (!grouped[key].date_returned && rec.date_returned) grouped[key].date_returned = rec.date_returned;
+        if (rec.remarks && !grouped[key].remarks) grouped[key].remarks = rec.remarks;
+      });
+
+      const groupedArray = Object.values(grouped);
+      const rowsToShow = Math.max(groupedArray.length, 20);
+      for (let i = 0; i < rowsToShow; i++) {
+        const grp = groupedArray[i] || { date_borrowed: '', borrower_name: '', counts: categories.reduce((m,c)=>{m[c]=0;return m;},{}) , due_date: '', date_returned: '', remarks: '' };
+        const tr = document.createElement('tr');
+
+        const rowValues = [
+          toRoman(i + 1),
+          grp.date_borrowed || '',
+          grp.borrower_name || ''
+        ];
+
+        // push multimedia columns as Roman numeral counts
+        categories.forEach(c => {
+          const cnt = grp.counts[c] || 0;
+          rowValues.push(cnt ? toRoman(cnt) : '');
+        });
+
+        rowValues.push(grp.due_date || '', '', grp.date_returned || '', '', grp.remarks || '');
+
+        rowValues.forEach(value => {
+          const td = document.createElement('td');
+          td.textContent = value || '';
+          td.style.color = '#000';
+          td.style.border = '0.5px solid #000';
+          td.style.padding = '4px 4px';
+          td.style.fontSize = '6.5pt';
+          td.style.verticalAlign = 'middle';
+          td.style.height = '24px';
+          td.style.overflow = 'hidden';
+          td.style.textOverflow = 'ellipsis';
+          td.style.whiteSpace = 'nowrap';
+          tr.appendChild(td);
+        });
+
+        tbody.appendChild(tr);
+      }
+      table.appendChild(tbody);
+      container.appendChild(table);
+
+      const opt = {
+        margin: 0,
+        filename: 'non_print_borrowers_log.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+      };
+
+      await window.html2pdf().set(opt).from(container).save();
+    } catch (error) {
+      Swal.fire({ icon: 'error', title: 'Export Error', text: error.message || error, confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0' });
+    }
+  }
+
   async function exportBorrowersExcel() {
     try {
       // load sheetjs if not present
@@ -3177,8 +5477,8 @@
       const records = d.records || [];
 
       const wb = XLSX.utils.book_new();
-      const cols = ['Date Borrowed','Borrower\'s Name','Grade Level & Section','Author','Title','Copyright','Due Date','Date Returned','Remarks'];
-      const data = [cols].concat(records.map(rw=>[rw.date_borrowed, rw.borrower_name, rw.grade_section, rw.author, rw.title, rw.copyright, rw.due_date, rw.date_returned, rw.remarks]));
+      const cols = ['Date Borrowed','Borrower\'s Name','Subject Area','Grade Level','Author','Title','Copyright','Due Date','Date Returned','Remarks'];
+      const data = [cols].concat(records.map(rw=>[rw.date_borrowed, rw.borrower_name, rw.subject_area, rw.grade_level, rw.author, rw.title, rw.copyright, rw.due_date, rw.date_returned, rw.remarks]));
       const ws = XLSX.utils.aoa_to_sheet(data);
       XLSX.utils.book_append_sheet(wb, ws, 'BorrowersLog');
       XLSX.writeFile(wb, 'borrowers_log.xlsx');
@@ -3197,12 +5497,117 @@
       const records = d.records || [];
 
       const wb = XLSX.utils.book_new();
-      const cols = ['Date Borrowed','Borrower\'s Name','Grade Level & Section','Author','Title','Copyright','Due Date','Date Returned','Remarks'];
-      const data = [cols].concat(records.map(rw=>[rw.date_borrowed, rw.borrower_name, rw.grade_section, rw.author, rw.title, rw.copyright, rw.due_date, rw.date_returned, rw.remarks]));
+      const cols = ['Date Borrowed','Borrower\'s Name','Subject Area','Grade Level','Author','Title','Copyright','Due Date','Date Returned','Remarks'];
+      const data = [cols].concat(records.map(rw=>[rw.date_borrowed, rw.borrower_name, rw.subject_area, rw.grade_level, rw.author, rw.title, rw.copyright, rw.due_date, rw.date_returned, rw.remarks]));
       const ws = XLSX.utils.aoa_to_sheet(data);
       XLSX.utils.book_append_sheet(wb, ws, 'TeacherBorrowersLog');
       XLSX.writeFile(wb, 'teacher_borrowers_log.xlsx');
     } catch (e) { Swal.fire({icon:'error',title:'Export Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+  }
+
+  async function ensureXLSX() {
+    if (typeof XLSX !== 'undefined') return;
+    await new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      s.onload = res;
+      s.onerror = rej;
+      document.head.appendChild(s);
+    });
+  }
+
+  function createExcelWorkbook(sheetName, headers, rows) {
+    const wb = XLSX.utils.book_new();
+    const data = [headers].concat(rows);
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    return wb;
+  }
+
+  async function exportMostFrequentUserExcel() {
+    try {
+      await ensureXLSX();
+      const stats = await getMostFrequentLibraryUsers();
+      const headers = ['Rank','Library ID','Name','Type','Age','Grade','Section','Session','Position','Employee No','Subject Area','Grade Level','Total Visits','Last Visit'];
+      const rows = stats.topUsers.map((u, idx) => [
+        idx + 1,
+        u.details.library_id || '',
+        u.details.name || u.label,
+        u.typeLabel,
+        u.details.age || '',
+        u.details.grade || '',
+        u.details.section || '',
+        u.details.session || '',
+        u.details.position || '',
+        u.details.employee_no || '',
+        u.details.subject_area || '',
+        u.details.grade_level || '',
+        u.count,
+        u.lastVisit || ''
+      ]);
+      const wb = createExcelWorkbook('FrequentUsers', headers, rows.length ? rows : [['No data available', '', '', '', '', '', '', '', '', '', '', '', '', '']]);
+      XLSX.writeFile(wb, 'most_frequent_library_user.xlsx');
+    } catch(e) { Swal.fire({icon:'error',title:'Export Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+  }
+
+  async function exportVisitorsByGradeExcel() {
+    try {
+      await ensureXLSX();
+      const res = await fetch('/api/admin/visitors-by-grade');
+      const data = await res.json();
+      const headers = ['Grade Level','Total Visits','Unique Students','Percentage'];
+      const rows = (data.grades || []).map(g => [g.grade || 'N/A', g.visits, g.unique_students, g.percentage + '%']);
+      const wb = createExcelWorkbook('VisitorsByGrade', headers, rows.length ? rows : [['No data available', '', '', '']]);
+      XLSX.writeFile(wb, 'visitors_by_grade.xlsx');
+    } catch(e) { Swal.fire({icon:'error',title:'Export Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+  }
+
+  async function exportVisitorsByPurposeExcel() {
+    try {
+      await ensureXLSX();
+      const res = await fetch('/api/admin/visitors-by-purpose');
+      const data = await res.json();
+      const headers = ['Purpose','Total Visits','Percentage'];
+      const rows = (data.purposes || []).map(p => [p.purpose || 'N/A', p.visits, p.percentage + '%']);
+      const wb = createExcelWorkbook('VisitorsByPurpose', headers, rows.length ? rows : [['No data available', '', '']]);
+      XLSX.writeFile(wb, 'visitors_by_purpose.xlsx');
+    } catch(e) { Swal.fire({icon:'error',title:'Export Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+  }
+
+  async function exportVisitorsByGenderExcel() {
+    try {
+      await ensureXLSX();
+      const res = await fetch('/api/admin/visitors-by-gender');
+      const data = await res.json();
+      const headers = ['Gender','Total Visits','Percentage'];
+      const rows = (data.genders || []).map(g => [g.sex || 'N/A', g.visits, g.percentage + '%']);
+      const wb = createExcelWorkbook('VisitorsByGender', headers, rows.length ? rows : [['No data available', '', '']]);
+      XLSX.writeFile(wb, 'visitors_by_gender.xlsx');
+    } catch(e) { Swal.fire({icon:'error',title:'Export Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+  }
+
+  async function exportBookAnalyticsExcel() {
+    try {
+      await ensureXLSX();
+      const res = await fetch('/api/book-analytics');
+      const data = await res.json();
+      const headers = ['Rank','Accession Number','Book Title','Author','Category','Read Count'];
+      const rows = (data.analytics || []).map((book, idx) => [idx + 1, book.accession_number, book.title, book.author, book.category, book.read_count]);
+      const wb = createExcelWorkbook('BookAnalytics', headers, rows.length ? rows : [['No data available', '', '', '', '', '']]);
+      XLSX.writeFile(wb, 'book_analytics.xlsx');
+    } catch(e) { Swal.fire({icon:'error',title:'Export Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+  }
+
+  async function exportVisitsChartExcel() {
+    try {
+      await ensureXLSX();
+      const res = await fetch('/api/admin/analytics');
+      const d = await res.json();
+      const headers = ['Day','Visits'];
+      const rows = (d.chart_data || []).map(item => [item.day || 'N/A', item.visits || 0]);
+      const wb = createExcelWorkbook('VisitsChart', headers, rows.length ? rows : [['No data available', 0]]);
+      XLSX.writeFile(wb, 'visits_chart.xlsx');
+    } catch(e) { Swal.fire({icon:'error',title:'Export Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
   }
 
   /* ── Modals ─────────────────────────────────── */
@@ -3366,7 +5771,8 @@
 
       let borrowRecords = [];
       try {
-        const borrowRes = await fetch(`/api/admin/student-borrow-records/${encodeURIComponent(faculty.faculty_id)}`);
+        const borrowIdentifier = faculty.faculty_id || faculty.employee_no || faculty.id;
+        const borrowRes = await fetch(`/api/admin/student-borrow-records/${encodeURIComponent(borrowIdentifier)}`);
         if (borrowRes.ok) {
           const borrowData = await borrowRes.json();
           borrowRecords = borrowData.records || [];
@@ -3430,10 +5836,6 @@
                 <div class="value">${escapeHtml(faculty.name || '')}</div>
               </div>
               <div class="card-student-field">
-                <label>EMPLOYEE NO.:</label>
-                <div class="value">${escapeHtml(faculty.faculty_id || '')}</div>
-              </div>
-              <div class="card-student-field">
                 <label>ADDRESS:</label>
                 <div class="value">${escapeHtml(faculty.address || '')}</div>
               </div>
@@ -3444,10 +5846,14 @@
                 <div class="value">${escapeHtml(faculty.contact_number || '')}</div>
               </div>
               <div class="card-student-field">
+                <label>EMPLOYEE NO.:</label>
+                <div class="value">${escapeHtml(faculty.employee_no || '')}</div>
+              </div>
+              <div class="card-student-field">
                 <label>EMAIL ADDRESS:</label>
                 <div class="value">${escapeHtml(faculty.email || '')}</div>
               </div>
-             
+            
             </div>
           </div>
 
