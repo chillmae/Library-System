@@ -7,10 +7,17 @@ const { randomUUID } = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
+
+// Middleware (grouped cleanly together)
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public')); // Serves your frontend files
+
+// Vercel Routing Fix
+app.get('/', (req, res) => {
+    res.redirect('/index.html');
+});
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
