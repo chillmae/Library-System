@@ -2601,6 +2601,7 @@
 
   function updateStudentsTable(filterSection = 'all') {
     const tbody = document.getElementById('students-table');
+    const studentKey = `${(s.grade || '').trim()} - ${(s.section || '').trim()}`;
     const filtered = filterSection === 'all'
       ? allStudents
       : allStudents.filter(s => (s.section || '').trim() === filterSection);
