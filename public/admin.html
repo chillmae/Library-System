@@ -2598,39 +2598,45 @@
   // Pass the combined value (e.g., "Grade 10 - A") to your table update function
   updateStudentsTable(selectedValue);
 }
+function updateStudentsTable(filterSection = 'all') {
+  const tbody = document.getElementById('students-table');
+  if (!tbody) return; // Guard clause to prevent errors if element is missing
 
-  function updateStudentsTable(filterSection = 'all') {
-    const tbody = document.getElementById('students-table');
-    const studentKey = `${(s.grade || '').trim()} - ${(s.section || '').trim()}`;
-    const filtered = filterSection === 'all'
-      ? allStudents
-      : allStudents.filter(s => (s.section || '').trim() === filterSection);
+  // Filter the students array
+  const filtered = filterSection === 'all'
+    ? allStudents
+    : allStudents.filter(s => {
+        // Create the composite key for EACH student inside the loop
+        const studentKey = `${(s.grade || '').trim()} - ${(s.section || '').trim()}`;
+        // Compare it against the selected value from the dropdown
+        return studentKey === filterSection;
+      });
 
-    if (!filtered.length) {
-      tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon"><i class="fas fa-user-slash"></i></div><div class="empty-text">No students found</div></div></td></tr>`;
-      return;
-    }
-    tbody.innerHTML = filtered.map(s => `
-      <tr>
-        <td style="white-space:nowrap;"><code>${s.student_id}</code></td>
-        <td style="white-space:nowrap;"><strong>${s.name||'—'}</strong></td>
-        <td style="white-space:nowrap;">${s.section||'—'}</td>
-        <td style="white-space:nowrap;">${s.session||'—'}</td>
-        <td style="white-space:nowrap;">${s.contact_number||'—'}</td>
-        <td style="white-space:nowrap;">${s.address||'—'}</td>
-        <td style="white-space:nowrap;">${s.sex||'—'}</td>
-        <td style="white-space:nowrap;">${s.birthdate||'—'}</td>
-        <td style="white-space:nowrap;">${s.age||'—'}</td>
-        <td style="white-space:nowrap;">
-          <div class="action-group">
-            <button class="btn btn-ghost btn-sm" onclick="exportLibraryCard(${s.id},'${s.student_id}','${s.name}','${s.grade}','${s.section}')"><i class="fas fa-download"></i></button>
-            <button class="btn btn-ghost btn-sm" onclick="openEditModal(${s.id})"><i class="fas fa-pen"></i></button>
-            <button class="btn btn-danger btn-sm" onclick="deleteStudent(${s.id},'${s.student_id}')"><i class="fas fa-trash"></i></button>
-          </div>
-        </td>
-      </tr>`).join('');
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon"><i class="fas fa-user-slash"></i></div><div class="empty-text">No students found</div></div></td></tr>`;
+    return;
   }
 
+  tbody.innerHTML = filtered.map(s => `
+    <tr>
+      <td style="white-space:nowrap;"><code>${s.student_id}</code></td>
+      <td style="white-space:nowrap;"><strong>${s.name || '—'}</strong></td>
+      <td style="white-space:nowrap;">${s.section || '—'}</td>
+      <td style="white-space:nowrap;">${s.session || '—'}</td>
+      <td style="white-space:nowrap;">${s.contact_number || '—'}</td>
+      <td style="white-space:nowrap;">${s.address || '—'}</td>
+      <td style="white-space:nowrap;">${s.sex || '—'}</td>
+      <td style="white-space:nowrap;">${s.birthdate || '—'}</td>
+      <td style="white-space:nowrap;">${s.age || '—'}</td>
+      <td style="white-space:nowrap;">
+        <div class="action-group">
+          <button class="btn btn-ghost btn-sm" onclick="exportLibraryCard(${s.id},'${s.student_id}','${s.name}','${s.grade}','${s.section}')"><i class="fas fa-download"></i></button>
+          <button class="btn btn-ghost btn-sm" onclick="openEditModal(${s.id})"><i class="fas fa-pen"></i></button>
+          <button class="btn btn-danger btn-sm" onclick="deleteStudent(${s.id},'${s.student_id}')"><i class="fas fa-trash"></i></button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
   async function addStudent() {
     const student_id = document.getElementById('student_id').value.trim();
     const name = document.getElementById('student_name').value.trim();
