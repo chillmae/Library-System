@@ -2566,21 +2566,38 @@
     } catch(e) { console.error(e); }
   }
 
-  function populateSectionFilter() {
-    const select = document.getElementById('student-section-filter');
-    if (!select) return;
-    const sections = [...new Set(allStudents.map(s => (s.section || '').trim()).filter(Boolean))].sort();
-    const options = ['all', ...sections];
-    select.innerHTML = options.map(opt => `
-      <option value="${opt}">${opt === 'all' ? 'All Students' : opt}</option>
-    `).join('');
-  }
+ function populateSectionFilter() {
+  const select = document.getElementById('student-section-filter');
+  if (!select) return;
+
+  // 1. Map over all students to create a combined "Grade - Section" string
+  const gradeSections = allStudents
+    .map(s => {
+      const grade = (s.grade || '').trim();
+      const section = (s.section || '').trim();
+      
+      // Combine them if both exist, otherwise fallback to whichever is available
+      return grade && section ? `${grade} - ${section}` : grade || section;
+    })
+    .filter(Boolean); // Remove any empty values
+
+  // 2. Get unique values and sort them alphabetically/numerically
+  const uniqueGradeSections = [...new Set(gradeSections)].sort();
+  const options = ['all', ...uniqueGradeSections];
+
+  // 3. Populate the dropdown menu
+  select.innerHTML = options.map(opt => `
+    <option value="${opt}">${opt === 'all' ? 'All Students' : opt}</option>
+  `).join('');
+}
 
   function filterStudentsBySection() {
-    const select = document.getElementById('student-section-filter');
-    const section = select ? select.value : 'all';
-    updateStudentsTable(section);
-  }
+  const select = document.getElementById('student-section-filter');
+  const selectedValue = select ? select.value : 'all';
+  
+  // Pass the combined value (e.g., "Grade 10 - A") to your table update function
+  updateStudentsTable(selectedValue);
+}
 
   function updateStudentsTable(filterSection = 'all') {
     const tbody = document.getElementById('students-table');
@@ -3905,21 +3922,22 @@
     const tr = document.createElement('tr');
     const cols = [
       { key: 'accession_number', placeholder: 'ACC-001' },
-      { key: 'call_number', placeholder: 'FIC-100' },
-      { key: 'title', placeholder: 'Title' },
-      { key: 'author', placeholder: 'Author' },
-      { key: 'category', placeholder: 'Category' },
       { key: 'date_received', placeholder: 'YYYY-MM-DD', type: 'date' },
       { key: 'ddc_no', placeholder: 'DDC No.' },
+      { key: 'author', placeholder: 'Author' },
+      { key: 'title', placeholder: 'Title' },
       { key: 'edition', placeholder: 'Edition' },
       { key: 'volumes', placeholder: 'Volumes' },
       { key: 'pages', placeholder: 'Pages' },
-      { key: 'source_of_fund', placeholder: 'Source of Found' },
+       { key: 'source_of_fund', placeholder: 'Source of Found' },
       { key: 'price', placeholder: 'Price' },
       { key: 'publisher', placeholder: 'Publisher' },
       { key: 'copyright_year', placeholder: 'Year', type: 'number' },
-      { key: 'isbn', placeholder: 'ISBN' },
-      { key: 'remarks', placeholder: 'Remarks' }
+       { key: 'remarks', placeholder: 'Remarks' },
+        { key: 'category', placeholder: 'Category' },
+      { key: 'call_number', placeholder: 'FIC-100' },
+      { key: 'isbn', placeholder: 'ISBN' }
+     
     ];
     cols.forEach(c=>{
       const td = document.createElement('td'); td.style.padding='4px'; td.style.verticalAlign='middle';
