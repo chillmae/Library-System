@@ -248,6 +248,43 @@
             pointer-events: none;
         }
 
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.8rem;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.85rem 0.95rem;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.9rem;
+            line-height: 1.3;
+        }
+
+        .checkbox-item input {
+            width: 1.05rem;
+            height: 1.05rem;
+            accent-color: var(--amber);
+        }
+
+        .checkbox-item:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.16);
+        }
+
+        .field-note {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
         /* Password toggle button */
         .password-toggle {
             position: absolute;
@@ -1274,30 +1311,27 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="visit_reason">Select Reason</label>
-                        <div class="input-wrap">
-                            <i class="input-icon fas fa-list"></i>
-                            <select id="visit_reason" required>
-                                <option value="">Choose a reason...</option>
-                                <option value="Attend/Conduct SLRC/Book Club,Event/Activity">🎓 Attend/Conduct SLRC/Book Club,Event/Activity</option>
-                                <option value="Attend SLRC Tour/Orientation">🚶 Attend SLRC Tour/Orientation</option>
-                                <option value="Borrow Books/Resources">📚 Borrow Books/Resources</option>
-                                <option value="Computer/Digital Technology/Internet Use">💻 Computer/Digital Technology/Internet Use</option>
-                                <option value="Conduct/Attend Book Club Reading Activity">📖 Conduct/Attend Book Club Reading Activity</option>
-                                <option value="Conduct/Attend Meeting">🫂 Conduct/Attend Meeting</option>
-                                <option value="Conduct/Attend Remedial Class">🎒 Conduct/Attend Remedial Class</option>
-                                <option value="Conduct/Attend SLRC Reading/Math Remediation">📘 Conduct/Attend SLRC Reading/Math Remediation</option>
-                                <option value="Conduct/Attend Storytelling Session">📚 Conduct/Attend Storytelling Session</option>
-                                <option value="Conduct/Attend Writing/Research Workshop">🛠️ Conduct/Attend Writing/Research Workshop</option>
-                                <option value="Donate Learning Resources">🎁 Donate Learning Resources</option>
-                                <option value="Lesson Preparation">📝 Lesson Preparation</option>
-                                <option value="Print/Photocopy projects/notes/lesson plan/activities">🖨️ Print/Photocopy projects/notes/lesson plan/activities</option>
-                                <option value="Reading">📖 Reading</option>
-                                <option value="Return Books/Resources">🔄 Return Books/Resources</option>
-                                <option value="SLRC Visitation/Assessment/Validation">📋 SLRC Visitation/Assessment/Validation</option>
-                                <option value="Study/Project/Activity Making">📚 Study/Project/Activity Making</option>
-                            </select>
+                        <label>Select your visit purposes</label>
+                        <div class="checkbox-grid" id="visit_reason_group">
+                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Attend/Conduct SLRC/Book Club,Event/Activity"> 🎓 Attend/Conduct SLRC/Book Club,Event/Activity</label>
+                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Attend SLRC Tour/Orientation"> 🚶 Attend SLRC Tour/Orientation</label>
+                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Borrow Books/Resources"> 📚 Borrow Books/Resources</label>
+                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Computer/Digital Technology/Internet Use"> 💻 Computer/Digital Technology/Internet Use</label>
+                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Conduct/Attend Book Club Reading Activity"> 📖 Conduct/Attend Book Club Reading Activity</label>
+                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Conduct/Attend Meeting"> 🫂 Conduct/Attend Meeting</label>
+                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Conduct/Attend Remedial Class"> 🎒 Conduct/Attend Remedial Class</label>
+                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Conduct/Attend SLRC Reading/Math Remediation"> 📘 Conduct/Attend SLRC Reading/Math Remediation</label>
+                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Conduct/Attend Storytelling Session"> 📚 Conduct/Attend Storytelling Session</label>
+                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Conduct/Attend Writing/Research Workshop"> 🛠️ Conduct/Attend Writing/Research Workshop</label>
+                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Donate Learning Resources"> 🎁 Donate Learning Resources</label>
+                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Lesson Preparation"> 📝 Lesson Preparation</label>
+                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Print/Photocopy projects/notes/lesson plan/activities"> 🖨️ Print/Photocopy projects/notes/lesson plan/activities</label>
+                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Reading"> 📖 Reading</label>
+                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Return Books/Resources"> 🔄 Return Books/Resources</label>
+                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="SLRC Visitation/Assessment/Validation"> 📋 SLRC Visitation/Assessment/Validation</label>
+                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Study/Project/Activity Making"> 📚 Study/Project/Activity Making</label>
                         </div>
+                        <div class="field-note">You may select more than one purpose, e.g. computer use while reading.</div>
                     </div>
 
                     <div class="error-msg" id="checkin-error-msg"></div>
@@ -1322,13 +1356,13 @@
                         <div class="screen-sub">Thanks for visiting the library!</div>
                     </div>
 
-                    <!-- Book Accession Input for Study Sessions -->
+                    <!-- Book Accession Input for reading-related visits -->
                     <div id="checkout-book-section" style="display:none; animation: fadeUp 0.3s ease;">
                         <div class="form-group">
-                            <label for="checkout_book_accession">📚 Return Book Accession Number</label>
+                            <label for="checkout_book_accession">📚 Book Accession Number Read</label>
                             <div class="input-wrap">
                                 <i class="input-icon fas fa-barcode"></i>
-                                <input type="text" id="checkout_book_accession" placeholder="Enter book accession number" autocomplete="off">
+                                <input type="text" id="checkout_book_accession" placeholder="Enter the accession number of the book you read" autocomplete="off">
                             </div>
                         </div>
                         <button type="button" class="btn btn-primary" onclick="addCheckOutBook()" style="margin-bottom: 1rem; background: var(--amber);">
@@ -2041,7 +2075,7 @@
                 }
                 document.getElementById('checkout-time').textContent  = formatTime(data.check_in_time);
                 // Show book section for study sessions on checkout
-                if (data.visit_reason === 'Study' || data.visit_reason === 'Study/Project/Activity Making') {
+                if (shouldShowCheckoutBookSection(data.visit_reason)) {
                     document.getElementById('checkout-book-section').style.display = 'block';
                     checkoutBooks = []; // Reset for this checkout
                     document.getElementById('checkout-books-list').innerHTML = '';
@@ -2069,13 +2103,28 @@
         } catch { setSpinner('admin-spinner', false); showError('admin-error-msg', '❌ Connection error'); }
     }
 
+    function getSelectedVisitReasons() {
+        const selected = Array.from(document.querySelectorAll('input[name="visit_reason_option"]:checked'))
+            .map(checkbox => checkbox.value.trim())
+            .filter(Boolean);
+        return selected;
+    }
+
+    function hasVisitReason(reason, selectedReasons) {
+        return selectedReasons.some(selected => selected === reason);
+    }
+
     async function submitCheckIn() {
-        const reason = document.getElementById('visit_reason').value;
-        if (!reason) { showError('checkin-error-msg', '❌ Please select a reason'); return; }
-        
-        // If Borrow or Return, show the respective modal instead of checking in
-        if (reason === 'Borrow Books/Resources') {
-            // Pre-populate student info in borrow modal
+        const selectedReasons = getSelectedVisitReasons();
+        if (!selectedReasons.length) {
+            showError('checkin-error-msg', '❌ Please select at least one purpose');
+            return;
+        }
+
+        const reason = selectedReasons.join(' | ');
+
+        // If Borrow or Return is selected, open the respective modal instead of standard check-in
+        if (hasVisitReason('Borrow Books/Resources', selectedReasons)) {
             document.getElementById('borrow_student_name').value = currentUserData.name || '';
             if (currentUserData.role === 'faculty') {
                 document.getElementById('borrow_section').value = currentUserData.section || 'Faculty';
@@ -2085,12 +2134,12 @@
             document.getElementById('borrow-error-msg').classList.remove('show');
             openBorrowModal();
             return;
-        } else if (reason === 'Return Books/Resources') {
+        } else if (hasVisitReason('Return Books/Resources', selectedReasons)) {
             document.getElementById('return-error-msg').classList.remove('show');
             openReturnModal();
             return;
         }
-        
+
         // For other reasons, proceed with normal check-in
         try {
             const userType = currentUserData.role === 'faculty' ? 'faculty' : currentUserData.role === 'stakeholder' ? 'stakeholder' : 'student';
@@ -2117,7 +2166,11 @@
 
     async function submitCheckOut() {
         try {
-            // Include checkout books if they were entered for study sessions
+            if (shouldShowCheckoutBookSection(currentUserData.visit_reason) && checkoutBooks.length === 0) {
+                showError('checkout-error-msg', '❌ Please enter at least one book accession number before checking out.');
+                return;
+            }
+
             const checkoutData = { 
                 log_id: currentUserData.log_id,
                 books: checkoutBooks
@@ -2138,10 +2191,11 @@
     }
 
     function resetKiosk() {
-        ['student_id','admin_id','admin_password','visit_reason','user_type'].forEach(id => {
+        ['student_id','admin_id','admin_password','user_type'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.value = id === 'user_type' ? 'student' : '';
         });
+        document.querySelectorAll('input[name="visit_reason_option"]').forEach(cb => cb.checked = false);
         ['error-msg','admin-error-msg','checkin-error-msg','checkout-error-msg'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.classList.remove('show');
@@ -2171,6 +2225,19 @@
 
     function formatTime(t) {
         return new Date(t).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    }
+
+    function shouldShowCheckoutBookSection(visitReason) {
+        const reasonsRequiringBookAccession = [
+            'Borrow Books/Resources',
+            'Conduct/Attend Book Club Reading Activity',
+            'Conduct/Attend SLRC Reading/Math Remediation',
+            'Conduct/Attend Storytelling Session',
+            'Conduct/Attend Writing/Research Workshop',
+            'Reading',
+            'Study/Project/Activity Making'
+        ];
+        return reasonsRequiringBookAccession.includes(visitReason);
     }
 
     function togglePasswordVisibility() {
@@ -2225,7 +2292,7 @@
 
         listEl.innerHTML = `
             <div style="background: rgba(212, 131, 26, 0.08); border-radius: 10px; padding: 0.8rem; border: 1.5px solid rgba(212, 131, 26, 0.2);">
-                <div style="font-size: 0.75rem; font-weight: 600; color: var(--amber-dark); text-transform: uppercase; margin-bottom: 0.6rem;">📖 Books to Return (${checkoutBooks.length})</div>
+                <div style="font-size: 0.75rem; font-weight: 600; color: var(--amber-dark); text-transform: uppercase; margin-bottom: 0.6rem;">📖 Books Read (${checkoutBooks.length})</div>
                 ${checkoutBooks.map((book, idx) => `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem; background: white; border-radius: 6px; margin-bottom: 0.5rem; border: 1px solid rgba(212, 131, 26, 0.1);">
                         <span style="font-size: 0.85rem; color: var(--text-body); font-weight: 500;">${book}</span>

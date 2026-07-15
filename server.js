@@ -670,12 +670,12 @@ app.get('/api/admin/students', async (req, res) => {
 // 6. Admin: Update a student
 app.put('/api/admin/students/:id', async (req, res) => {
     const { id } = req.params;
-    const { name, grade, section, session, adviser, address, contact_number, sex, birthdate, age } = req.body;
+    const { name, grade, section, organization, session, adviser, address, contact_number, sex, birthdate, age } = req.body;
 
     try {
         const { data, error } = await supabase
             .from('users')
-            .update({ name, grade, section, session, adviser, address, contact_number, sex, birthdate, age: age || null })
+            .update({ name, grade, section, organization, session, adviser, address, contact_number, sex, birthdate, age: age || null })
             .eq('id', id);
 
         if (error) {
