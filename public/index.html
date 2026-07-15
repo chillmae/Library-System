@@ -1131,7 +1131,7 @@
                     <div class="screen-header" style="margin-bottom:1rem;">
                         <div class="screen-badge" id="checkin-badge"><i class="fas fa-user-graduate"></i> Check In</div>
                         <div class="screen-title">Purpose of Visit</div>
-                        <div class="screen-sub">What brings you to the library today?</div>
+                        <div class="screen-sub">What brings you to the SLRC today?</div>
                     </div>
 
                     <div class="form-group">
@@ -1140,23 +1140,23 @@
                             <i class="input-icon fas fa-list"></i>
                             <select id="visit_reason" required>
                                 <option value="">Choose a reason...</option>
-                                <option value="Attend SLRC">🏫 Attend SLRC</option>
-                                <option value="Activity/Event">🎉 Activity / Event</option>
-                                <option value="Project Making">🛠️ Project Making</option>
-                                <option value="Borrow">📚 Borrow Item</option>
-                                <option value="Computer Use">💻 Computer Use</option>
-                                <option value="Group Work">👥 Group Study</option>
-                                <option value="Lesson Preparation">📝 Lesson Preparation</option>
+                                <option value="Attend/Conduct SLRC/Book Club,Event/Activity">🎓 Attend/Conduct SLRC/Book Club,Event/Activity</option>
+                                <option value="Attend SLRC Tour/Orientation">🚶 Attend SLRC Tour/Orientation</option>
+                                <option value="Borrow Books/Resources">📚 Borrow Books/Resources</option>
+                                <option value="Computer/Digital Technology/Internet Use">💻 Computer/Digital Technology/Internet Use</option>
+                                <option value="Conduct/Attend Book Club Reading Activity">📖 Conduct/Attend Book Club Reading Activity</option>
+                                <option value="Conduct/Attend Meeting">🫂 Conduct/Attend Meeting</option>
                                 <option value="Conduct/Attend Remedial Class">🎒 Conduct/Attend Remedial Class</option>
-                                <option value="Meeting (Book Club, LRMT, SLRComm, etc.)">🫂 Meeting (Book Club, LRMT, SLRComm, etc.)</option>
-                                <option value="Reading Remediation">📘 Reading Remediation</option>
-                                <option value="Research">🔍 Research / Thesis</option>
-                                <option value="Return">🔄 Return Item</option>
-                                <option value="SLRC Tour/ Orientation/ Validation">🚶 SLRC Tour / Orientation / Validation</option>
-                                <option value="SLRC Use Training Session">🎓 SLRC Use Training Session</option>
-                                <option value="Storytelling Session">📖 Storytelling Session</option>
-                                <option value="Study">📖 Study Session</option>
-                                <option value="Workshop (Research Writing)">🛠️ Workshop (Research Writing)</option>
+                                <option value="Conduct/Attend SLRC Reading/Math Remediation">📘 Conduct/Attend SLRC Reading/Math Remediation</option>
+                                <option value="Conduct/Attend Storytelling Session">📚 Conduct/Attend Storytelling Session</option>
+                                <option value="Conduct/Attend Writing/Research Workshop">🛠️ Conduct/Attend Writing/Research Workshop</option>
+                                <option value="Donate Learning Resources">🎁 Donate Learning Resources</option>
+                                <option value="Lesson Preparation">📝 Lesson Preparation</option>
+                                <option value="Print/Photocopy projects/notes/lesson plan/activities">🖨️ Print/Photocopy projects/notes/lesson plan/activities</option>
+                                <option value="Reading">📖 Reading</option>
+                                <option value="Return Books/Resources">🔄 Return Books/Resources</option>
+                                <option value="SLRC Visitation/Assessment/Validation">📋 SLRC Visitation/Assessment/Validation</option>
+                                <option value="Study/Project/Activity Making">📚 Study/Project/Activity Making</option>
                             </select>
                         </div>
                     </div>
@@ -1380,6 +1380,12 @@
         if (borrowCategory) {
             borrowCategory.addEventListener('change', updateBorrowFormFields);
         }
+
+        const borrowCodeInput = document.getElementById('borrow_code');
+        if (borrowCodeInput) {
+            borrowCodeInput.addEventListener('blur', autoFillBorrowTitle);
+            borrowCodeInput.addEventListener('change', autoFillBorrowTitle);
+        }
     });
 
     // Load and display current users
@@ -1466,7 +1472,7 @@
                 </div>
                 
                 <!-- Book Input Section - Only for Study Sessions -->
-                ${user.visit_reason === 'Study' 
+                ${(user.visit_reason === 'Study' || user.visit_reason === 'Study/Project/Activity Making') 
                     ? `<div style="margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px solid rgba(212, 131, 26, 0.1);">
                         <div id="book-inputs-${user.log_id}" style="display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.4rem;">
                             <div style="display: flex; gap: 0.4rem;">
@@ -1822,7 +1828,7 @@
                 }
                 document.getElementById('checkout-time').textContent  = formatTime(data.check_in_time);
                 // Show book section for study sessions on checkout
-                if (data.visit_reason === 'Study') {
+                if (data.visit_reason === 'Study' || data.visit_reason === 'Study/Project/Activity Making') {
                     document.getElementById('checkout-book-section').style.display = 'block';
                     checkoutBooks = []; // Reset for this checkout
                     document.getElementById('checkout-books-list').innerHTML = '';
@@ -1855,7 +1861,7 @@
         if (!reason) { showError('checkin-error-msg', '❌ Please select a reason'); return; }
         
         // If Borrow or Return, show the respective modal instead of checking in
-        if (reason === 'Borrow') {
+        if (reason === 'Borrow Books/Resources') {
             // Pre-populate student info in borrow modal
             document.getElementById('borrow_student_name').value = currentUserData.name || '';
             if (currentUserData.role === 'faculty') {
@@ -1866,7 +1872,7 @@
             document.getElementById('borrow-error-msg').classList.remove('show');
             openBorrowModal();
             return;
-        } else if (reason === 'Return') {
+        } else if (reason === 'Return Books/Resources') {
             document.getElementById('return-error-msg').classList.remove('show');
             openReturnModal();
             return;
@@ -2043,21 +2049,61 @@
         if (category === 'non-print') {
             titleLabel.textContent = 'Resource Name *';
             titleInput.placeholder = 'e.g., Science Kit or Board Game';
+            titleInput.readOnly = false;
             codeLabel.textContent = 'Resource Code *';
             codeInput.placeholder = 'e.g., NP-001';
             helpText.textContent = 'Non-print resources use resource codes from the equipment inventory.';
         } else if (category === 'print') {
             titleLabel.textContent = 'Book Title *';
-            titleInput.placeholder = 'e.g., Introduction to Biology';
+            titleInput.placeholder = 'Will auto-fill from accession number';
+            titleInput.readOnly = true;
             codeLabel.textContent = 'Accession Number *';
             codeInput.placeholder = 'e.g., BIO-001-2024';
-            helpText.textContent = 'Print resources use book accession numbers from the library catalog.';
+            helpText.textContent = 'Enter the book accession number and the title will automatically fill in.';
         } else {
             titleLabel.textContent = 'Item Title / Resource Name *';
             titleInput.placeholder = 'Enter the item title or resource name';
+            titleInput.readOnly = false;
             codeLabel.textContent = 'Accession Number / Resource Code *';
             codeInput.placeholder = 'Enter the accession number or resource code';
             helpText.textContent = 'Choose the item type to show the correct identifier.';
+        }
+    }
+
+    async function autoFillBorrowTitle() {
+        const category = document.getElementById('borrow_category')?.value || '';
+        const code = document.getElementById('borrow_code')?.value.trim() || '';
+        const titleInput = document.getElementById('borrow_title');
+
+        if (!titleInput) return;
+
+        if (category !== 'print' || !code) {
+            titleInput.readOnly = false;
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/validate-book', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ accession_number: code })
+            });
+            const data = await response.json();
+
+            if (data.valid && data.book && data.book.title) {
+                titleInput.value = data.book.title;
+                titleInput.readOnly = true;
+                showError('borrow-error-msg', '');
+            } else {
+                titleInput.value = '';
+                titleInput.readOnly = true;
+                showError('borrow-error-msg', '❌ Book not found. Please check the accession number.');
+            }
+        } catch (error) {
+            console.error('Auto-fill borrow title error:', error);
+            titleInput.value = '';
+            titleInput.readOnly = true;
+            showError('borrow-error-msg', '❌ Unable to auto-fill book title. Please try again.');
         }
     }
 
@@ -2093,9 +2139,14 @@
 
     async function submitBorrow() {
         const category = document.getElementById('borrow_category').value.trim();
-        const title = document.getElementById('borrow_title').value.trim();
+        let title = document.getElementById('borrow_title').value.trim();
         const code = document.getElementById('borrow_code').value.trim();
         const nonPrintCategory = document.getElementById('borrow_nonprint_category')?.value.trim() || '';
+
+        if (category === 'print' && !title && code) {
+            await autoFillBorrowTitle();
+            title = document.getElementById('borrow_title').value.trim();
+        }
 
         if (!category || !title || !code) {
             showError('borrow-error-msg', '❌ Please fill in all required fields');
