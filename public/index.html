@@ -85,7 +85,7 @@
             justify-content: flex-end;
             padding: 3rem 2%;
             padding-right: 5%;
-            margin-left: 380px;
+            margin-left: 760px;
         }
 
         /* Centered editorial panel */
@@ -516,15 +516,69 @@
             position: fixed;
             left: 0;
             top: 0;
-            width: 380px;
+            width: 760px;
             height: 100vh;
-            background: linear-gradient(135deg, var(--dark-shelf) 0%, rgba(44, 33, 24, 0.95) 100%);
+            background: rgba(255, 255, 255, 0.04);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            border-right: 2px solid rgba(212, 131, 26, 0.25);
+            border-right: 2px solid rgba(212, 131, 26, 0.14);
             overflow-y: auto;
             z-index: 100;
-            box-shadow: 4px 0 20px rgba(26, 16, 5, 0.3);
+            box-shadow: 4px 0 20px rgba(26, 16, 5, 0.15);
+        }
+
+        .sidebar-columns {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 1rem;
+            padding: 1rem;
+            height: calc(100vh - 96px);
+            align-items: stretch;
+        }
+
+        .sidebar-panel {
+            border-radius: 24px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 0;
+        }
+
+        .sidebar-panel.visitors-panel {
+            background: linear-gradient(135deg, var(--dark-shelf) 0%, rgba(44, 33, 24, 0.95) 100%);
+            border: 1px solid rgba(212, 131, 26, 0.25);
+            box-shadow: 4px 0 30px rgba(26, 16, 5, 0.35);
+        }
+
+        .sidebar-panel.calendar-panel {
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid rgba(212, 131, 26, 0.18);
+            box-shadow: 0 12px 28px rgba(26, 16, 5, 0.12);
+        }
+
+        .sidebar-panel.calendar-panel .sidebar-header {
+            position: static;
+            padding: 1.25rem 1.25rem 1rem;
+            border-bottom: 1px solid rgba(212, 131, 26, 0.16);
+            background: rgba(255, 255, 255, 1);
+            backdrop-filter: blur(16px);
+        }
+
+        .sidebar-panel.calendar-panel .sidebar-title {
+            color: var(--dark);
+        }
+
+        .sidebar-panel.calendar-panel .sidebar-subtitle {
+            color: var(--text-body);
+        }
+
+        .sidebar-panel .sidebar-header {
+            position: static;
+            padding: 1.25rem 1.25rem 1rem;
+            border-bottom: 1px solid rgba(212, 131, 26, 0.12);
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(12px);
         }
 
         .sidebar-header {
@@ -538,36 +592,47 @@
 
         .sidebar-title {
             font-family: 'Playfair Display', serif;
-            font-size: 0.9rem;
-            font-weight: 600;
+            font-size: 0.95rem;
+            font-weight: 700;
             color: var(--amber-light);
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.45rem;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.55rem;
         }
 
         .sidebar-count {
             display: inline-block;
             background: var(--amber);
             color: white;
-            padding: 0.2rem 0.6rem;
-            border-radius: 12px;
+            padding: 0.25rem 0.65rem;
+            border-radius: 999px;
             font-size: 0.75rem;
             font-weight: 700;
             margin-left: 0.5rem;
         }
 
         .sidebar-subtitle {
-            font-size: 0.75rem;
-            color: var(--text-muted);
+            font-size: 0.78rem;
+            color: rgba(255,255,255,0.75);
             font-weight: 400;
+            line-height: 1.45;
         }
 
         .sidebar-content {
-            padding: 1rem 0.8rem;
+            padding: 1rem 1.2rem 1.2rem;
+        }
+
+        .sidebar-panel .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem 1rem 1.1rem;
+        }
+
+        .sidebar-panel + .sidebar-panel {
+            margin-left: 0;
         }
 
         .user-item {
@@ -753,6 +818,50 @@
             padding: 0.8rem;
             font-size: 0.7rem;
             color: var(--text-muted);
+        }
+
+        .sidebar-calendar-event {
+            background: #fff;
+            border: 1px solid rgba(212, 131, 26, 0.22);
+            border-radius: 16px;
+            padding: 1rem 1.1rem;
+            margin-bottom: 0.85rem;
+            color: var(--dark);
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.06);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .sidebar-calendar-event:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 16px 28px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-calendar-event-date {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--amber-light);
+            margin-bottom: 0.35rem;
+        }
+
+        .sidebar-calendar-event-desc {
+            font-size: 0.8rem;
+            line-height: 1.4;
+            color: rgba(255,255,255,0.88);
+            margin-bottom: 0.35rem;
+        }
+
+        .sidebar-calendar-event-meta {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .sidebar-calendar-event-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
         }
 
         /* Adjust page layout to accommodate sidebar */
@@ -950,10 +1059,19 @@
         /* Responsive */
         @media (max-width: 900px) {
             .sidebar {
-                width: 320px;
+                width: 100%;
+                height: auto;
+                position: static;
+                border-right: none;
+                border-bottom: 2px solid rgba(212, 131, 26, 0.25);
             }
             .page-layout {
-                margin-left: 320px;
+                margin-left: 0;
+                padding: 2rem 1.2rem;
+                justify-content: center;
+            }
+            .sidebar-columns {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -961,7 +1079,7 @@
             .sidebar {
                 width: 100%;
                 height: auto;
-                max-height: 200px;
+                max-height: none;
                 position: static;
                 border-right: none;
                 border-bottom: 2px solid rgba(212, 131, 26, 0.25);
@@ -989,22 +1107,43 @@
     <div class="blob blob-1"></div>
     <div class="blob blob-2"></div>
 
-    <!-- Left Sidebar - Current Users -->
+    <!-- Left Sidebar - Current Users + Calendar -->
     <div class="sidebar" id="users-sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-title">
-                <i class="fas fa-users"></i> 
-                Visitors Today
-                <span class="sidebar-count" id="user-count">0</span>
+        <div class="sidebar-columns">
+            <div class="sidebar-panel visitors-panel">
+                <div class="sidebar-header">
+                    <div class="sidebar-title">
+                        <i class="fas fa-users"></i>
+                        Visitors Today
+                        <span class="sidebar-count" id="user-count">0</span>
+                    </div>
+                    <div class="sidebar-subtitle">Currently checked in</div>
+                </div>
+                <div class="sidebar-content" id="sidebar-users-list">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📚</div>
+                        <div class="empty-state-text">No visitors yet</div>
+                    </div>
+                </div>
             </div>
-            <div class="sidebar-subtitle">Currently checked in</div>
-        </div>
-        <div class="sidebar-content" id="sidebar-users-list">
-            <div class="empty-state">
-                <div class="empty-state-icon">📚</div>
-                <div class="empty-state-text">No visitors yet</div>
+
+            <div class="sidebar-panel calendar-panel">
+                <div class="sidebar-header">
+                    <div class="sidebar-title">
+                        <i class="fas fa-calendar-alt"></i>
+                        Calendar
+                    </div>
+                    <div class="sidebar-subtitle">Admin events this week</div>
+                </div>
+                <div class="sidebar-content" id="sidebar-calendar-events">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🗓️</div>
+                        <div class="empty-state-text">Loading admin events...</div>
+                    </div>
+                </div>
             </div>
         </div>
+
         <div class="sidebar-refresh" id="sidebar-refresh-time">Last updated: just now</div>
     </div>
 
@@ -1386,6 +1525,9 @@
             borrowCodeInput.addEventListener('blur', autoFillBorrowTitle);
             borrowCodeInput.addEventListener('change', autoFillBorrowTitle);
         }
+
+        loadCalendarEvents();
+        setInterval(loadCalendarEvents, 1800000); // refresh every 30 minutes
     });
 
     // Load and display current users
@@ -1519,6 +1661,76 @@
         const now = new Date();
         const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         document.getElementById('sidebar-refresh-time').textContent = `Last updated: ${timeStr}`;
+    }
+
+    async function loadCalendarEvents() {
+        const calendarList = document.getElementById('sidebar-calendar-events');
+        if (!calendarList) return;
+
+        calendarList.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">🕒</div>
+                <div class="empty-state-text">Loading admin events...</div>
+            </div>
+        `;
+
+        try {
+            const res = await fetch('/api/admin/calendar-activities');
+            const data = await res.json();
+            const events = Array.isArray(data.calendar_activities) ? data.calendar_activities : [];
+            const weekdayEvents = events.filter(item => {
+                if (!item.activity_date) return false;
+                const date = new Date(item.activity_date);
+                const day = date.getDay();
+                return day >= 1 && day <= 5; // Monday(1) through Friday(5)
+            });
+
+            renderCalendarEvents(weekdayEvents.slice(0, 6));
+        } catch (error) {
+            console.error('Failed to load calendar events:', error);
+            calendarList.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">⚠️</div>
+                    <div class="empty-state-text">Unable to load admin events.</div>
+                </div>
+            `;
+        }
+    }
+
+    function renderCalendarEvents(events) {
+        const calendarList = document.getElementById('sidebar-calendar-events');
+        if (!calendarList) return;
+
+        if (!events || events.length === 0) {
+            calendarList.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">🗓️</div>
+                    <div class="empty-state-text">No admin events scheduled Monday–Friday.</div>
+                </div>
+            `;
+            return;
+        }
+
+        const sorted = events.slice().sort((a, b) => new Date(a.activity_date) - new Date(b.activity_date));
+
+        calendarList.innerHTML = sorted.map(event => {
+            const date = new Date(event.activity_date);
+            const dateLabel = date.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+            const description = event.activity_description || 'No description provided';
+            const people = event.persons_involved ? event.persons_involved : 'Admin event';
+            const status = event.status ? event.status : 'Planned';
+
+            return `
+                <div class="sidebar-calendar-event">
+                    <div class="sidebar-calendar-event-date">${dateLabel}</div>
+                    <div class="sidebar-calendar-event-desc">${description}</div>
+                    <div class="sidebar-calendar-event-meta">
+                        <span><i class="fas fa-user-friends"></i> ${people}</span>
+                        <span><i class="fas fa-flag"></i> ${status}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
 
     // Format time in short format (HH:MM)

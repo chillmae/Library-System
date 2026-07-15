@@ -1143,6 +1143,7 @@
     <ul style="list-style:none">
       <li class="nav-item"><a class="nav-link" onclick="showSection('analytics', this)"><i class="nav-icon fas fa-book-bookmark"></i> Book Analytics</a></li>
       <li class="nav-item"><a class="nav-link" onclick="showSection('reports', this)"><i class="nav-icon fas fa-chart-column"></i> Reports</a></li>
+      <li class="nav-item"><a class="nav-link" onclick="showSection('calendar', this)"><i class="nav-icon fas fa-calendar-week"></i> Calendar</a></li>
     </ul>
   </nav>
 
@@ -2163,6 +2164,28 @@
       </div>
 
       <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-title-icon"><i class="fas fa-file-export"></i></div>
+            Export Reports
+          </div>
+        </div>
+        <div class="export-row">
+          <button class="btn btn-success" onclick="generateCSVReport()">
+            <i class="fas fa-file-csv"></i> Export CSV
+          </button>
+          <!-- Monthly statistics removed -->
+        </div>
+      </div>
+    </section>
+
+    <section id="calendar" class="content-section">
+      <div class="page-header">
+        <h2>Event Calendar</h2>
+        <p>Manage scheduled library activities and weekly event planning.</p>
+      </div>
+
+      <div class="card">
         <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
           <div class="card-title">
             <div class="card-title-icon"><i class="fas fa-calendar-week"></i></div>
@@ -2191,21 +2214,6 @@
               <tr><td colspan="5" style="text-align:center; color:var(--text-mute); padding:40px;">Loading calendar activities…</td></tr>
             </tbody>
           </table>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">
-            <div class="card-title-icon"><i class="fas fa-file-export"></i></div>
-            Export Reports
-          </div>
-        </div>
-        <div class="export-row">
-          <button class="btn btn-success" onclick="generateCSVReport()">
-            <i class="fas fa-file-csv"></i> Export CSV
-          </button>
-          <!-- Monthly statistics removed -->
         </div>
       </div>
     </section>
@@ -2450,6 +2458,7 @@
     'active-borrowers': ['fa-user-clock','Active Borrowers'],
     analytics: ['fa-book-bookmark','Book Analytics'],
     reports:   ['fa-chart-column','Reports & Analytics'],
+    calendar:  ['fa-calendar-week','Calendar Activities'],
   };
 
   /* ── Init ──────────────────────────────────── */
@@ -2476,6 +2485,7 @@
       `<i class="page-icon fas ${icon}"></i><span>${title}</span>`;
 
     if (id === 'reports') loadReports();
+    if (id === 'calendar') loadCalendarActivities();
     if (id === 'inventory-weeding') loadInventoryWeedingReports();
     if (id === 'borrowing') loadPendingBorrows();
     if (id === 'active-borrowers') loadActiveBorrowers();
