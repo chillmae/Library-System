@@ -845,9 +845,9 @@
 
         .sidebar-calendar-event-desc {
             font-size: 0.8rem;
-            line-height: 1.4;
-            color: rgba(255,255,255,0.88);
-            margin-bottom: 0.35rem;
+            line-height: 1.6;
+            color: var(--text-body);
+            margin-bottom: 0.45rem;
         }
 
         .sidebar-calendar-event-meta {
@@ -1685,7 +1685,8 @@
                 return day >= 1 && day <= 5; // Monday(1) through Friday(5)
             });
 
-            renderCalendarEvents(weekdayEvents.slice(0, 6));
+            const eventsToShow = weekdayEvents.length > 0 ? weekdayEvents : events;
+            renderCalendarEvents(eventsToShow.slice(0, 6));
         } catch (error) {
             console.error('Failed to load calendar events:', error);
             calendarList.innerHTML = `

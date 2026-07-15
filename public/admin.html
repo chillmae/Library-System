@@ -1280,6 +1280,18 @@
             <input type="text" id="student_section" placeholder="e.g., GAS">
           </div>
           <div class="form-group">
+            <label>Organization</label>
+            <select id="student_organization">
+              <option value="">-- Select --</option>
+              <option value="SSLG">SSLG</option>
+              <option value="BKB">BKB</option>
+              <option value="YES-O">YES-O</option>
+              <option value="School Publication">School Publication</option>
+              <option value="Book Club">Book Club</option>
+              <option value="None">None</option>
+            </select>
+          </div>
+          <div class="form-group">
             <label>Session</label>
             <input type="text" id="student_session" placeholder="Morning / Afternoon">
           </div>
@@ -1341,6 +1353,7 @@
                 <th style="width:90px; white-space:nowrap;">SLRC ID</th>
                 <th style="width:180px; white-space:nowrap;">Name</th>
                 <th style="width:90px; white-space:nowrap;">Section</th>
+                <th style="width:120px; white-space:nowrap;">Organization</th>
                 <th style="width:95px; white-space:nowrap;">Session</th>
                 <th style="width:120px; white-space:nowrap;">Contact</th>
                 <th style="width:180px; white-space:nowrap;">Address</th>
@@ -2280,6 +2293,7 @@
       <div class="form-group"><label>Full Name</label><input type="text" id="edit_student_name"></div>
       <div class="form-group"><label>Grade</label><input type="text" id="edit_student_grade"></div>
       <div class="form-group"><label>Section</label><input type="text" id="edit_student_section"></div>
+      <div class="form-group"><label>Organization</label><select id="edit_student_organization"><option value="">-- Select --</option><option value="SSLG">SSLG</option><option value="BKB">BKB</option><option value="YES-O">YES-O</option><option value="School Publication">School Publication</option><option value="Book Club">Book Club</option><option value="None">None</option></select></div>
       <div class="form-group"><label>Session</label><input type="text" id="edit_student_session"></div>
       <div class="form-group"><label>Adviser</label><input type="text" id="edit_student_adviser"></div>
       <div class="form-group"><label>Address</label><input type="text" id="edit_student_address"></div>
@@ -2686,6 +2700,7 @@ function updateStudentsTable(filterSection = 'all') {
       <td style="white-space:nowrap;"><code>${s.student_id}</code></td>
       <td style="white-space:nowrap;"><strong>${s.name || '—'}</strong></td>
       <td style="white-space:nowrap;">${s.section || '—'}</td>
+      <td style="white-space:nowrap;">${s.organization || 'None'}</td>
       <td style="white-space:nowrap;">${s.session || '—'}</td>
       <td style="white-space:nowrap;">${s.contact_number || '—'}</td>
       <td style="white-space:nowrap;">${s.address || '—'}</td>
@@ -2706,6 +2721,7 @@ function updateStudentsTable(filterSection = 'all') {
     const name = document.getElementById('student_name').value.trim();
     const grade = document.getElementById('student_grade').value.trim();
     const section = document.getElementById('student_section').value.trim();
+    const organization = document.getElementById('student_organization').value.trim();
     const session = document.getElementById('student_session').value.trim();
     const adviser = document.getElementById('student_adviser').value.trim();
     const address = document.getElementById('student_address').value.trim();
@@ -2715,11 +2731,11 @@ function updateStudentsTable(filterSection = 'all') {
     const age = document.getElementById('student_age').value;
     if (!student_id || !name) { showMessage('add-student-message','SLRC ID and Name are required','error'); return; }
     try {
-      const res = await fetch('/api/admin/add-student',{ method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id,name,grade,section,session,adviser,address,contact_number,sex,birthdate,age:parseInt(age)||null}) });
+      const res = await fetch('/api/admin/add-student',{ method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id,name,grade,section,organization,session,adviser,address,contact_number,sex,birthdate,age:parseInt(age)||null}) });
       const data = await res.json();
       if (res.ok) {
         Swal.fire({ icon:'success', title:'Student Added!', text:'Student has been registered.', confirmButtonColor:'#5b6ef5', background:'#1a1e2b', color:'#e8eaf0' });
-        ['student_id','student_name','student_grade','student_section','student_session','student_adviser','student_address','student_contact','student_sex','student_birthdate','student_age'].forEach(id => document.getElementById(id).value='');
+        ['student_id','student_name','student_grade','student_section','student_organization','student_session','student_adviser','student_address','student_contact','student_sex','student_birthdate','student_age'].forEach(id => document.getElementById(id).value='');
         loadStudents(); loadDashboard();
       } else { Swal.fire({ icon:'error', title:'Error', text:data.error||'Could not add student', confirmButtonColor:'#f43f5e', background:'#1a1e2b', color:'#e8eaf0' }); }
     } catch(e) { Swal.fire({ icon:'error', title:'Connection Error', text:'Cannot reach server.', confirmButtonColor:'#f43f5e', background:'#1a1e2b', color:'#e8eaf0' }); }
@@ -2732,6 +2748,7 @@ function updateStudentsTable(filterSection = 'all') {
     document.getElementById('edit_student_name').value = s.name||'';
     document.getElementById('edit_student_grade').value = s.grade||'';
     document.getElementById('edit_student_section').value = s.section||'';
+    document.getElementById('edit_student_organization').value = s.organization||'';
     document.getElementById('edit_student_session').value = s.session||'';
     document.getElementById('edit_student_adviser').value = s.adviser||'';
     document.getElementById('edit_student_address').value = s.address||'';
@@ -2746,6 +2763,7 @@ function updateStudentsTable(filterSection = 'all') {
     const name = document.getElementById('edit_student_name').value.trim();
     const grade = document.getElementById('edit_student_grade').value.trim();
     const section = document.getElementById('edit_student_section').value.trim();
+    const organization = document.getElementById('edit_student_organization').value.trim();
     const session = document.getElementById('edit_student_session').value.trim();
     const adviser = document.getElementById('edit_student_adviser').value.trim();
     const address = document.getElementById('edit_student_address').value.trim();
@@ -2755,7 +2773,7 @@ function updateStudentsTable(filterSection = 'all') {
     const age = document.getElementById('edit_student_age').value;
     if (!name) { Swal.fire({icon:'warning',title:'Name required',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); return; }
     try {
-      const res = await fetch(`/api/admin/students/${currentEditId}`,{ method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,grade,section,session,adviser,address,contact_number,sex,birthdate,age:parseInt(age)||null}) });
+      const res = await fetch(`/api/admin/students/${currentEditId}`,{ method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,grade,section,organization,session,adviser,address,contact_number,sex,birthdate,age:parseInt(age)||null}) });
       if (res.ok) {
         Swal.fire({icon:'success',title:'Updated!',text:'Student info updated.',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}).then(()=>{ closeModal('edit-modal'); loadStudents(); });
       } else { Swal.fire({icon:'error',title:'Error',text:'Could not update.',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }

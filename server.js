@@ -627,7 +627,7 @@ app.get('/api/current-users', async (req, res) => {
 
 // 4. Admin: Add a new student
 app.post('/api/admin/add-student', async (req, res) => {
-    const { student_id, name, grade, section, session, adviser, address, contact_number, sex, birthdate, age } = req.body;
+    const { student_id, name, grade, section, organization, session, adviser, address, contact_number, sex, birthdate, age } = req.body;
 
     if (!student_id || !name) {
         return res.status(400).json({ error: 'Student ID and Name are required.' });
@@ -635,7 +635,7 @@ app.post('/api/admin/add-student', async (req, res) => {
 
     const { data, error } = await supabase
         .from('users')
-        .insert([{ student_id: student_id, name, grade, section, session, adviser, address, contact_number, sex, birthdate, age: age || null, password: 'NOT_REQUIRED', role: 'student' }]);
+        .insert([{ student_id: student_id, name, grade, section, organization, session, adviser, address, contact_number, sex, birthdate, age: age || null, password: 'NOT_REQUIRED', role: 'student' }]);
 
     if (error) {
         if (error.code === '23505') {
