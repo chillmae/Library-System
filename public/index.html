@@ -2048,11 +2048,11 @@
 
         if (category === 'non-print') {
             titleLabel.textContent = 'Resource Name *';
-            titleInput.placeholder = 'e.g., Science Kit or Board Game';
-            titleInput.readOnly = false;
+            titleInput.placeholder = 'Will auto-fill from resource code';
+            titleInput.readOnly = true;
             codeLabel.textContent = 'Resource Code *';
             codeInput.placeholder = 'e.g., NP-001';
-            helpText.textContent = 'Non-print resources use resource codes from the equipment inventory.';
+            helpText.textContent = 'Enter the resource code and the item name will automatically fill in.';
         } else if (category === 'print') {
             titleLabel.textContent = 'Book Title *';
             titleInput.placeholder = 'Will auto-fill from accession number';
@@ -2077,7 +2077,13 @@
 
         if (!titleInput) return;
 
-        if (category !== 'print' || !code) {
+        if (!code) {
+            titleInput.value = '';
+            titleInput.readOnly = category === 'print' || category === 'non-print';
+            return;
+        }
+
+        if (category !== 'print' && category !== 'non-print') {
             titleInput.readOnly = false;
             return;
         }
@@ -2090,14 +2096,24 @@
             });
             const data = await response.json();
 
-            if (data.valid && data.book && data.book.title) {
-                titleInput.value = data.book.title;
-                titleInput.readOnly = true;
-                showError('borrow-error-msg', '');
+            if (data.valid) {
+                if (data.type === 'print' && data.book && data.book.title) {
+                    titleInput.value = data.book.title;
+                    titleInput.readOnly = true;
+                    showError('borrow-error-msg', '');
+                } else if (data.type === 'non-print' && data.resource && data.resource.title) {
+                    titleInput.value = data.resource.title;
+                    titleInput.readOnly = true;
+                    showError('borrow-error-msg', '');
+                } else {
+                    titleInput.value = '';
+                    titleInput.readOnly = true;
+                    showError('borrow-error-msg', '❌ Resource not found. Please check the code.');
+                }
             } else {
                 titleInput.value = '';
                 titleInput.readOnly = true;
-                showError('borrow-error-msg', '❌ Book not found. Please check the accession number.');
+                showError('borrow-error-msg', '❌ Resource not found. Please check the code.');
             }
         } catch (error) {
             console.error('Auto-fill borrow title error:', error);

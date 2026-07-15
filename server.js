@@ -1380,6 +1380,70 @@ app.delete('/api/admin/attendance/:id', async (req, res) => {
     }
 });
 
+// Calendar of Activities
+app.get('/api/admin/calendar-activities', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('calendar_activities')
+            .select('*')
+            .order('activity_date', { ascending: true });
+
+        if (error) return res.status(500).json({ error: error.message });
+        res.json({ calendar_activities: data || [] });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/admin/calendar-activities', async (req, res) => {
+    try {
+        const payload = {
+            activity_date: req.body.activity_date || new Date().toISOString().slice(0, 10),
+            activity_description: req.body.activity_description || '',
+            persons_involved: req.body.persons_involved || '',
+            status: req.body.status || 'Planned'
+        };
+
+        const { data, error } = await supabase.from('calendar_activities').insert([payload]).select('*');
+        if (error) throw error;
+        res.json({ calendar_activity: data?.[0] || null });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.put('/api/admin/calendar-activities/:id', async (req, res) => {
+    try {
+        const payload = {
+            activity_date: req.body.activity_date || new Date().toISOString().slice(0, 10),
+            activity_description: req.body.activity_description || '',
+            persons_involved: req.body.persons_involved || '',
+            status: req.body.status || 'Planned'
+        };
+
+        const { data, error } = await supabase
+            .from('calendar_activities')
+            .update(payload)
+            .eq('id', req.params.id)
+            .select('*');
+
+        if (error) throw error;
+        res.json({ calendar_activity: data?.[0] || null });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.delete('/api/admin/calendar-activities/:id', async (req, res) => {
+    try {
+        const { error } = await supabase.from('calendar_activities').delete().eq('id', req.params.id);
+        if (error) throw error;
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // ========== BOOKS MANAGEMENT API ==========
 
 // 10. Get all books
@@ -2675,37 +2739,59 @@ app.get('/api/admin/visitors-by-gender', async (req, res) => {
 
 // ========== BOOK VALIDATION & ANALYTICS ==========
 
-// Validate book accession number
+// Validate book accession number or non-print resource code
 app.post('/api/validate-book', async (req, res) => {
     const { accession_number } = req.body;
 
     if (!accession_number) {
-        return res.status(400).json({ error: 'Accession number is required.' });
+        return res.status(400).json({ error: 'Accession number/resource code is required.' });
     }
 
     try {
-        const { data: book, error } = await supabase
+        const code = accession_number.trim();
+        const { data: book, error: bookError } = await supabase
             .from('books')
             .select('id, accession_number, title, author, category')
-            .eq('accession_number', accession_number.trim())
+            .eq('accession_number', code)
             .single();
 
-        if (error || !book) {
-            console.log('[VALIDATE-BOOK] Book not found:', accession_number);
-            return res.status(404).json({ valid: false, error: 'Book accession number not found in database' });
+        if (book) {
+            console.log('[VALIDATE-BOOK] Print book found:', book.title);
+            return res.json({ 
+                valid: true, 
+                type: 'print',
+                book: {
+                    id: book.id,
+                    accession_number: book.accession_number,
+                    title: book.title,
+                    author: book.author,
+                    category: book.category
+                }
+            });
         }
 
-        console.log('[VALIDATE-BOOK] Book found:', book.title);
-        res.json({ 
-            valid: true, 
-            book: {
-                id: book.id,
-                accession_number: book.accession_number,
-                title: book.title,
-                author: book.author,
-                category: book.category
-            }
-        });
+        const { data: resource, error: resourceError } = await supabase
+            .from('non_print_resources')
+            .select('id, resource_code, title, name, category')
+            .eq('resource_code', code)
+            .single();
+
+        if (resource) {
+            console.log('[VALIDATE-BOOK] Non-print resource found:', resource.title || resource.name);
+            return res.json({ 
+                valid: true, 
+                type: 'non-print',
+                resource: {
+                    id: resource.id,
+                    resource_code: resource.resource_code,
+                    title: resource.title || resource.name,
+                    category: resource.category
+                }
+            });
+        }
+
+        console.log('[VALIDATE-BOOK] Resource not found:', accession_number);
+        res.status(404).json({ valid: false, error: 'Accession number or resource code not found in database' });
     } catch (error) {
         console.error('[VALIDATE-BOOK] Error:', error);
         res.status(500).json({ valid: false, error: error.message });

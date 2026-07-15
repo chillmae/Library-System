@@ -167,6 +167,24 @@ INSERT INTO non_print_resources (resource_code, title, category, unit, condition
 ('NP-MAP-001', 'Philippine Map Set', 'Maps', '3', 'Usable', 'Equipment', 'Map set for social studies and history'),
 ('NP-OTH-001', 'Portable Speaker', 'Other', '1', 'Usable', 'Equipment', 'Audio speaker for school events');
 
+-- 4a. CALENDAR ACTIVITIES TABLE
+CREATE TABLE IF NOT EXISTS calendar_activities (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    activity_date DATE NOT NULL,
+    activity_description TEXT NOT NULL,
+    persons_involved VARCHAR(255),
+    status VARCHAR(50) DEFAULT 'Planned',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_calendar_activities_date ON calendar_activities(activity_date);
+
+-- Sample calendar activities
+INSERT INTO calendar_activities (activity_date, activity_description, persons_involved, status) VALUES
+('2026-06-06', 'Library orientation for incoming Grade 7 students', 'Library Staff, Grade 7 Advisers', 'Planned'),
+('2026-06-13', 'Reading and research workshop for senior students', 'Library Staff, Senior High Representatives', 'Planned');
+
 -- 5. BORROW RECORDS TABLE
 CREATE TABLE IF NOT EXISTS borrow_records (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

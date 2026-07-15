@@ -2163,6 +2163,38 @@
       </div>
 
       <div class="card">
+        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+          <div class="card-title">
+            <div class="card-title-icon"><i class="fas fa-calendar-week"></i></div>
+            Calendar of Activities
+          </div>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <button class="btn btn-primary btn-sm" onclick="openCalendarActivityModal()"><i class="fas fa-plus"></i> Add Activity</button>
+            <button class="btn btn-primary btn-sm" onclick="exportCalendarActivitiesPDF()"><i class="fas fa-file-pdf"></i> Export PDF</button>
+          </div>
+        </div>
+        <div style="padding:0 0 12px; color:var(--text-dim); font-size:0.9rem;">
+          Activities are scheduled for the current week's Friday. Edit entries as needed.
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:120px;">Date</th>
+                <th>Activities to be conducted</th>
+                <th style="width:220px;">Person/s Involved</th>
+                <th style="width:140px;">Status</th>
+                <th style="width:110px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="calendar-activities-tbody">
+              <tr><td colspan="5" style="text-align:center; color:var(--text-mute); padding:40px;">Loading calendar activities…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
         <div class="card-header">
           <div class="card-title">
             <div class="card-title-icon"><i class="fas fa-file-export"></i></div>
@@ -2203,6 +2235,26 @@
       <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
         <button class="btn btn-ghost" onclick="closeModal('attendance-modal')">Cancel</button>
         <button class="btn btn-primary" onclick="saveAttendanceRecord()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="calendar-activity-modal" class="modal">
+  <div class="modal-box" style="max-width:560px;">
+    <div class="modal-head">
+      <h2 id="calendar-activity-modal-title">Add Calendar Activity</h2>
+      <button class="modal-close" onclick="closeModal('calendar-activity-modal')"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="modal-form">
+      <input type="hidden" id="calendar-activity-id">
+      <div class="form-group"><label>Date</label><input type="date" id="calendar-activity-date"></div>
+      <div class="form-group" style="grid-column:1/-1;"><label>Activity</label><textarea id="calendar-activity-description" rows="3" placeholder="Describe the activity"></textarea></div>
+      <div class="form-group" style="grid-column:1/-1;"><label>Person/s Involved</label><input type="text" id="calendar-activity-persons" placeholder="Names or teams involved"></div>
+      <div class="form-group"><label>Status</label><select id="calendar-activity-status"><option value="Planned">Planned</option><option value="In Progress">In Progress</option><option value="Completed">Completed</option><option value="Deferred">Deferred</option></select></div>
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
+        <button class="btn btn-ghost" onclick="closeModal('calendar-activity-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveCalendarActivity()">Save</button>
       </div>
     </div>
   </div>
@@ -2383,6 +2435,8 @@
   let currentLibraryCardName = 'learner-library-card';
   let attendanceDates = [];
   let currentAttendanceDate = '';
+  let calendarActivities = [];
+  let currentCalendarActivityId = null;
 
   const PAGE_TITLES = {
     dashboard: ['fa-chart-line','Dashboard'],
@@ -2999,6 +3053,7 @@ function updateStudentsTable(filterSection = 'all') {
       // Load visitor analytics
       await loadVisitorAnalytics();
       await loadDailyAttendance();
+      await loadCalendarActivities();
     } catch(e) {
       console.error('Analytics error:', e);
       c.innerHTML = `<div style="margin:auto;color:#f43f5e;font-size:.8rem"><i class="fas fa-exclamation-triangle"></i> Cannot connect to server</div>`;
@@ -3131,19 +3186,141 @@ function updateStudentsTable(filterSection = 'all') {
     }
   }
 
-  async function exportDailyAttendancePDF() {
+  function getFridayOfCurrentWeek(reference = new Date()) {
+    const d = new Date(reference);
+    const day = d.getDay();
+    const diff = ((5 - day) + 7) % 7;
+    d.setDate(d.getDate() + diff);
+    return d.toISOString().slice(0, 10);
+  }
+
+  function formatActivityDate(value) {
+    if (!value) return '—';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return value;
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  async function loadCalendarActivities() {
+    try {
+      const res = await fetch('/api/admin/calendar-activities');
+      const data = await res.json();
+      calendarActivities = data.calendar_activities || [];
+      updateCalendarActivitiesTable();
+    } catch (error) {
+      console.error('Calendar activities load error:', error);
+      document.getElementById('calendar-activities-tbody').innerHTML = `<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--text-dim);">Unable to load calendar activities.</td></tr>`;
+    }
+  }
+
+  function updateCalendarActivitiesTable() {
+    const tbody = document.getElementById('calendar-activities-tbody');
+    if (!calendarActivities.length) {
+      tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="empty-icon"><i class="fas fa-calendar-day"></i></div><div class="empty-text">No calendar activities yet</div></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = calendarActivities.map(item => `
+      <tr>
+        <td>${formatActivityDate(item.activity_date)}</td>
+        <td>${item.activity_description || '—'}</td>
+        <td>${item.persons_involved || '—'}</td>
+        <td>${item.status || 'Planned'}</td>
+        <td>
+          <div class="action-group">
+            <button class="btn btn-ghost btn-sm" onclick="editCalendarActivity('${item.id}')"><i class="fas fa-pen"></i></button>
+            <button class="btn btn-danger btn-sm" onclick="deleteCalendarActivity('${item.id}')"><i class="fas fa-trash"></i></button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function openCalendarActivityModal() {
+    currentCalendarActivityId = null;
+    document.getElementById('calendar-activity-id').value = '';
+    document.getElementById('calendar-activity-modal-title').textContent = 'Add Calendar Activity';
+    document.getElementById('calendar-activity-date').value = getFridayOfCurrentWeek();
+    document.getElementById('calendar-activity-description').value = '';
+    document.getElementById('calendar-activity-persons').value = '';
+    document.getElementById('calendar-activity-status').value = 'Planned';
+    document.getElementById('calendar-activity-modal').classList.add('active');
+  }
+
+  function editCalendarActivity(id) {
+    const activity = calendarActivities.find(item => item.id === id);
+    if (!activity) return;
+    currentCalendarActivityId = id;
+    document.getElementById('calendar-activity-id').value = id;
+    document.getElementById('calendar-activity-modal-title').textContent = 'Edit Calendar Activity';
+    document.getElementById('calendar-activity-date').value = activity.activity_date || getFridayOfCurrentWeek();
+    document.getElementById('calendar-activity-description').value = activity.activity_description || '';
+    document.getElementById('calendar-activity-persons').value = activity.persons_involved || '';
+    document.getElementById('calendar-activity-status').value = activity.status || 'Planned';
+    document.getElementById('calendar-activity-modal').classList.add('active');
+  }
+
+  async function saveCalendarActivity() {
+    try {
+      const id = document.getElementById('calendar-activity-id').value;
+      const payload = {
+        activity_date: document.getElementById('calendar-activity-date').value,
+        activity_description: document.getElementById('calendar-activity-description').value.trim(),
+        persons_involved: document.getElementById('calendar-activity-persons').value.trim(),
+        status: document.getElementById('calendar-activity-status').value
+      };
+
+      if (!payload.activity_description) {
+        Swal.fire({ icon: 'warning', title: 'Activity required', text: 'Please describe the activity.', confirmButtonColor: '#5b6ef5', background: '#1a1e2b', color: '#e8eaf0' });
+        return;
+      }
+
+      const selectedDate = new Date(payload.activity_date || '');
+      if (Number.isNaN(selectedDate.getTime()) || selectedDate.getDay() !== 5) {
+        Swal.fire({ icon: 'warning', title: 'Friday only', text: 'Select a Friday date for the calendar activity.', confirmButtonColor: '#5b6ef5', background: '#1a1e2b', color: '#e8eaf0' });
+        return;
+      }
+
+      const url = id ? `/api/admin/calendar-activities/${encodeURIComponent(id)}` : '/api/admin/calendar-activities';
+      const method = id ? 'PUT' : 'POST';
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not save calendar activity.');
+      closeModal('calendar-activity-modal');
+      await loadCalendarActivities();
+      Swal.fire({ icon: 'success', title: id ? 'Activity updated' : 'Activity added', confirmButtonColor: '#5b6ef5', background: '#1a1e2b', color: '#e8eaf0' });
+    } catch (error) {
+      Swal.fire({ icon: 'error', title: 'Save Error', text: error.message || error, confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0' });
+    }
+  }
+
+  async function deleteCalendarActivity(id) {
+    if (!id) return;
+    const result = await Swal.fire({ icon: 'warning', title: 'Delete calendar activity?', text: 'This action cannot be undone.', showCancelButton: true, confirmButtonColor: '#f43f5e', cancelButtonColor: '#3d4260', background: '#1a1e2b', color: '#e8eaf0' });
+    if (!result.isConfirmed) return;
+    try {
+      const res = await fetch(`/api/admin/calendar-activities/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not delete calendar activity.');
+      await loadCalendarActivities();
+      Swal.fire({ icon: 'success', title: 'Activity deleted', confirmButtonColor: '#5b6ef5', background: '#1a1e2b', color: '#e8eaf0' });
+    } catch (error) {
+      Swal.fire({ icon: 'error', title: 'Delete Error', text: error.message || error, confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0' });
+    }
+  }
+
+  async function exportCalendarActivitiesPDF() {
     try {
       if (!window.html2pdfReady) throw new Error('PDF export loader is not initialized.');
       await window.html2pdfReady;
       if (typeof window.html2pdf !== 'function') throw new Error('PDF export library is not loaded yet.');
-      const date = currentAttendanceDate || document.getElementById('attendance-date-picker').value || new Date().toISOString().slice(0, 10);
-      const res = await fetch(`/api/admin/daily-attendance?date=${encodeURIComponent(date)}`);
-      if (!res.ok) throw new Error('Failed to fetch daily attendance.');
+      const res = await fetch('/api/admin/calendar-activities');
+      if (!res.ok) throw new Error('Failed to fetch calendar activities.');
       const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      const records = data.attendance_records || [];
-
-  
+      const activities = data.calendar_activities || [];
       const container = document.createElement('div');
       container.style.background = '#fff';
       container.style.color = '#000';
@@ -3153,7 +3330,106 @@ function updateStudentsTable(filterSection = 'all') {
 
       const header = document.createElement('div');
       header.style.textAlign = 'center';
-      header.style.marginBottom = '10px';
+      header.style.marginBottom = '12px';
+      const logo = document.createElement('img');
+      logo.src = '/images/Deped-Seal.png';
+      logo.style.height = '90px';
+      logo.style.objectFit = 'contain';
+      logo.style.marginBottom = '6px';
+      header.appendChild(logo);
+      header.innerHTML += `
+        <div style="font-weight:700; font-size:12px; margin-top:4px;">Republic of the Philippines</div>
+        <div style="font-weight:700; font-size:12px;">Department of Education</div>
+        <div style="font-size:10px; margin-top:4px;">Region VII - Central Visayas</div>
+        <div style="font-size:10px;">Sudlon, Lahug, Cebu City</div>
+        <div style="font-size:10px; margin-top:4px;">Division of Cebu Province</div>
+        <div style="font-size:10px; margin-top:4px;">Bala National High School</div>
+        <div style="font-size:16px; font-weight:800; margin-top:12px;">SCHOOL LIBRARY CALENDAR OF ACTIVITIES</div>
+        <div style="font-size:10px; margin-top:2px;">SY 2026-2027</div>
+      `;
+      container.appendChild(header);
+
+      const table = document.createElement('table');
+      table.style.width = '100%';
+      table.style.borderCollapse = 'collapse';
+      table.style.tableLayout = 'fixed';
+      const thead = document.createElement('thead');
+      const headRow = document.createElement('tr');
+      ['DATE', 'ACTIVITY', 'PERSON/S INVOLVED', 'STATUS'].forEach(text => {
+        const th = document.createElement('th');
+        th.textContent = text;
+        th.style.border = '0.5px solid #000';
+        th.style.padding = '8px 6px';
+        th.style.fontSize = '9px';
+        th.style.fontWeight = '700';
+        th.style.textAlign = 'center';
+        th.style.background = '#f5f5f5';
+        th.style.verticalAlign = 'middle';
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+      const tbody = document.createElement('tbody');
+      const rows = activities.length ? activities : [{ activity_date: getFridayOfCurrentWeek(), activity_description: '', persons_involved: '', status: '' }];
+      rows.forEach((item, index) => {
+        const row = document.createElement('tr');
+        const values = [formatActivityDate(item.activity_date), item.activity_description || '', item.persons_involved || '', item.status || 'Planned'];
+        values.forEach((value, idx) => {
+          const td = document.createElement('td');
+          td.textContent = value;
+          td.style.color = '#000';
+          td.style.border = '0.5px solid #000';
+          td.style.padding = '8px 6px';
+          td.style.fontSize = '9px';
+          td.style.verticalAlign = 'top';
+          if (idx === 0) td.style.textAlign = 'center';
+          if (idx === 1 || idx === 2) td.style.whiteSpace = 'normal';
+          row.appendChild(td);
+        });
+        tbody.appendChild(row);
+      });
+      table.appendChild(tbody);
+      container.appendChild(table);
+      document.body.appendChild(container);
+
+      const opt = {
+        margin: 0,
+        filename: `calendar_activities_${new Date().toISOString().slice(0,10)}.pdf`,
+        image: { type: 'jpeg', quality: 0.95 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+      };
+
+      await window.html2pdf().set(opt).from(container).save();
+      document.body.removeChild(container);
+    } catch (error) {
+      Swal.fire({ icon: 'error', title: 'Export Error', text: error.message || error, confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0' });
+    }
+  }
+
+  async function exportDailyAttendancePDF() {
+    try {
+      if (!window.html2pdfReady) throw new Error('PDF export loader is not initialized.');
+      await window.html2pdfReady;
+      if (typeof window.html2pdf !== 'function') throw new Error('PDF export library is not loaded yet.');
+
+      const dateInput = document.getElementById('attendance-date-picker');
+      const date = dateInput?.value || new Date().toLocaleDateString('sv');
+      const res = await fetch(`/api/admin/daily-attendance?date=${encodeURIComponent(date)}`);
+      if (!res.ok) throw new Error('Failed to fetch daily attendance.');
+      const data = await res.json();
+      const records = data.attendance_records || [];
+
+      const container = document.createElement('div');
+      container.style.background = '#fff';
+      container.style.color = '#000';
+      container.style.padding = '24px';
+      container.style.width = '100%';
+      container.style.maxWidth = '100%';
+
+      const header = document.createElement('div');
+      header.style.textAlign = 'center';
+      header.style.marginBottom = '12px';
       const logo = document.createElement('img');
       logo.src = '/images/Deped-Seal.png';
       logo.style.height = '90px';
@@ -3171,8 +3447,6 @@ function updateStudentsTable(filterSection = 'all') {
         <div style="font-size:10px; margin-top:2px;">SY 2026-2027</div>
       `;
       container.appendChild(header);
-
-     
 
       const table = document.createElement('table');
       table.style.width = '100%';
@@ -3197,7 +3471,7 @@ function updateStudentsTable(filterSection = 'all') {
       table.appendChild(thead);
 
       const tbody = document.createElement('tbody');
-      for (let i = 0; i < 30; i++) {
+      for (let i = 0; i < Math.max(records.length, 30); i++) {
         const record = records[i] || {};
         const row = document.createElement('tr');
         const fields = [
