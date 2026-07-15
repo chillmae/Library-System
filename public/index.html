@@ -1168,12 +1168,12 @@
                         <i class="fas fa-calendar-alt"></i>
                         Calendar
                     </div>
-                    <div class="sidebar-subtitle">Admin events this week</div>
+                    <div class="sidebar-subtitle">Weekly Activities</div>
                 </div>
                 <div class="sidebar-content" id="sidebar-calendar-events">
                     <div class="empty-state">
                         <div class="empty-state-icon">🗓️</div>
-                        <div class="empty-state-text">Loading admin events...</div>
+                        <div class="empty-state-text">Loading weekly activities...</div>
                     </div>
                 </div>
             </div>
@@ -1744,7 +1744,7 @@
         calendarList.innerHTML = `
             <div class="empty-state">
                 <div class="empty-state-icon">🕒</div>
-                <div class="empty-state-text">Loading admin events...</div>
+                <div class="empty-state-text">Loading Weekly Activities...</div>
             </div>
         `;
 
@@ -1766,7 +1766,7 @@
             calendarList.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon">⚠️</div>
-                    <div class="empty-state-text">Unable to load admin events.</div>
+                    <div class="empty-state-text">Unable to load weekly activities.</div>
                 </div>
             `;
         }
@@ -1780,7 +1780,7 @@
             calendarList.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon">🗓️</div>
-                    <div class="empty-state-text">No admin events scheduled Monday–Friday.</div>
+                    <div class="empty-state-text">No activities scheduled Monday–Friday.</div>
                 </div>
             `;
             return;
