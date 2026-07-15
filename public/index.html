@@ -248,41 +248,39 @@
             pointer-events: none;
         }
 
-        .checkbox-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 0.8rem;
-        }
-
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.85rem 0.95rem;
-            border-radius: 12px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.08);
-            cursor: pointer;
-            transition: var(--transition);
-            font-size: 0.9rem;
-            line-height: 1.3;
-        }
-
-        .checkbox-item input {
-            width: 1.05rem;
-            height: 1.05rem;
-            accent-color: var(--amber);
-        }
-
-        .checkbox-item:hover {
-            background: rgba(255,255,255,0.08);
-            border-color: rgba(255,255,255,0.16);
-        }
-
         .field-note {
             font-size: 0.82rem;
             color: var(--text-muted);
             margin-top: 0.5rem;
+        }
+
+        .purpose-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .purpose-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.55rem 0.9rem;
+            border-radius: 999px;
+            background: rgba(91, 110, 245, 0.12);
+            color: var(--text);
+            border: 1px solid rgba(91, 110, 245, 0.18);
+            font-size: 0.85rem;
+        }
+
+        .purpose-chip button {
+            background: none;
+            border: none;
+            color: var(--text);
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+            font-size: 0.95rem;
         }
 
         /* Password toggle button */
@@ -1311,28 +1309,66 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Select your visit purposes</label>
-                        <div class="checkbox-grid" id="visit_reason_group">
-                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Attend/Conduct SLRC/Book Club,Event/Activity"> 🎓 Attend/Conduct SLRC/Book Club,Event/Activity</label>
-                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Attend SLRC Tour/Orientation"> 🚶 Attend SLRC Tour/Orientation</label>
-                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Borrow Books/Resources"> 📚 Borrow Books/Resources</label>
-                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Computer/Digital Technology/Internet Use"> 💻 Computer/Digital Technology/Internet Use</label>
-                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Conduct/Attend Book Club Reading Activity"> 📖 Conduct/Attend Book Club Reading Activity</label>
-                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Conduct/Attend Meeting"> 🫂 Conduct/Attend Meeting</label>
-                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Conduct/Attend Remedial Class"> 🎒 Conduct/Attend Remedial Class</label>
-                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Conduct/Attend SLRC Reading/Math Remediation"> 📘 Conduct/Attend SLRC Reading/Math Remediation</label>
-                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Conduct/Attend Storytelling Session"> 📚 Conduct/Attend Storytelling Session</label>
-                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Conduct/Attend Writing/Research Workshop"> 🛠️ Conduct/Attend Writing/Research Workshop</label>
-                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Donate Learning Resources"> 🎁 Donate Learning Resources</label>
-                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Lesson Preparation"> 📝 Lesson Preparation</label>
-                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Print/Photocopy projects/notes/lesson plan/activities"> 🖨️ Print/Photocopy projects/notes/lesson plan/activities</label>
-                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Reading"> 📖 Reading</label>
-                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Return Books/Resources"> 🔄 Return Books/Resources</label>
-                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="SLRC Visitation/Assessment/Validation"> 📋 SLRC Visitation/Assessment/Validation</label>
-                            <label class="checkbox-item"><input type="checkbox" name="visit_reason_option" value="Study/Project/Activity Making"> 📚 Study/Project/Activity Making</label>
+                        <label for="visit_reason_primary">Primary Purpose</label>
+                        <div class="input-wrap">
+                            <i class="input-icon fas fa-list"></i>
+                            <select id="visit_reason_primary" required>
+                                <option value="">Choose a purpose...</option>
+                                <option value="Attend/Conduct SLRC/Book Club,Event/Activity">🎓 Attend/Conduct SLRC/Book Club,Event/Activity</option>
+                                <option value="Attend SLRC Tour/Orientation">🚶 Attend SLRC Tour/Orientation</option>
+                                <option value="Borrow Books/Resources">📚 Borrow Books/Resources</option>
+                                <option value="Computer/Digital Technology/Internet Use">💻 Computer/Digital Technology/Internet Use</option>
+                                <option value="Conduct/Attend Book Club Reading Activity">📖 Conduct/Attend Book Club Reading Activity</option>
+                                <option value="Conduct/Attend Meeting">🫂 Conduct/Attend Meeting</option>
+                                <option value="Conduct/Attend Remedial Class">🎒 Conduct/Attend Remedial Class</option>
+                                <option value="Conduct/Attend SLRC Reading/Math Remediation">📘 Conduct/Attend SLRC Reading/Math Remediation</option>
+                                <option value="Conduct/Attend Storytelling Session">📚 Conduct/Attend Storytelling Session</option>
+                                <option value="Conduct/Attend Writing/Research Workshop">🛠️ Conduct/Attend Writing/Research Workshop</option>
+                                <option value="Donate Learning Resources">🎁 Donate Learning Resources</option>
+                                <option value="Lesson Preparation">📝 Lesson Preparation</option>
+                                <option value="Print/Photocopy projects/notes/lesson plan/activities">🖨️ Print/Photocopy projects/notes/lesson plan/activities</option>
+                                <option value="Reading">📖 Reading</option>
+                                <option value="Return Books/Resources">🔄 Return Books/Resources</option>
+                                <option value="SLRC Visitation/Assessment/Validation">📋 SLRC Visitation/Assessment/Validation</option>
+                                <option value="Study/Project/Activity Making">📚 Study/Project/Activity Making</option>
+                            </select>
                         </div>
-                        <div class="field-note">You may select more than one purpose, e.g. computer use while reading.</div>
                     </div>
+
+                    <div class="form-group" id="additional-purpose-group" style="display:none;">
+                        <label for="visit_reason_secondary">Add another purpose</label>
+                        <div class="input-wrap">
+                            <i class="input-icon fas fa-plus-circle"></i>
+                            <select id="visit_reason_secondary">
+                                <option value="">Choose another purpose...</option>
+                                <option value="Attend/Conduct SLRC/Book Club,Event/Activity">🎓 Attend/Conduct SLRC/Book Club,Event/Activity</option>
+                                <option value="Attend SLRC Tour/Orientation">🚶 Attend SLRC Tour/Orientation</option>
+                                <option value="Borrow Books/Resources">📚 Borrow Books/Resources</option>
+                                <option value="Computer/Digital Technology/Internet Use">💻 Computer/Digital Technology/Internet Use</option>
+                                <option value="Conduct/Attend Book Club Reading Activity">📖 Conduct/Attend Book Club Reading Activity</option>
+                                <option value="Conduct/Attend Meeting">🫂 Conduct/Attend Meeting</option>
+                                <option value="Conduct/Attend Remedial Class">🎒 Conduct/Attend Remedial Class</option>
+                                <option value="Conduct/Attend SLRC Reading/Math Remediation">📘 Conduct/Attend SLRC Reading/Math Remediation</option>
+                                <option value="Conduct/Attend Storytelling Session">📚 Conduct/Attend Storytelling Session</option>
+                                <option value="Conduct/Attend Writing/Research Workshop">🛠️ Conduct/Attend Writing/Research Workshop</option>
+                                <option value="Donate Learning Resources">🎁 Donate Learning Resources</option>
+                                <option value="Lesson Preparation">📝 Lesson Preparation</option>
+                                <option value="Print/Photocopy projects/notes/lesson plan/activities">🖨️ Print/Photocopy projects/notes/lesson plan/activities</option>
+                                <option value="Reading">📖 Reading</option>
+                                <option value="Return Books/Resources">🔄 Return Books/Resources</option>
+                                <option value="SLRC Visitation/Assessment/Validation">📋 SLRC Visitation/Assessment/Validation</option>
+                                <option value="Study/Project/Activity Making">📚 Study/Project/Activity Making</option>
+                            </select>
+                            <button type="button" class="btn btn-secondary" onclick="addSecondaryVisitPurpose()" style="margin-left:0.65rem; white-space: nowrap;">Add</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="selected-purposes-section" style="display:none;">
+                        <label>Selected purposes</label>
+                        <div id="selected-purposes-list" class="purpose-list"></div>
+                    </div>
+
+                    <div class="field-note">After choosing a primary purpose, you can add another purpose if you are doing more than one activity.</div>
 
                     <div class="error-msg" id="checkin-error-msg"></div>
 
@@ -1559,6 +1595,9 @@
             borrowCodeInput.addEventListener('blur', autoFillBorrowTitle);
             borrowCodeInput.addEventListener('change', autoFillBorrowTitle);
         }
+
+        attachVisitReasonListeners();
+        updateAdditionalPurposeVisibility();
 
         loadCalendarEvents();
         setInterval(loadCalendarEvents, 1800000); // refresh every 30 minutes
@@ -2103,21 +2142,85 @@
         } catch { setSpinner('admin-spinner', false); showError('admin-error-msg', '❌ Connection error'); }
     }
 
+    let additionalVisitPurposes = [];
+
+    function getPrimaryVisitReason() {
+        return document.getElementById('visit_reason_primary')?.value.trim() || '';
+    }
+
     function getSelectedVisitReasons() {
-        const selected = Array.from(document.querySelectorAll('input[name="visit_reason_option"]:checked'))
-            .map(checkbox => checkbox.value.trim())
-            .filter(Boolean);
-        return selected;
+        const primary = getPrimaryVisitReason();
+        return [primary, ...additionalVisitPurposes].filter(Boolean);
     }
 
     function hasVisitReason(reason, selectedReasons) {
         return selectedReasons.some(selected => selected === reason);
     }
 
+    function renderSelectedVisitPurposes() {
+        const list = document.getElementById('selected-purposes-list');
+        const section = document.getElementById('selected-purposes-section');
+        const selected = getSelectedVisitReasons();
+
+        if (!list || !section) return;
+
+        if (selected.length === 0) {
+            list.innerHTML = '';
+            section.style.display = 'none';
+            return;
+        }
+
+        section.style.display = 'block';
+        list.innerHTML = selected.map((purpose, idx) => `
+            <span class="purpose-chip">
+                ${purpose}
+                ${idx > 0 ? `<button type="button" onclick="removeSecondaryPurpose(${idx - 1})">×</button>` : ''}
+            </span>
+        `).join('');
+    }
+
+    function addSecondaryVisitPurpose() {
+        const secondary = document.getElementById('visit_reason_secondary')?.value.trim();
+        const primary = getPrimaryVisitReason();
+        if (!secondary) {
+            showError('checkin-error-msg', '❌ Please select an additional purpose to add');
+            return;
+        }
+        if (secondary === primary) {
+            showError('checkin-error-msg', '⚠️ This purpose is already selected as primary');
+            return;
+        }
+        if (additionalVisitPurposes.includes(secondary)) {
+            showError('checkin-error-msg', '⚠️ This purpose is already added');
+            return;
+        }
+        additionalVisitPurposes.push(secondary);
+        document.getElementById('visit_reason_secondary').value = '';
+        renderSelectedVisitPurposes();
+    }
+
+    function removeSecondaryPurpose(index) {
+        additionalVisitPurposes.splice(index, 1);
+        renderSelectedVisitPurposes();
+    }
+
+    function updateAdditionalPurposeVisibility() {
+        const primary = getPrimaryVisitReason();
+        const group = document.getElementById('additional-purpose-group');
+        const selected = document.getElementById('selected-purposes-section');
+        if (group && primary) {
+            group.style.display = 'block';
+            selected.style.display = additionalVisitPurposes.length ? 'block' : 'none';
+        } else if (group) {
+            group.style.display = 'none';
+            selected.style.display = 'none';
+        }
+    }
+
     async function submitCheckIn() {
         const selectedReasons = getSelectedVisitReasons();
-        if (!selectedReasons.length) {
-            showError('checkin-error-msg', '❌ Please select at least one purpose');
+        if (selectedReasons.length === 0) {
+            showError('checkin-error-msg', '❌ Please choose a primary purpose first');
             return;
         }
 
@@ -2195,7 +2298,13 @@
             const el = document.getElementById(id);
             if (el) el.value = id === 'user_type' ? 'student' : '';
         });
-        document.querySelectorAll('input[name="visit_reason_option"]').forEach(cb => cb.checked = false);
+        const primarySelect = document.getElementById('visit_reason_primary');
+        const secondarySelect = document.getElementById('visit_reason_secondary');
+        if (primarySelect) primarySelect.value = '';
+        if (secondarySelect) secondarySelect.value = '';
+        additionalVisitPurposes = [];
+        renderSelectedVisitPurposes();
+        updateAdditionalPurposeVisibility();
         ['error-msg','admin-error-msg','checkin-error-msg','checkout-error-msg'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.classList.remove('show');
@@ -2237,7 +2346,9 @@
             'Reading',
             'Study/Project/Activity Making'
         ];
-        return reasonsRequiringBookAccession.includes(visitReason);
+        if (!visitReason || typeof visitReason !== 'string') return false;
+        const selectedReasons = visitReason.split('|').map(r => r.trim()).filter(Boolean);
+        return selectedReasons.some(reason => reasonsRequiringBookAccession.includes(reason));
     }
 
     function togglePasswordVisibility() {
@@ -2416,6 +2527,16 @@
         document.getElementById('borrow_title').value = '';
         document.getElementById('borrow_code').value = '';
         updateBorrowFormFields();
+    }
+
+    function attachVisitReasonListeners() {
+        const primary = document.getElementById('visit_reason_primary');
+        if (primary) {
+            primary.addEventListener('change', () => {
+                updateAdditionalPurposeVisibility();
+                renderSelectedVisitPurposes();
+            });
+        }
     }
 
     function openReturnModal() {
