@@ -670,12 +670,12 @@ app.get('/api/admin/students', async (req, res) => {
 // 6. Admin: Update a student
 app.put('/api/admin/students/:id', async (req, res) => {
     const { id } = req.params;
-    const { name, grade, section, organization, session, adviser, address, contact_number, sex, birthdate, age } = req.body;
+    const { student_id, name, grade, section, organization, session, adviser, address, contact_number, sex, birthdate, age } = req.body;
 
     try {
         const { data, error } = await supabase
             .from('users')
-            .update({ name, grade, section, organization, session, adviser, address, contact_number, sex, birthdate, age: age || null })
+            .update({ student_id, name, grade, section, organization, session, adviser, address, contact_number, sex, birthdate, age: age || null })
             .eq('id', id);
 
         if (error) {
@@ -884,16 +884,16 @@ app.get('/api/admin/faculty', async (req, res) => {
 // Update Faculty
 app.put('/api/admin/faculty/:id', async (req, res) => {
     const { id } = req.params;
-    const { employee_no, name, position, subject_area, grade_level, sex, address, contact_number, email, birthdate, age } = req.body;
+    const { faculty_id, employee_no, name, position, subject_area, grade_level, sex, address, contact_number, email, birthdate, age } = req.body;
 
     try {
         const normalizedBirthdate = birthdate && String(birthdate).trim() ? birthdate : null;
         const normalizedAge = age !== undefined && age !== '' && age !== null ? Number(age) : null;
 
-        console.log('[UPDATE-FACULTY] id:', id, 'payload:', { employee_no, name, position, subject_area, grade_level, sex, address, contact_number, email, birthdate: normalizedBirthdate, age: normalizedAge });
+        console.log('[UPDATE-FACULTY] id:', id, 'payload:', { faculty_id, employee_no, name, position, subject_area, grade_level, sex, address, contact_number, email, birthdate: normalizedBirthdate, age: normalizedAge });
         const { data, error } = await supabase
             .from('faculty')
-            .update({ employee_no, name, position, subject_area, grade_level, sex, address, contact_number, email, birthdate: normalizedBirthdate, age: normalizedAge })
+            .update({ faculty_id, employee_no, name, position, subject_area, grade_level, sex, address, contact_number, email, birthdate: normalizedBirthdate, age: normalizedAge })
             .eq('id', id);
 
         console.log('[UPDATE-FACULTY] supabase response:', { data, error });

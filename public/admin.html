@@ -1623,9 +1623,6 @@
                   <th style="width:6%;text-align:left;padding:6px">Year</th>
                   <th style="width:12%;text-align:left;padding:6px">Remarks</th>
                   <th style="width:10%;text-align:left;padding:6px">Category</th>
-                  <th style="width:8%;text-align:left;padding:6px">Call No.</th>
-                  <th style="width:10%;text-align:left;padding:6px">ISBN</th>
-              
                 </tr>
               </thead>
               <tbody id="books_bulk_tbody">
@@ -1653,7 +1650,6 @@
             <thead>
               <tr>
                 <th style="min-width:120px; white-space:nowrap;">Accession #</th>
-                <th style="min-width:120px; white-space:nowrap;">Call No.</th>
                 <th style="min-width:220px; white-space:nowrap;">Title</th>
                 <th style="min-width:180px; white-space:nowrap;">Author</th>
                 <th style="min-width:140px; white-space:nowrap;">Category</th>
@@ -1666,7 +1662,6 @@
                 <th style="min-width:100px; white-space:nowrap;">Price</th>
                 <th style="min-width:140px; white-space:nowrap;">Publisher</th>
                 <th style="min-width:110px; white-space:nowrap;">Year</th>
-                <th style="min-width:180px; white-space:nowrap;">ISBN</th>
                 <th style="min-width:220px; white-space:nowrap;">Remarks</th>
                 <th style="min-width:110px; white-space:nowrap;">Actions</th>
               </tr>
@@ -2289,7 +2284,7 @@
       <button class="modal-close" onclick="closeModal('edit-modal')"><i class="fas fa-xmark"></i></button>
     </div>
     <div class="modal-form">
-      <div class="form-group"><label>SLRC ID</label><input type="text" id="edit_student_id" disabled style="opacity:.5; cursor:not-allowed;"></div>
+      <div class="form-group"><label>SLRC ID</label><input type="text" id="edit_student_id"></div>
       <div class="form-group"><label>Full Name</label><input type="text" id="edit_student_name"></div>
       <div class="form-group"><label>Grade</label><input type="text" id="edit_student_grade"></div>
       <div class="form-group"><label>Section</label><input type="text" id="edit_student_section"></div>
@@ -2317,7 +2312,7 @@
       <button class="modal-close" onclick="closeModal('edit-faculty-modal')"><i class="fas fa-xmark"></i></button>
     </div>
     <div class="modal-form">
-      <div class="form-group"><label>Faculty Library ID</label><input type="text" id="edit_faculty_id" disabled style="opacity:.5; cursor:not-allowed;"></div>
+      <div class="form-group"><label>Faculty Library ID</label><input type="text" id="edit_faculty_id"></div>
       <div class="form-group"><label>Employee Number</label><input type="text" id="edit_faculty_employee_no"></div>
       <div class="form-group"><label>Full Name</label><input type="text" id="edit_faculty_name"></div>
       <div class="form-group"><label>Position</label><input type="text" id="edit_faculty_position"></div>
@@ -2760,6 +2755,7 @@ function updateStudentsTable(filterSection = 'all') {
   }
 
   async function updateStudent() {
+    const student_id = document.getElementById('edit_student_id').value.trim();
     const name = document.getElementById('edit_student_name').value.trim();
     const grade = document.getElementById('edit_student_grade').value.trim();
     const section = document.getElementById('edit_student_section').value.trim();
@@ -2771,9 +2767,9 @@ function updateStudentsTable(filterSection = 'all') {
     const sex = document.getElementById('edit_student_sex').value.trim();
     const birthdate = document.getElementById('edit_student_birthdate').value;
     const age = document.getElementById('edit_student_age').value;
-    if (!name) { Swal.fire({icon:'warning',title:'Name required',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); return; }
+    if (!student_id || !name) { Swal.fire({icon:'warning',title:'ID and name required',text:'Please provide both SLRC ID and name.',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); return; }
     try {
-      const res = await fetch(`/api/admin/students/${currentEditId}`,{ method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,grade,section,organization,session,adviser,address,contact_number,sex,birthdate,age:parseInt(age)||null}) });
+      const res = await fetch(`/api/admin/students/${currentEditId}`,{ method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({student_id,name,grade,section,organization,session,adviser,address,contact_number,sex,birthdate,age:parseInt(age)||null}) });
       if (res.ok) {
         Swal.fire({icon:'success',title:'Updated!',text:'Student info updated.',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}).then(()=>{ closeModal('edit-modal'); loadStudents(); });
       } else { Swal.fire({icon:'error',title:'Error',text:'Could not update.',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
@@ -3000,6 +2996,7 @@ function updateStudentsTable(filterSection = 'all') {
   }
 
   async function updateFaculty() {
+    const faculty_id = document.getElementById('edit_faculty_id').value.trim();
     const employee_no = document.getElementById('edit_faculty_employee_no').value.trim();
     const name = document.getElementById('edit_faculty_name').value.trim();
     const position = document.getElementById('edit_faculty_position').value.trim();
@@ -3011,9 +3008,9 @@ function updateStudentsTable(filterSection = 'all') {
     const email = document.getElementById('edit_faculty_email').value.trim();
     const birthdate = document.getElementById('edit_faculty_birthdate').value;
     const age = document.getElementById('edit_faculty_age').value;
-    if (!name) { Swal.fire({icon:'warning',title:'Name required',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); return; }
+    if (!faculty_id || !name) { Swal.fire({icon:'warning',title:'ID and name required',text:'Please provide both Faculty Library ID and name.',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); return; }
     try {
-      const res = await fetch(`/api/admin/faculty/${currentEditFacultyId}`,{ method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({employee_no,name,position,subject_area,grade_level,sex,address,contact_number,email,birthdate,age:parseInt(age)||null}) });
+      const res = await fetch(`/api/admin/faculty/${currentEditFacultyId}`,{ method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({faculty_id,employee_no,name,position,subject_area,grade_level,sex,address,contact_number,email,birthdate,age:parseInt(age)||null}) });
       if (res.ok) {
         Swal.fire({icon:'success',title:'Updated!',text:'Faculty info updated.',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}).then(()=>{ closeModal('edit-faculty-modal'); loadFaculty(); });
       } else { Swal.fire({icon:'error',title:'Error',text:'Could not update.',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
@@ -3633,6 +3630,25 @@ function updateStudentsTable(filterSection = 'all') {
     return text;
   }
 
+  function compareAccessionNumbers(a, b) {
+    const normalize = value => {
+      if (!value) return { prefix: '', num: NaN, raw: '' };
+      const text = String(value).trim();
+      const match = text.match(/^(.*?)(\d+)$/);
+      if (match) {
+        return { prefix: match[1].toLowerCase(), num: parseInt(match[2], 10), raw: text.toLowerCase() };
+      }
+      return { prefix: text.toLowerCase(), num: NaN, raw: text.toLowerCase() };
+    };
+
+    const left = normalize(a);
+    const right = normalize(b);
+
+    if (left.prefix !== right.prefix) return left.prefix.localeCompare(right.prefix, undefined, { numeric: true, sensitivity: 'base' });
+    if (!Number.isNaN(left.num) && !Number.isNaN(right.num)) return left.num - right.num;
+    return left.raw.localeCompare(right.raw, undefined, { numeric: true, sensitivity: 'base' });
+  }
+
   async function saveBookCellValue(cell) {
     const bookId = cell.getAttribute('data-book-id');
     const field = cell.getAttribute('data-field');
@@ -3680,11 +3696,11 @@ function updateStudentsTable(filterSection = 'all') {
 
   function updateBooksTable() {
     const tbody = document.getElementById('books-table');
-    if (!allBooks.length) { tbody.innerHTML = `<tr><td colspan="17"><div class="empty-state"><div class="empty-icon"><i class="fas fa-book-open"></i></div><div class="empty-text">No books found</div></div></td></tr>`; return; }
-    tbody.innerHTML = allBooks.map(b => `
+    if (!allBooks.length) { tbody.innerHTML = `<tr><td colspan="15"><div class="empty-state"><div class="empty-icon"><i class="fas fa-book-open"></i></div><div class="empty-text">No books found</div></div></td></tr>`; return; }
+    const sortedBooks = [...allBooks].sort((a, b) => compareAccessionNumbers(a.accession_number, b.accession_number));
+    tbody.innerHTML = sortedBooks.map(b => `
       <tr>
         <td class="book-cell" contenteditable="true" data-book-id="${b.id}" data-field="accession_number" style="min-width:120px; white-space:nowrap;">${escapeHtml(b.accession_number || '')}</td>
-        <td class="book-cell" contenteditable="true" data-book-id="${b.id}" data-field="call_number" style="min-width:120px; white-space:nowrap;">${escapeHtml(b.call_number || '')}</td>
         <td class="book-cell" contenteditable="true" data-book-id="${b.id}" data-field="title" style="min-width:220px; white-space:nowrap;">${escapeHtml(b.title || '')}</td>
         <td class="book-cell" contenteditable="true" data-book-id="${b.id}" data-field="author" style="min-width:180px; white-space:nowrap;">${escapeHtml(b.author || '')}</td>
         <td class="book-cell" contenteditable="true" data-book-id="${b.id}" data-field="category" style="min-width:140px; white-space:nowrap;">${escapeHtml(b.category || '')}</td>
@@ -3697,7 +3713,6 @@ function updateStudentsTable(filterSection = 'all') {
         <td class="book-cell" contenteditable="true" data-book-id="${b.id}" data-field="price" style="min-width:100px; white-space:nowrap;">${escapeHtml(b.price || '')}</td>
         <td class="book-cell" contenteditable="true" data-book-id="${b.id}" data-field="publisher" style="min-width:140px; white-space:nowrap;">${escapeHtml(b.publisher || '')}</td>
         <td class="book-cell" contenteditable="true" data-book-id="${b.id}" data-field="copyright_year" style="min-width:110px; white-space:nowrap;">${escapeHtml(b.copyright_year || '')}</td>
-        <td class="book-cell" contenteditable="true" data-book-id="${b.id}" data-field="isbn" style="min-width:180px; white-space:nowrap;">${escapeHtml(b.isbn || '')}</td>
         <td class="book-cell" contenteditable="true" data-book-id="${b.id}" data-field="remarks" style="min-width:220px; white-space:nowrap;">${escapeHtml(b.remarks || '')}</td>
         <td>
           <div class="action-group">
@@ -4243,10 +4258,7 @@ function updateStudentsTable(filterSection = 'all') {
       { key: 'publisher', placeholder: 'Publisher' },
       { key: 'copyright_year', placeholder: 'Year', type: 'number' },
        { key: 'remarks', placeholder: 'Remarks' },
-        { key: 'category', placeholder: 'Category' },
-      { key: 'call_number', placeholder: 'FIC-100' },
-      { key: 'isbn', placeholder: 'ISBN' }
-     
+        { key: 'category', placeholder: 'Category' }
     ];
     cols.forEach(c=>{
       const td = document.createElement('td'); td.style.padding='4px'; td.style.verticalAlign='middle';
