@@ -1502,7 +1502,12 @@
           </div>
           <div class="form-group">
             <label>Position</label>
-            <input type="text" id="faculty_position" placeholder="e.g., English Teacher">
+            <select id="faculty_position">
+              <option value="">-- Select Position --</option>
+              <option value="SHS">SHS</option>
+              <option value="JHS">JHS</option>
+              <option value="Non-Teaching">Non-Teaching</option>
+            </select>
           </div>
           <div class="form-group">
             <label>Subject Area</label>
@@ -2315,7 +2320,7 @@
       <div class="form-group"><label>Faculty Library ID</label><input type="text" id="edit_faculty_id"></div>
       <div class="form-group"><label>Employee Number</label><input type="text" id="edit_faculty_employee_no"></div>
       <div class="form-group"><label>Full Name</label><input type="text" id="edit_faculty_name"></div>
-      <div class="form-group"><label>Position</label><input type="text" id="edit_faculty_position"></div>
+      <div class="form-group"><label>Position</label><select id="edit_faculty_position"><option value="">-- Select Position --</option><option value="SHS">SHS</option><option value="JHS">JHS</option><option value="Non-Teaching">Non-Teaching</option></select></div>
       <div class="form-group"><label>Subject Area</label><input type="text" id="edit_faculty_subject_area"></div>
       <div class="form-group"><label>Grade Level</label><input type="text" id="edit_faculty_grade_level"></div>
       <div class="form-group"><label>Sex</label><select id="edit_faculty_sex"><option value="">-- Select --</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
@@ -2907,10 +2912,13 @@ function updateStudentsTable(filterSection = 'all') {
   function populateFacultyFilter() {
     const select = document.getElementById('faculty-position-filter');
     if (!select) return;
-    const positions = [...new Set(allFaculty.map(f => (f.position || '').trim()).filter(Boolean))].sort();
+    const canonical = ['SHS', 'JHS', 'Non-Teaching'];
+    const extra = [...new Set(allFaculty.map(f => (f.position || '').trim()).filter(p => p && !canonical.includes(p)))].sort();
     select.innerHTML = [`
       <option value="all">All Faculty</option>
-    `].concat(positions.map(pos => `
+    `].concat(canonical.map(pos => `
+      <option value="${pos}">${pos}</option>
+    `)).concat(extra.map(pos => `
       <option value="${pos}">${pos}</option>
     `)).join('');
   }
@@ -2983,7 +2991,15 @@ function updateStudentsTable(filterSection = 'all') {
     document.getElementById('edit_faculty_id').value = f.faculty_id;
     document.getElementById('edit_faculty_employee_no').value = f.employee_no || '';
     document.getElementById('edit_faculty_name').value = f.name||'';
-    document.getElementById('edit_faculty_position').value = f.position||'';
+    const editPositionSelect = document.getElementById('edit_faculty_position');
+    editPositionSelect.value = f.position||'';
+    if (f.position && ![...editPositionSelect.options].some(o => o.value === f.position)) {
+      const customOption = document.createElement('option');
+      customOption.value = f.position;
+      customOption.textContent = f.position;
+      customOption.selected = true;
+      editPositionSelect.appendChild(customOption);
+    }
     document.getElementById('edit_faculty_subject_area').value = f.subject_area||'';
     document.getElementById('edit_faculty_grade_level').value = f.grade_level||'';
     document.getElementById('edit_faculty_sex').value = f.sex||'';
@@ -4258,11 +4274,33 @@ function updateStudentsTable(filterSection = 'all') {
       { key: 'publisher', placeholder: 'Publisher' },
       { key: 'copyright_year', placeholder: 'Year', type: 'number' },
        { key: 'remarks', placeholder: 'Remarks' },
-        { key: 'category', placeholder: 'Category' }
+        { key: 'category', placeholder: 'Category', type: 'select' }
     ];
     cols.forEach(c=>{
       const td = document.createElement('td'); td.style.padding='4px'; td.style.verticalAlign='middle';
-      const inp = makeCellInput(data[c.key]||'', c.placeholder, c.type || 'text');
+      let inp;
+      if (c.type === 'select') {
+        inp = document.createElement('select');
+        inp.style.width = '100%';
+        inp.style.padding = '6px';
+        inp.style.border = '1px solid var(--border)';
+        inp.style.background = 'transparent';
+        inp.style.color = 'var(--text)';
+        inp.style.minHeight = '32px';
+        const categories = [
+          'Filipiniana',
+          'General References',
+          'Learning Area References',
+          'Supplementary Reading Remediation Materials',
+          'Fiction',
+          'Learning Activity Sheets'
+        ];
+        inp.appendChild(new Option('-- Select Category --', ''));
+        categories.forEach(cat => inp.appendChild(new Option(cat, cat)));
+        inp.value = data[c.key] || '';
+      } else {
+        inp = makeCellInput(data[c.key]||'', c.placeholder, c.type || 'text');
+      }
       inp.dataset.key = c.key;
       inp.addEventListener('paste', (event) => {
         const clip = (event.clipboardData || window.clipboardData).getData('text');
