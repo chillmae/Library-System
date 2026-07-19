@@ -1793,13 +1793,14 @@
         calendarList.innerHTML = sorted.map(event => {
             const date = new Date(event.activity_date);
             const dateLabel = date.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+            const timeLabel = formatTimeShort(event.activity_date);
             const description = event.activity_description || 'No description provided';
             const people = event.persons_involved ? event.persons_involved : 'Admin event';
             const status = event.status ? event.status : 'Planned';
 
             return `
                 <div class="sidebar-calendar-event">
-                    <div class="sidebar-calendar-event-date">${dateLabel}</div>
+                    <div class="sidebar-calendar-event-date">${dateLabel} · ${timeLabel}</div>
                     <div class="sidebar-calendar-event-desc">${description}</div>
                     <div class="sidebar-calendar-event-meta">
                         <span><i class="fas fa-user-friends"></i> ${people}</span>
