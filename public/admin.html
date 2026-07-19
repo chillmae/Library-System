@@ -2269,7 +2269,7 @@
     </div>
     <div class="modal-form">
       <input type="hidden" id="calendar-activity-id">
-      <div class="form-group"><label>Date</label><input type="date" id="calendar-activity-date"></div>
+      <div class="form-group"><label>Date & Time</label><input type="datetime-local" id="calendar-activity-date" placeholder="Select date and time"></div>
       <div class="form-group" style="grid-column:1/-1;"><label>Activity</label><textarea id="calendar-activity-description" rows="3" placeholder="Describe the activity"></textarea></div>
       <div class="form-group" style="grid-column:1/-1;"><label>Person/s Involved</label><input type="text" id="calendar-activity-persons" placeholder="Names or teams involved"></div>
       <div class="form-group"><label>Status</label><select id="calendar-activity-status"><option value="Planned">Planned</option><option value="In Progress">In Progress</option><option value="Completed">Completed</option><option value="Deferred">Deferred</option></select></div>
@@ -3227,19 +3227,22 @@ function updateStudentsTable(filterSection = 'all') {
     }
   }
 
-  function getFridayOfCurrentWeek(reference = new Date()) {
+  function getCurrentDateTimeLocal(reference = new Date()) {
+    const pad = num => String(num).padStart(2, '0');
     const d = new Date(reference);
-    const day = d.getDay();
-    const diff = ((5 - day) + 7) % 7;
-    d.setDate(d.getDate() + diff);
-    return d.toISOString().slice(0, 10);
+    const year = d.getFullYear();
+    const month = pad(d.getMonth() + 1);
+    const day = pad(d.getDate());
+    const hours = pad(d.getHours());
+    const minutes = pad(d.getMinutes());
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   }
 
   function formatActivityDate(value) {
     if (!value) return '—';
     const d = new Date(value);
     if (Number.isNaN(d.getTime())) return value;
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
   }
 
   async function loadCalendarActivities() {
@@ -3280,7 +3283,7 @@ function updateStudentsTable(filterSection = 'all') {
     currentCalendarActivityId = null;
     document.getElementById('calendar-activity-id').value = '';
     document.getElementById('calendar-activity-modal-title').textContent = 'Add Calendar Activity';
-    document.getElementById('calendar-activity-date').value = getFridayOfCurrentWeek();
+    document.getElementById('calendar-activity-date').value = getCurrentDateTimeLocal();
     document.getElementById('calendar-activity-description').value = '';
     document.getElementById('calendar-activity-persons').value = '';
     document.getElementById('calendar-activity-status').value = 'Planned';
@@ -3293,7 +3296,7 @@ function updateStudentsTable(filterSection = 'all') {
     currentCalendarActivityId = id;
     document.getElementById('calendar-activity-id').value = id;
     document.getElementById('calendar-activity-modal-title').textContent = 'Edit Calendar Activity';
-    document.getElementById('calendar-activity-date').value = activity.activity_date || getFridayOfCurrentWeek();
+    document.getElementById('calendar-activity-date').value = activity.activity_date || getCurrentDateTimeLocal();
     document.getElementById('calendar-activity-description').value = activity.activity_description || '';
     document.getElementById('calendar-activity-persons').value = activity.persons_involved || '';
     document.getElementById('calendar-activity-status').value = activity.status || 'Planned';
@@ -3316,8 +3319,8 @@ function updateStudentsTable(filterSection = 'all') {
       }
 
       const selectedDate = new Date(payload.activity_date || '');
-      if (Number.isNaN(selectedDate.getTime()) || selectedDate.getDay() !== 5) {
-        Swal.fire({ icon: 'warning', title: 'Friday only', text: 'Select a Friday date for the calendar activity.', confirmButtonColor: '#5b6ef5', background: '#1a1e2b', color: '#e8eaf0' });
+      if (Number.isNaN(selectedDate.getTime())) {
+        Swal.fire({ icon: 'warning', title: 'Invalid date/time', text: 'Please enter a valid date and time for the activity.', confirmButtonColor: '#5b6ef5', background: '#1a1e2b', color: '#e8eaf0' });
         return;
       }
 
@@ -3411,7 +3414,7 @@ function updateStudentsTable(filterSection = 'all') {
       thead.appendChild(headRow);
       table.appendChild(thead);
       const tbody = document.createElement('tbody');
-      const rows = activities.length ? activities : [{ activity_date: getFridayOfCurrentWeek(), activity_description: '', persons_involved: '', status: '' }];
+      const rows = activities.length ? activities : [{ activity_date: getCurrentDateTimeLocal(), activity_description: '', persons_involved: '', status: '' }];
       rows.forEach((item, index) => {
         const row = document.createElement('tr');
         const values = [formatActivityDate(item.activity_date), item.activity_description || '', item.persons_involved || '', item.status || 'Planned'];
