@@ -334,25 +334,6 @@ app.post('/api/check-in', async (req, res) => {
         const normalizedUserType = user_type === 'stakeholder' ? 'stakeholder' : (user_type === 'faculty' ? 'faculty' : 'student');
         
         console.log('[CHECKIN] Formatted checkInTime:', checkInTime);
-
-        const { data: existingLog, error: existingLogError } = await supabase
-            .from('library_logs')
-            .select('id, check_in_time')
-            .eq('user_id', user_id)
-            .eq('action_date', today)
-            .is('check_out_time', null)
-            .order('check_in_time', { ascending: false })
-            .limit(1)
-            .single();
-
-        if (existingLogError && existingLogError.code !== 'PGRST116') {
-            console.error('[CHECKIN] Existing log lookup failed:', existingLogError);
-            return res.status(500).json({ error: existingLogError.message });
-        }
-
-        if (existingLog) {
-            return res.json({ message: 'Already checked in', already_checked_in: true, log_id: existingLog.id });
-        }
         
         let insertPayload = {
             user_id,
@@ -374,7 +355,7 @@ app.post('/api/check-in', async (req, res) => {
 
         if (error) return res.status(500).json({ error: error.message });
 
-        res.json({ message: 'Checked in successfully', already_checked_in: false, log_id: data?.[0]?.id || null });
+        res.json({ message: 'Checked in successfully' });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -691,15 +672,21 @@ app.get('/api/admin/students', async (req, res) => {
 // 6. Admin: Update a student
 app.put('/api/admin/students/:id', async (req, res) => {
     const { id } = req.params;
+    const studentId = Number(id);
     const { student_id, name, grade, section, organization, session, adviser, address, contact_number, sex, birthdate, age } = req.body;
     const normalizedBirthdate = birthdate && String(birthdate).trim() ? birthdate : null;
     const normalizedAge = age !== undefined && age !== null && String(age).trim() !== '' ? age : null;
+
+    if (!Number.isInteger(studentId)) {
+        return res.status(400).json({ error: 'Invalid student ID.' });
+    }
 
     try {
         const { data, error } = await supabase
             .from('users')
             .update({ student_id, name, grade, section, organization, session, adviser, address, contact_number, sex, birthdate: normalizedBirthdate, age: normalizedAge })
-            .eq('id', id);
+            .eq('id', studentId)
+            .select('*');
 
         if (error) {
             if (error.message && /column|schema cache|Could not find/i.test(error.message)) {
@@ -708,7 +695,7 @@ app.put('/api/admin/students/:id', async (req, res) => {
             return res.status(500).json({ error: error.message });
         }
 
-        res.json({ message: 'Student updated successfully' });
+        res.json({ message: 'Student updated successfully', student: data?.[0] || null });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

@@ -2227,7 +2227,14 @@
         }
     }
 
+    let checkInSubmitting = false;
+
     async function submitCheckIn() {
+        if (checkInSubmitting) {
+            showError('checkin-error-msg', '⚠️ You already clicked. Please wait while the check-in finishes.');
+            return;
+        }
+
         const selectedReasons = getSelectedVisitReasons();
         if (selectedReasons.length === 0) {
             showError('checkin-error-msg', '❌ Please choose a primary purpose first');
@@ -2254,6 +2261,13 @@
         }
 
         // For other reasons, proceed with normal check-in
+        checkInSubmitting = true;
+        const checkInButton = document.querySelector('#check-in-screen .btn.btn-amber');
+        if (checkInButton) {
+            checkInButton.disabled = true;
+            checkInButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Please wait…</span>';
+        }
+
         try {
             const userType = currentUserData.role === 'faculty' ? 'faculty' : currentUserData.role === 'stakeholder' ? 'stakeholder' : 'student';
             
@@ -2270,7 +2284,6 @@
                 body: JSON.stringify(checkInData) 
             });
             const result = await response.json().catch(() => ({}));
-            
             if (!response.ok) {
                 throw new Error(result.error || 'Check-in failed.');
             }
@@ -2279,7 +2292,16 @@
             document.getElementById('success-title').textContent    = 'Welcome In!';
             document.getElementById('success-subtitle').textContent = result.already_checked_in ? 'You were already checked in for today, so you remain on the visitors list.' : 'You are now checked in. Enjoy your visit!';
             showScreen('success');
-        } catch (error) { showError('checkin-error-msg', `❌ ${error.message || 'Check-in failed. Try again.'}`); }
+        } catch (error) { 
+            showError('checkin-error-msg', `❌ ${error.message || 'Check-in failed. Try again.'}`);
+        } finally {
+            checkInSubmitting = false;
+            const checkInButton = document.querySelector('#check-in-screen .btn.btn-amber');
+            if (checkInButton) {
+                checkInButton.disabled = false;
+                checkInButton.innerHTML = '<i class="fas fa-sign-in-alt"></i> <span>Check In</span>';
+            }
+        }
     }
 
     async function submitCheckOut() {

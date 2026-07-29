@@ -2794,6 +2794,11 @@ function updateStudentsTable(filterSection = 'all') {
   }
 
   async function updateStudent() {
+    if (!currentEditId) {
+      Swal.fire({icon:'warning',title:'No student selected',text:'Please reopen the edit form and try again.',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'});
+      return;
+    }
+
     const student_id = document.getElementById('edit_student_id').value.trim();
     const name = document.getElementById('edit_student_name').value.trim();
     const grade = document.getElementById('edit_student_grade').value.trim();
