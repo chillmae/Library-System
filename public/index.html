@@ -1813,13 +1813,19 @@
 
     // Format time in short format (HH:MM)
     function formatTimeShort(t) {
-        // If t is already in HH:MM:SS format, just extract HH:MM
-        if (t && typeof t === 'string' && t.includes(':')) {
-            const parts = t.split(':');
-            return `${parts[0]}:${parts[1]}`; // HH:MM
+        if (!t) return 'N/A';
+
+        const value = String(t).trim();
+        const directMatch = value.match(/T(\d{2}):(\d{2})(?::\d{2})?(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?/i);
+        if (directMatch) {
+            return `${directMatch[1]}:${directMatch[2]}`;
         }
-        
-        // Fallback for other formats
+
+        const compactMatch = value.match(/^(\d{2}):(\d{2})(?::\d{2})?$/);
+        if (compactMatch) {
+            return `${compactMatch[1]}:${compactMatch[2]}`;
+        }
+
         try {
             return new Date(t).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
         } catch {
@@ -2258,17 +2264,22 @@
                 user_type: userType
             };
             
-            await fetch('/api/check-in', { 
+            const response = await fetch('/api/check-in', { 
                 method:'POST', 
                 headers:{'Content-Type':'application/json'}, 
                 body: JSON.stringify(checkInData) 
             });
+            const result = await response.json().catch(() => ({}));
             
-            loadCurrentUsers();
+            if (!response.ok) {
+                throw new Error(result.error || 'Check-in failed.');
+            }
+            
+            await loadCurrentUsers();
             document.getElementById('success-title').textContent    = 'Welcome In!';
-            document.getElementById('success-subtitle').textContent = 'You are now checked in. Enjoy your visit!';
+            document.getElementById('success-subtitle').textContent = result.already_checked_in ? 'You were already checked in for today, so you remain on the visitors list.' : 'You are now checked in. Enjoy your visit!';
             showScreen('success');
-        } catch { showError('checkin-error-msg', '❌ Check-in failed. Try again.'); }
+        } catch (error) { showError('checkin-error-msg', `❌ ${error.message || 'Check-in failed. Try again.'}`); }
     }
 
     async function submitCheckOut() {
