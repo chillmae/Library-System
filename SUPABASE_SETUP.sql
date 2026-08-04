@@ -182,6 +182,29 @@ CREATE TABLE IF NOT EXISTS calendar_activities (
 
 CREATE INDEX IF NOT EXISTS idx_calendar_activities_date ON calendar_activities(activity_date);
 
+ALTER TABLE calendar_activities ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY IF NOT EXISTS "Allow public read access to calendar activities"
+ON calendar_activities
+FOR SELECT
+USING (true);
+
+CREATE POLICY IF NOT EXISTS "Allow public insert access to calendar activities"
+ON calendar_activities
+FOR INSERT
+WITH CHECK (true);
+
+CREATE POLICY IF NOT EXISTS "Allow public update access to calendar activities"
+ON calendar_activities
+FOR UPDATE
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY IF NOT EXISTS "Allow public delete access to calendar activities"
+ON calendar_activities
+FOR DELETE
+USING (true);
+
 -- Sample calendar activities
 INSERT INTO calendar_activities (activity_date, activity_description, persons_involved, status) VALUES
 ('2026-06-06 09:00:00+00', 'Library orientation for incoming Grade 7 students', 'Library Staff, Grade 7 Advisers', 'Planned'),

@@ -3307,7 +3307,14 @@ function updateStudentsTable(filterSection = 'all') {
     const parsed = new Date(`${year}-${month}-${day}T${hours}:${minutes}:00`);
     if (Number.isNaN(parsed.getTime())) return normalized;
 
-    return parsed.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+    return parsed.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
   }
 
   function getCompletedCalendarActivities() {
