@@ -61,6 +61,27 @@ function getInventoryWeedingStorePath() {
     return path.join(__dirname, 'data', 'inventory_weeding_reports.json');
 }
 
+function normalizeCalendarActivityValue(value) {
+    if (!value) return new Date().toISOString();
+
+    const raw = String(value).trim();
+    if (!raw) return new Date().toISOString();
+
+    const directMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})(?::(\d{2}))?(?:\.(\d+))?(?:Z|[+-]\d{2}:\d{2})?$/);
+    if (directMatch) {
+        const [, year, month, day, hours, minutes, seconds = '00'] = directMatch;
+        const parsed = new Date(Number(year), Number(month) - 1, Number(day), Number(hours), Number(minutes), Number(seconds));
+        return parsed.toISOString();
+    }
+
+    const parsed = new Date(raw);
+    if (!Number.isNaN(parsed.getTime())) {
+        return parsed.toISOString();
+    }
+
+    return new Date().toISOString();
+}
+
 function ensureInventoryWeedingStoreFile() {
     const filePath = getInventoryWeedingStorePath();
     const dirPath = path.dirname(filePath);
@@ -1408,7 +1429,7 @@ app.get('/api/admin/calendar-activities', async (req, res) => {
 app.post('/api/admin/calendar-activities', async (req, res) => {
     try {
         const payload = {
-            activity_date: req.body.activity_date || new Date().toISOString().slice(0, 10),
+            activity_date: normalizeCalendarActivityValue(req.body.activity_date || new Date().toISOString()),
             activity_description: req.body.activity_description || '',
             persons_involved: req.body.persons_involved || '',
             status: req.body.status || 'Planned'
@@ -1425,7 +1446,7 @@ app.post('/api/admin/calendar-activities', async (req, res) => {
 app.put('/api/admin/calendar-activities/:id', async (req, res) => {
     try {
         const payload = {
-            activity_date: req.body.activity_date || new Date().toISOString().slice(0, 10),
+            activity_date: normalizeCalendarActivityValue(req.body.activity_date || new Date().toISOString()),
             activity_description: req.body.activity_description || '',
             persons_involved: req.body.persons_involved || '',
             status: req.body.status || 'Planned'
