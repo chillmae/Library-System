@@ -1811,19 +1811,27 @@
         }).join('');
     }
 
-    // Format time in short format (HH:MM)
+    // Format time in short format using standard 12-hour time
     function formatTimeShort(t) {
         if (!t) return 'N/A';
 
         const value = String(t).trim();
         const directMatch = value.match(/T(\d{2}):(\d{2})(?::\d{2})?(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?/i);
         if (directMatch) {
-            return `${directMatch[1]}:${directMatch[2]}`;
+            const hour = Number(directMatch[1]);
+            const minute = directMatch[2];
+            const date = new Date();
+            date.setHours(hour, Number(minute), 0, 0);
+            return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
         }
 
         const compactMatch = value.match(/^(\d{2}):(\d{2})(?::\d{2})?$/);
         if (compactMatch) {
-            return `${compactMatch[1]}:${compactMatch[2]}`;
+            const hour = Number(compactMatch[1]);
+            const minute = compactMatch[2];
+            const date = new Date();
+            date.setHours(hour, Number(minute), 0, 0);
+            return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
         }
 
         try {
