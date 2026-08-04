@@ -1615,7 +1615,6 @@
               <thead>
                 <tr>
                   <th style="width:8%;text-align:left;padding:6px">Accession #</th>
-                  <th style="width:8%;text-align:left;padding:6px">Call No.</th>
                   <th style="width:8%;text-align:left;padding:6px">Date Received</th>
                   <th style="width:8%;text-align:left;padding:6px">DDC No.</th>
                   <th style="width:12%;text-align:left;padding:6px">Author</th>
@@ -2382,7 +2381,6 @@
     <div class="modal-form">
       <div class="form-grid">
         <div class="form-group"><label>Accession Number</label><input type="text" id="edit_book_accession"></div>
-        <div class="form-group"><label>Call Number</label><input type="text" id="edit_book_call_number"></div>
         <div class="form-group"><label>Title</label><input type="text" id="edit_book_title"></div>
         <div class="form-group"><label>Author</label><input type="text" id="edit_book_author"></div>
         <div class="form-group"><label>Category</label>
@@ -4015,7 +4013,7 @@ function updateStudentsTable(filterSection = 'all') {
 
   async function addBook() {
     const accession_number = document.getElementById('book_accession').value.trim();
-    const call_number = document.getElementById('book_call_number').value.trim();
+    const call_number = '';
     const title = document.getElementById('book_title').value.trim();
     const author = document.getElementById('book_author').value.trim();
     const category = document.getElementById('book_category').value.trim();
@@ -4030,13 +4028,13 @@ function updateStudentsTable(filterSection = 'all') {
     const price = document.getElementById('book_price').value.trim();
     const publisher = document.getElementById('book_publisher').value.trim();
     const remarks = document.getElementById('book_remarks').value.trim();
-    if (!accession_number||!call_number||!title||!author||!category) { showMessage('add-book-message','Fill in all required fields','error'); return; }
+    if (!accession_number || !title || !author || !category) { showMessage('add-book-message','Fill in all required fields','error'); return; }
     try {
-      const res = await fetch('/api/admin/add-book',{ method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accession_number,call_number,title,author,category,copyright_year:copyright_year||null,isbn:isbn||null,date_received:date_received||null,ddc_no:ddc_no||null,edition:edition||null,volumes:volumes||null,pages:pages||null,source_of_fund:source_of_fund||null,price:price||null,publisher:publisher||null,remarks:remarks||null}) });
+      const res = await fetch('/api/admin/add-book',{ method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accession_number,call_number: call_number || ddc_no || '',title,author,category,copyright_year:copyright_year||null,isbn:isbn||null,date_received:date_received||null,ddc_no:ddc_no||null,edition:edition||null,volumes:volumes||null,pages:pages||null,source_of_fund:source_of_fund||null,price:price||null,publisher:publisher||null,remarks:remarks||null}) });
       const d = await res.json();
       if (res.ok) {
         Swal.fire({icon:'success',title:'Book Added!',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'});
-        ['book_accession','book_call_number','book_title','book_author','book_copyright','book_isbn','book_date_received','book_ddc_no','book_edition','book_volumes','book_pages','book_source_of_fund','book_price','book_publisher','book_remarks'].forEach(id=>document.getElementById(id).value='');
+        ['book_accession','book_title','book_author','book_copyright','book_isbn','book_date_received','book_ddc_no','book_edition','book_volumes','book_pages','book_source_of_fund','book_price','book_publisher','book_remarks'].forEach(id=>document.getElementById(id).value='');
         document.getElementById('book_category').value='';
         loadBooks();
       } else { Swal.fire({icon:'error',title:'Error',text:d.error,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
@@ -4047,7 +4045,6 @@ function updateStudentsTable(filterSection = 'all') {
     const b = allBooks.find(x=>x.id===id); if(!b) return;
     currentEditBookId = id;
     document.getElementById('edit_book_accession').value = b.accession_number;
-    document.getElementById('edit_book_call_number').value = b.call_number;
     document.getElementById('edit_book_title').value = b.title;
     document.getElementById('edit_book_author').value = b.author;
     document.getElementById('edit_book_category').value = b.category||'';
@@ -4067,7 +4064,7 @@ function updateStudentsTable(filterSection = 'all') {
 
   async function updateBook() {
     const accession_number = document.getElementById('edit_book_accession').value.trim();
-    const call_number = document.getElementById('edit_book_call_number').value.trim();
+    const call_number = '';
     const title = document.getElementById('edit_book_title').value.trim();
     const author = document.getElementById('edit_book_author').value.trim();
     const category = document.getElementById('edit_book_category').value.trim();
@@ -4082,9 +4079,9 @@ function updateStudentsTable(filterSection = 'all') {
     const price = document.getElementById('edit_book_price').value.trim();
     const publisher = document.getElementById('edit_book_publisher').value.trim();
     const remarks = document.getElementById('edit_book_remarks').value.trim();
-    if(!accession_number||!call_number||!title||!author||!category){Swal.fire({icon:'warning',title:'Required fields missing',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'});return;}
+    if(!accession_number||!title||!author||!category){Swal.fire({icon:'warning',title:'Required fields missing',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'});return;}
     try {
-      const res = await fetch(`/api/admin/books/${currentEditBookId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({accession_number,call_number,title,author,category,copyright_year:copyright_year||null,isbn:isbn||null,date_received:date_received||null,ddc_no:ddc_no||null,edition:edition||null,volumes:volumes||null,pages:pages||null,source_of_fund:source_of_fund||null,price:price||null,publisher:publisher||null,remarks:remarks||null})});
+      const res = await fetch(`/api/admin/books/${currentEditBookId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({accession_number,call_number: call_number || ddc_no || '',title,author,category,copyright_year:copyright_year||null,isbn:isbn||null,date_received:date_received||null,ddc_no:ddc_no||null,edition:edition||null,volumes:volumes||null,pages:pages||null,source_of_fund:source_of_fund||null,price:price||null,publisher:publisher||null,remarks:remarks||null})});
       if(res.ok){Swal.fire({icon:'success',title:'Updated!',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}).then(()=>{closeModal('edit-book-modal');loadBooks();});}
       else{Swal.fire({icon:'error',title:'Error',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'});}
     }catch(e){Swal.fire({icon:'error',title:'Connection Error',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'});}
@@ -4526,7 +4523,6 @@ function updateStudentsTable(filterSection = 'all') {
     const tr = document.createElement('tr');
     const cols = [
       { key: 'accession_number', placeholder: 'ACC-001' },
-      { key: 'call_number', placeholder: 'Call No.' },
       { key: 'date_received', placeholder: 'YYYY-MM-DD', type: 'date' },
       { key: 'ddc_no', placeholder: 'DDC No.' },
       { key: 'author', placeholder: 'Author' },
@@ -4616,8 +4612,8 @@ function updateStudentsTable(filterSection = 'all') {
 
   async function saveBulkBooks() {
     const rows = gatherBulkBookRows();
-    const valid = rows.filter(r => r.accession_number && (r.call_number || r.ddc_no) && r.title && r.author && r.category);
-    if (!valid.length) { Swal.fire({icon:'warning',title:'No valid rows',text:'Each row requires Accession, Call No/DDC, Title, Author, and Category',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); return; }
+    const valid = rows.filter(r => r.accession_number && r.title && r.author && r.category);
+    if (!valid.length) { Swal.fire({icon:'warning',title:'No valid rows',text:'Each row requires Accession, Title, Author, and Category',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); return; }
     try {
       const normalizedRows = valid.map(r => ({ ...r, call_number: r.call_number || r.ddc_no || '' }));
       const res = await fetch('/api/admin/import-books',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ records: normalizedRows }) });
