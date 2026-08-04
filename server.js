@@ -25,7 +25,7 @@ function buildBookRecord(input = {}) {
     const remarksValue = (input.remarks ?? input.remark ?? input.remarks_text ?? input.notes ?? '').toString().trim();
     return {
         accession_number: (input.accession_number || input.accessionNumber || '').toString().trim(),
-        call_number: (input.call_number || input.callNumber || input.call_no || '').toString().trim(),
+        call_number: (input.call_number || input.callNumber || input.call_no || input.ddc_no || input.ddc || '').toString().trim(),
         title: (input.title || input.name || '').toString().trim(),
         author: (input.author || '').toString().trim(),
         category: (input.category || '').toString().trim(),
@@ -1475,18 +1475,19 @@ app.get('/api/admin/books', async (req, res) => {
 // 11. Add a new book
 app.post('/api/admin/add-book', async (req, res) => {
     const payload = buildBookRecord({ ...req.body, remarks: req.body?.remarks ?? req.body?.remark ?? req.body?.remarks_text ?? req.body?.notes ?? '' });
+    const normalizedPayload = { ...payload, call_number: payload.call_number || payload.ddc_no || payload.ddc || '' };
     console.log('[ADD-BOOK] Received request body:', req.body);
     console.log('[ADD-BOOK] Built payload:', payload);
     console.log('[ADD-BOOK] Category value:', payload.category);
 
-    if (!payload.accession_number || !payload.call_number || !payload.title || !payload.author || !payload.category) {
+    if (!normalizedPayload.accession_number || !normalizedPayload.call_number || !normalizedPayload.title || !normalizedPayload.author || !normalizedPayload.category) {
         return res.status(400).json({ error: 'Accession Number, Call Number, Title, Author, and Category are required.' });
     }
 
     try {
         const { data, error } = await supabase
             .from('books')
-            .insert([payload])
+            .insert([normalizedPayload])
             .select('*');
 
         if (error) {

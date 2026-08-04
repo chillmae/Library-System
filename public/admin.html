@@ -1615,6 +1615,7 @@
               <thead>
                 <tr>
                   <th style="width:8%;text-align:left;padding:6px">Accession #</th>
+                  <th style="width:8%;text-align:left;padding:6px">Call No.</th>
                   <th style="width:8%;text-align:left;padding:6px">Date Received</th>
                   <th style="width:8%;text-align:left;padding:6px">DDC No.</th>
                   <th style="width:12%;text-align:left;padding:6px">Author</th>
@@ -3290,7 +3291,9 @@ function updateStudentsTable(filterSection = 'all') {
     }
 
     const parsed = new Date(raw);
-    if (!Number.isNaN(parsed.getTime())) return getCurrentDateTimeLocal(parsed);
+    if (!Number.isNaN(parsed.getTime())) {
+      return getCurrentDateTimeLocal(parsed);
+    }
     return getCurrentDateTimeLocal();
   }
 
@@ -3301,8 +3304,10 @@ function updateStudentsTable(filterSection = 'all') {
     if (!dateMatch) return '—';
 
     const [, year, month, day, hours, minutes] = dateMatch;
-    const date = new Date(Number(year), Number(month) - 1, Number(day), Number(hours), Number(minutes));
-    return date.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+    const parsed = new Date(`${year}-${month}-${day}T${hours}:${minutes}:00`);
+    if (Number.isNaN(parsed.getTime())) return normalized;
+
+    return parsed.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
   }
 
   function getCompletedCalendarActivities() {
@@ -4514,6 +4519,7 @@ function updateStudentsTable(filterSection = 'all') {
     const tr = document.createElement('tr');
     const cols = [
       { key: 'accession_number', placeholder: 'ACC-001' },
+      { key: 'call_number', placeholder: 'Call No.' },
       { key: 'date_received', placeholder: 'YYYY-MM-DD', type: 'date' },
       { key: 'ddc_no', placeholder: 'DDC No.' },
       { key: 'author', placeholder: 'Author' },
@@ -4593,17 +4599,21 @@ function updateStudentsTable(filterSection = 'all') {
     const rows = Array.from(tbody.children || []);
     return rows.map(tr=>{
       const obj = {};
-      Array.from(tr.querySelectorAll('input')).forEach(inp=>{ obj[inp.dataset.key]=inp.value.trim(); });
+      Array.from(tr.querySelectorAll('input, select')).forEach(el=>{
+        if (!el.dataset.key) return;
+        obj[el.dataset.key] = (el.value || '').trim();
+      });
       return obj;
     });
   }
 
   async function saveBulkBooks() {
     const rows = gatherBulkBookRows();
-    const valid = rows.filter(r=>r.accession_number && r.call_number && r.title && r.author && r.category);
-    if (!valid.length) { Swal.fire({icon:'warning',title:'No valid rows',text:'Each row requires Accession, Call No, Title, Author, and Category',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); return; }
+    const valid = rows.filter(r => r.accession_number && (r.call_number || r.ddc_no) && r.title && r.author && r.category);
+    if (!valid.length) { Swal.fire({icon:'warning',title:'No valid rows',text:'Each row requires Accession, Call No/DDC, Title, Author, and Category',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); return; }
     try {
-      const res = await fetch('/api/admin/import-books',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ records: valid }) });
+      const normalizedRows = valid.map(r => ({ ...r, call_number: r.call_number || r.ddc_no || '' }));
+      const res = await fetch('/api/admin/import-books',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ records: normalizedRows }) });
       let d = null;
       try { d = await res.json(); } catch (e) { d = {}; }
       if (res.ok) { Swal.fire({icon:'success',title:d?.message || 'Imported',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}); loadBooks(); document.getElementById('books_bulk_tbody').innerHTML=''; for(let i=0;i<3;i++) addBulkBookRow(); }
