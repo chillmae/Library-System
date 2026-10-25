@@ -586,13 +586,15 @@
             box-shadow: 4px 0 30px rgba(26, 16, 5, 0.35);
         }
 
-        .sidebar-panel.calendar-panel {
+        .sidebar-panel.calendar-panel,
+        .sidebar-panel.catalog-panel {
             background: rgba(255, 255, 255, 0.92);
             border: 1px solid rgba(212, 131, 26, 0.18);
             box-shadow: 0 12px 28px rgba(26, 16, 5, 0.12);
         }
 
-        .sidebar-panel.calendar-panel .sidebar-header {
+        .sidebar-panel.calendar-panel .sidebar-header,
+        .sidebar-panel.catalog-panel .sidebar-header {
             position: static;
             padding: 1.25rem 1.25rem 1rem;
             border-bottom: 1px solid rgba(212, 131, 26, 0.16);
@@ -600,11 +602,13 @@
             backdrop-filter: blur(16px);
         }
 
-        .sidebar-panel.calendar-panel .sidebar-title {
+        .sidebar-panel.calendar-panel .sidebar-title,
+        .sidebar-panel.catalog-panel .sidebar-title {
             color: var(--dark);
         }
 
-        .sidebar-panel.calendar-panel .sidebar-subtitle {
+        .sidebar-panel.calendar-panel .sidebar-subtitle,
+        .sidebar-panel.catalog-panel .sidebar-subtitle {
             color: var(--text-body);
         }
 
@@ -1091,6 +1095,221 @@
             }
         }
 
+        /* ===== OPAC: library catalog search ===== */
+        /* Calendar on top, catalog search below it, in the sidebar's right column */
+        .sidebar-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            min-height: 0;
+        }
+
+        .sidebar-stack .sidebar-panel { height: auto; }
+        .sidebar-stack .calendar-panel { flex: 1; }
+        .sidebar-stack .catalog-panel { flex: 0 0 auto; }
+
+        .catalog-search {
+            display: flex;
+            gap: 0.6rem;
+        }
+
+        .catalog-search .input-wrap { flex: 1; }
+        .catalog-search .btn { width: auto; flex: 0 0 auto; }
+
+        /* Laid out like the School Library OPAC sample: header band, search panel, filters, card grid, details window */
+        .modal-content.opac-content {
+            max-width: 1180px;
+            width: 94vw;
+            height: 90vh;
+            max-height: 90vh;
+            background: #f6f2e9;
+            overflow: hidden;
+        }
+
+        .opac-header {
+            background: var(--teal);
+            border-bottom: none;
+            padding: 1.3rem 1.75rem;
+        }
+
+        .opac-header h2 { color: #fff; font-size: 1.6rem; }
+        .opac-header p { color: rgba(255, 255, 255, 0.85); font-size: 0.9rem; margin-top: 0.25rem; }
+        .opac-header .close-btn { color: #fff; }
+        .opac-header .close-btn:hover { background: rgba(255, 255, 255, 0.15); color: #fff; }
+
+        .opac-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem 1.75rem 2rem;
+        }
+
+        .opac-search-panel {
+            background: #fff;
+            border-radius: 14px;
+            padding: 1.25rem;
+            box-shadow: 0 3px 14px rgba(26, 16, 5, 0.07);
+        }
+
+        .opac-search-row { display: flex; gap: 0.75rem; }
+        .opac-search-row .input-wrap { flex: 1; }
+        .opac-search-row .btn { width: auto; padding: 0.82rem 1.8rem; text-transform: uppercase; letter-spacing: 0.8px; }
+
+        .opac-filters {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+
+        .opac-filters select { padding-left: 1rem; cursor: pointer; }
+
+        .opac-results-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 1rem;
+            margin: 1.6rem 0 0.9rem;
+        }
+
+        .opac-results-head h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            color: var(--dark);
+        }
+
+        .opac-count { font-size: 0.9rem; color: var(--text-muted); white-space: nowrap; }
+
+        .opac-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 1.1rem;
+        }
+
+        .opac-grid > .empty-state, .opac-grid > .opac-more { grid-column: 1 / -1; }
+
+        .opac-card {
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            border: 1px solid rgba(212, 131, 26, 0.15);
+            border-radius: 14px;
+            padding: 1rem;
+            box-shadow: 0 3px 14px rgba(26, 16, 5, 0.05);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .opac-card:hover { border-color: rgba(212, 131, 26, 0.4); box-shadow: 0 10px 24px rgba(26, 16, 5, 0.09); }
+
+        .opac-cover {
+            height: 110px;
+            border-radius: 10px;
+            background: #edf2ee;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.6rem;
+            margin-bottom: 0.9rem;
+        }
+
+        .opac-cover-lg { height: 150px; font-size: 3.6rem; margin-bottom: 1.1rem; }
+
+        .opac-card h4 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.05rem;
+            font-weight: 600;
+            line-height: 1.3;
+            color: var(--dark);
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .opac-author { font-size: 0.85rem; color: var(--text-muted); margin-top: 0.3rem; }
+        .opac-meta { font-size: 0.82rem; line-height: 1.75; color: var(--text-body); margin-top: 0.7rem; }
+        .opac-meta b { font-weight: 600; }
+
+        .opac-badge {
+            display: inline-flex;
+            align-items: center;
+            align-self: flex-start;
+            gap: 0.35rem;
+            padding: 0.3rem 0.7rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin: 0.7rem 0 0.9rem;
+        }
+
+        .opac-badge.available { background: #e7f6ef; color: #04694c; }
+        .opac-badge.borrowed { background: #fdecec; color: #a11a1a; }
+
+        .opac-view {
+            margin-top: auto;
+            padding: 0.7rem;
+            background: rgba(45, 110, 110, 0.09);
+            color: var(--teal);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .opac-view:hover { background: rgba(45, 110, 110, 0.17); }
+
+        .modal-content.opac-book-content { max-width: 640px; }
+
+        .opac-facts {
+            display: grid;
+            grid-template-columns: max-content 1fr;
+            gap: 0.45rem 1rem;
+            font-size: 0.88rem;
+        }
+
+        .opac-facts .opac-badge { margin: 0; }
+
+        .opac-facts dt { font-weight: 600; color: var(--text-muted); }
+        .opac-facts dd { color: var(--text-body); }
+
+        .opac-copies-wrap { overflow-x: auto; margin-top: 0.9rem; }
+
+        .opac-copies {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+
+        .opac-copies th {
+            text-align: left;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            padding: 0.45rem 0.6rem;
+            border-bottom: 1px solid rgba(212, 131, 26, 0.2);
+        }
+
+        .opac-copies td {
+            padding: 0.5rem 0.6rem;
+            border-bottom: 1px solid rgba(212, 131, 26, 0.08);
+            white-space: nowrap;
+        }
+
+        .opac-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 0.45rem;
+            background: #04694c;
+        }
+
+        .opac-dot.on-loan { background: #a11a1a; }
+
+        .opac-hint { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.8rem; }
+
+        .opac-more { width: auto; align-self: center; justify-self: center; margin-top: 0.4rem; }
+
         /* Responsive */
         @media (max-width: 900px) {
             .sidebar {
@@ -1130,9 +1349,21 @@
             .headline { 
                 font-size: 2.2rem; 
             }
-            .blob { 
-                display: none; 
+            .blob {
+                display: none;
             }
+            .modal-content.opac-content {
+                width: 100vw;
+                height: 100vh;
+                max-height: 100vh;
+                border-radius: 0;
+            }
+            .opac-header { padding: 1rem; }
+            .opac-body { padding: 1rem; }
+            .opac-search-row { flex-direction: column; }
+            .opac-search-row .btn { width: 100%; }
+            .opac-filters { grid-template-columns: 1fr; }
+            .opac-copies td { white-space: normal; }
         }
     </style>
 </head>
@@ -1162,19 +1393,39 @@
                 </div>
             </div>
 
-            <div class="sidebar-panel calendar-panel">
-                <div class="sidebar-header">
-                    <div class="sidebar-title">
-                        <i class="fas fa-calendar-alt"></i>
-                        Calendar
+            <div class="sidebar-stack">
+                <div class="sidebar-panel calendar-panel">
+                    <div class="sidebar-header">
+                        <div class="sidebar-title">
+                            <i class="fas fa-calendar-alt"></i>
+                            Calendar
+                        </div>
+                        <div class="sidebar-subtitle">Weekly Activities</div>
                     </div>
-                    <div class="sidebar-subtitle">Weekly Activities</div>
+                    <div class="sidebar-content" id="sidebar-calendar-events">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🗓️</div>
+                            <div class="empty-state-text">Loading weekly activities...</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="sidebar-content" id="sidebar-calendar-events">
-                    <div class="empty-state">
-                        <div class="empty-state-icon">🗓️</div>
-                        <div class="empty-state-text">Loading weekly activities...</div>
+
+                <!-- OPAC entry: opens the full catalog search with what was typed -->
+                <div class="sidebar-panel catalog-panel">
+                    <div class="sidebar-header">
+                        <div class="sidebar-title">
+                            <i class="fas fa-book-open"></i>
+                            Library Catalog
+                        </div>
+                        <div class="sidebar-subtitle">Find a book by title, author, subject or call number</div>
                     </div>
+                    <form class="sidebar-content catalog-search" onsubmit="event.preventDefault(); openOpac(this.q.value); this.reset();">
+                        <div class="input-wrap">
+                            <i class="input-icon fas fa-magnifying-glass"></i>
+                            <input name="q" type="search" placeholder="Search books" autocomplete="off" aria-label="Search the library catalog">
+                        </div>
+                        <button type="submit" class="btn btn-teal">Search</button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -1446,6 +1697,55 @@
         </div>
     </div>
 
+<!-- OPAC: library catalog search (public, no login) -->
+<div id="opac-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="opac-title">
+    <div class="modal-content opac-content">
+        <div class="modal-header opac-header">
+            <div>
+                <h2 id="opac-title">📚 School Library OPAC</h2>
+                <p>Online Public Access Catalog · Bala National High School SLRC</p>
+            </div>
+            <button type="button" class="close-btn" onclick="closeOpac()" aria-label="Close the catalog">&times;</button>
+        </div>
+        <div class="opac-body">
+            <section class="opac-search-panel">
+                <form class="opac-search-row" onsubmit="event.preventDefault(); opacShown = OPAC_PAGE; renderOpac();">
+                    <div class="input-wrap">
+                        <i class="input-icon fas fa-magnifying-glass"></i>
+                        <input type="search" id="opac-query" placeholder="Search by title, author, subject, call number, ISBN or keyword…" autocomplete="off" aria-label="Search the catalog">
+                    </div>
+                    <button type="submit" class="btn btn-teal">Search</button>
+                </form>
+                <div class="opac-filters">
+                    <select id="opac-location" aria-label="Filter by location"><option value="">All Locations</option></select>
+                    <select id="opac-status" aria-label="Filter by status">
+                        <option value="">All Status</option>
+                        <option value="available">Available</option>
+                        <option value="borrowed">Borrowed</option>
+                    </select>
+                    <select id="opac-lending" aria-label="Filter by lending type"><option value="">All Lending Types</option></select>
+                </div>
+            </section>
+            <div class="opac-results-head">
+                <h3>Library Collection</h3>
+                <span class="opac-count" id="opac-count" aria-live="polite"></span>
+            </div>
+            <div class="opac-grid" id="opac-results"></div>
+        </div>
+    </div>
+</div>
+
+<!-- OPAC book details, opened from a card's "View book details" -->
+<div id="opac-book" class="modal" role="dialog" aria-modal="true" aria-labelledby="opac-book-title">
+    <div class="modal-content opac-book-content">
+        <div class="modal-header">
+            <h2 id="opac-book-title"></h2>
+            <button type="button" class="close-btn" onclick="closeOpacBook()" aria-label="Close book details">&times;</button>
+        </div>
+        <div class="modal-body" id="opac-book-body"></div>
+    </div>
+</div>
+
 <!-- Borrow Item Modal -->
 <div id="borrow-modal" class="modal">
     <div class="modal-content">
@@ -1604,6 +1904,8 @@
 
         loadCalendarEvents();
         setInterval(loadCalendarEvents, 1800000); // refresh every 30 minutes
+
+        initOpac();
     });
 
     // Load and display current users
@@ -2731,6 +3033,175 @@
             console.error('Return error:', error);
             showError('return-error-msg', '❌ Connection error. Please try again.');
         }
+    }
+
+    /* ── OPAC: search the library catalog ─────────────────── */
+    const OPAC_PAGE = 24;
+    const OPAC_COVERS = { 'Fiction': '📕', 'Filipiniana': '📙', 'General References': '📘', 'Learning Area References': '📗' };
+    let opacTitles = null; // null while the catalog is loading
+    let opacShown = OPAC_PAGE;
+    let opacOpener = null;
+    let opacBookOpener = null;
+
+    // Lower-case without accents, so "peñaranda" finds "Penaranda"
+    const opacNorm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    const opacEsc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const opacDate = d => new Date(`${d}T00:00:00`).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' });
+    const opacIsbn = s => opacNorm(s).replace(/[^0-9x]/g, '');
+
+    function initOpac() {
+        let timer;
+        const rerender = () => { opacShown = OPAC_PAGE; renderOpac(); };
+        document.getElementById('opac-query').addEventListener('input', () => {
+            clearTimeout(timer);
+            timer = setTimeout(rerender, 150);
+        });
+        ['opac-location', 'opac-status', 'opac-lending'].forEach(id => document.getElementById(id).addEventListener('change', rerender));
+        const catalog = document.getElementById('opac-modal');
+        const book = document.getElementById('opac-book');
+        catalog.addEventListener('click', e => { if (e.target === catalog) closeOpac(); });
+        book.addEventListener('click', e => { if (e.target === book) closeOpacBook(); });
+        // Escape closes the book details first, then the catalog
+        document.addEventListener('keydown', e => {
+            if (e.key !== 'Escape') return;
+            if (book.classList.contains('active')) closeOpacBook();
+            else if (catalog.classList.contains('active')) closeOpac();
+        });
+    }
+
+    // Loads the catalog every time it opens, so "available / borrowed" matches the latest borrows.
+    // Starts from only the search typed in the sidebar (no leftover filters) because the kiosk is shared.
+    async function openOpac(query = '') {
+        if (!document.getElementById('opac-modal').classList.contains('active')) opacOpener = document.activeElement;
+        document.getElementById('opac-modal').classList.add('active');
+        document.getElementById('opac-query').value = query.trim();
+        ['opac-location', 'opac-status', 'opac-lending'].forEach(id => { document.getElementById(id).value = ''; });
+        opacShown = OPAC_PAGE;
+        opacTitles = null;
+        document.getElementById('opac-query').focus();
+        const results = document.getElementById('opac-results');
+        document.getElementById('opac-count').textContent = '';
+        results.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📚</div><div class="empty-state-text">Loading the catalog…</div></div>';
+        try {
+            const res = await fetch('/api/opac/catalog');
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error || 'The catalog could not be loaded.');
+            opacTitles = data.titles.map((t, index) => ({
+                ...t,
+                index,
+                titleKey: opacNorm(t.title),
+                // One string per title to search: title, author, subject, call numbers, accession numbers, publisher, section, ISBN with and without dashes
+                search: [t.title, t.author, t.subject, t.call_number, ...t.copies.map(c => `${c.call_number} ${c.accession}`), t.publisher, t.section, t.isbn, opacIsbn(t.isbn)].map(opacNorm).join(' ')
+            }));
+            fillOpacFilters();
+            renderOpac();
+        } catch (error) {
+            results.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">${opacEsc(error.message)}<br>Check the connection and try again.</div>
+                <button type="button" class="btn btn-ghost opac-more" onclick="openOpac(document.getElementById('opac-query').value)"><i class="fas fa-rotate-right"></i> Try again</button></div>`;
+        }
+    }
+
+    function closeOpac() {
+        document.getElementById('opac-modal').classList.remove('active');
+        if (opacOpener) opacOpener.focus();
+    }
+
+    // Location and lending choices come from the catalog itself, so a new section shows up without a code change
+    function fillOpacFilters() {
+        const options = (id, label, values) => {
+            document.getElementById(id).innerHTML = `<option value="">${label}</option>`
+                + [...new Set(values.filter(Boolean))].sort().map(v => `<option value="${opacEsc(v)}">${opacEsc(v)}</option>`).join('');
+        };
+        options('opac-location', 'All Locations', opacTitles.map(t => t.section));
+        options('opac-lending', 'All Lending Types', opacTitles.map(t => t.loan_policy));
+    }
+
+    function opacMatches() {
+        const query = opacNorm(document.getElementById('opac-query').value.trim());
+        const words = query.split(/\s+/).filter(Boolean);
+        const location = document.getElementById('opac-location').value;
+        const status = document.getElementById('opac-status').value;
+        const lending = document.getElementById('opac-lending').value;
+        const list = opacTitles.filter(t =>
+            (!location || t.section === location)
+            && (!lending || t.loan_policy === lending)
+            && (!status || (status === 'available') === t.copies.some(c => !c.on_loan))
+            && words.every(w => t.search.includes(w)));
+        // Titles that start with, then contain, the search come first; the rest keep A–Z order
+        if (words.length) {
+            const rank = t => t.titleKey.startsWith(query) ? 0 : words.every(w => t.titleKey.includes(w)) ? 1 : 2;
+            list.sort((a, b) => rank(a) - rank(b));
+        }
+        return list;
+    }
+
+    function renderOpac() {
+        if (!opacTitles) return;
+        const list = opacMatches();
+        const results = document.getElementById('opac-results');
+        document.getElementById('opac-count').textContent = `${list.length.toLocaleString()} book${list.length === 1 ? '' : 's'} found`;
+
+        if (!list.length) {
+            results.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🔎</div><div class="empty-state-text">No books matched your search.<br>Try fewer or shorter words, check the spelling, or set the filters back to <strong>All</strong>.</div></div>`;
+            return;
+        }
+        const more = list.length - opacShown;
+        results.innerHTML = list.slice(0, opacShown).map(opacCard).join('')
+            + (more > 0 ? `<button type="button" class="btn btn-ghost opac-more" onclick="opacShown += OPAC_PAGE; renderOpac();"><i class="fas fa-chevron-down"></i> Show more (${more.toLocaleString()} left)</button>` : '');
+    }
+
+    function opacBadge(t) {
+        const free = t.copies.filter(c => !c.on_loan).length;
+        if (free) return `<span class="opac-badge available"><i class="fas fa-circle-check"></i> Available · ${free} of ${t.copies.length}</span>`;
+        // Earliest due date still to come; an overdue copy has no "back by" date to promise
+        const today = new Date().toLocaleDateString('sv');
+        const nextDue = t.copies.filter(c => c.due_date && c.due_date >= today).map(c => c.due_date).sort()[0];
+        return `<span class="opac-badge borrowed"><i class="fas fa-clock"></i> Borrowed${nextDue ? ` · back ${opacDate(nextDue)}` : ''}</span>`;
+    }
+
+    function opacCard(t) {
+        return `<article class="opac-card">
+            <div class="opac-cover" aria-hidden="true">${OPAC_COVERS[t.section] || '📒'}</div>
+            <h4>${opacEsc(t.title)}</h4>
+            ${t.author ? `<div class="opac-author">by ${opacEsc(t.author)}</div>` : ''}
+            <div class="opac-meta">
+                <b>Call No.:</b> ${opacEsc(t.call_number || '—')}<br>
+                <b>Location:</b> ${opacEsc(t.section || '—')}
+                ${t.loan_policy ? `<br><b>Lending:</b> ${opacEsc(t.loan_policy)}` : ''}
+            </div>
+            ${opacBadge(t)}
+            <button type="button" class="btn opac-view" onclick="viewOpacBook(${t.index})">View book details</button>
+        </article>`;
+    }
+
+    function viewOpacBook(index) {
+        const t = opacTitles[index];
+        opacBookOpener = document.activeElement;
+        document.getElementById('opac-book-title').textContent = t.title;
+        const facts = [['Author', t.author], ['Subject', t.subject], ['Call Number', t.call_number], ['Location', t.section], ['Publisher', t.publisher],
+            ['Publication Year', t.year], ['Edition', t.edition], ['ISBN', t.isbn], ['Lending', t.loan_policy]]
+            .filter(([, value]) => value).map(([label, value]) => `<dt>${label}</dt><dd>${opacEsc(value)}</dd>`).join('');
+        const copies = t.copies.map(c => `<tr>
+                <td>${opacEsc(c.copy_no || '—')}</td><td>${opacEsc(c.accession)}</td><td>${opacEsc(c.call_number)}</td>
+                <td>${c.on_loan ? `<span class="opac-dot on-loan"></span>Borrowed${c.due_date ? `, due ${opacDate(c.due_date)}` : ''}` : '<span class="opac-dot"></span>Available'}</td>
+            </tr>`).join('');
+        document.getElementById('opac-book-body').innerHTML = `
+            <div class="opac-cover opac-cover-lg" aria-hidden="true">${OPAC_COVERS[t.section] || '📒'}</div>
+            <dl class="opac-facts">${facts}<dt>Status</dt><dd>${opacBadge(t)}</dd></dl>
+            <div class="opac-copies-wrap">
+                <table class="opac-copies">
+                    <thead><tr><th>Copy</th><th>Accession no.</th><th>Call number</th><th>Status</th></tr></thead>
+                    <tbody>${copies}</tbody>
+                </table>
+            </div>
+            <div class="opac-hint"><i class="fas fa-circle-info"></i> Note the call number and look for it in the ${opacEsc(t.section || 'library')} section. Ask the librarian if you can't find it.</div>`;
+        document.getElementById('opac-book').classList.add('active');
+        document.querySelector('#opac-book .close-btn').focus();
+    }
+
+    function closeOpacBook() {
+        document.getElementById('opac-book').classList.remove('active');
+        if (opacBookOpener) opacBookOpener.focus();
     }
 </script>
 

@@ -1611,19 +1611,15 @@
         <div style="margin-top:10px;">
           <label style="display:block;font-size:0.95rem;margin-bottom:6px;color:var(--text-dim)">Bulk Entry Table — paste rows from Excel into the cells or type directly</label>
           <div class="table-wrap" style="border:1px solid var(--border);padding:8px;background:transparent">
-            <table id="books_bulk_table" style="width:100%;border-collapse:collapse; min-width: 1800px;">
+            <table id="books_bulk_table" style="width:100%;border-collapse:collapse; min-width: 1300px;">
               <thead>
                 <tr>
                   <th style="width:8%;text-align:left;padding:6px">Accession #</th>
-                  <th style="width:8%;text-align:left;padding:6px">Date Received</th>
                   <th style="width:8%;text-align:left;padding:6px">DDC No.</th>
                   <th style="width:12%;text-align:left;padding:6px">Author</th>
                   <th style="width:16%;text-align:left;padding:6px">Title</th>
                   <th style="width:8%;text-align:left;padding:6px">Edition</th>
                   <th style="width:6%;text-align:left;padding:6px">Volumes</th>
-                  <th style="width:6%;text-align:left;padding:6px">Pages</th>
-                  <th style="width:10%;text-align:left;padding:6px">Source of Found</th>
-                  <th style="width:6%;text-align:left;padding:6px">Price</th>
                   <th style="width:10%;text-align:left;padding:6px">Publisher</th>
                   <th style="width:6%;text-align:left;padding:6px">Year</th>
                   <th style="width:12%;text-align:left;padding:6px">Remarks</th>
@@ -1721,7 +1717,7 @@
               <option value="Laptop">Laptop</option>
               <option value="Tablet">Tablet</option>
               <option value="Printer">Printer</option>
-              <option value="Project">Project</option>
+              <option value="Projector">Projector</option>
               <option value="Globes">Globes</option>
               <option value="Maps">Maps</option>
               <option value="Other">Other</option>
@@ -4554,15 +4550,11 @@ function updateStudentsTable(filterSection = 'all') {
     const tr = document.createElement('tr');
     const cols = [
       { key: 'accession_number', placeholder: 'ACC-001' },
-      { key: 'date_received', placeholder: 'YYYY-MM-DD', type: 'date' },
       { key: 'ddc_no', placeholder: 'DDC No.' },
       { key: 'author', placeholder: 'Author' },
       { key: 'title', placeholder: 'Title' },
       { key: 'edition', placeholder: 'Edition' },
       { key: 'volumes', placeholder: 'Volumes' },
-      { key: 'pages', placeholder: 'Pages' },
-       { key: 'source_of_fund', placeholder: 'Source of Found' },
-      { key: 'price', placeholder: 'Price' },
       { key: 'publisher', placeholder: 'Publisher' },
       { key: 'copyright_year', placeholder: 'Year', type: 'number' },
        { key: 'remarks', placeholder: 'Remarks' },
@@ -4842,6 +4834,8 @@ function updateStudentsTable(filterSection = 'all') {
         ${label('mb-borrower', 'Borrower ID')}
         <input id="mb-borrower" class="swal2-input" style="${field}" placeholder="Student ID or Faculty Library ID" autocomplete="off">
         ${hint('mb-borrower-name')}
+        ${label('mb-category', 'Type of resources')}
+        <select id="mb-category" class="swal2-select" style="${field} display:block;"><option value="print">Print</option><option value="non-print">Non-print</option></select>
         ${label('mb-code', 'Accession number')}
         <input id="mb-code" class="swal2-input" style="${field}" placeholder="e.g. 000265" autocomplete="off">
         ${hint('mb-title')}
@@ -4870,9 +4864,12 @@ function updateStudentsTable(filterSection = 'all') {
             const res = await fetch('/api/validate-book', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accession_number: code }) });
             const data = await res.json().catch(() => ({}));
             if ($('mb-code').value.trim() !== code) return; // typed on since this lookup started
-            $('mb-title').textContent = data.valid ? `Title: ${(data.book || data.resource).title}` : 'Not found in the catalog';
+            $('mb-title').textContent = !data.valid ? 'Not found in the catalog'
+              : data.type !== $('mb-category').value ? `This code is a ${data.type} resource`
+              : `Title: ${(data.book || data.resource).title}`;
           }, 300);
         };
+        $('mb-category').addEventListener('change', showTitle);
         $('mb-type').addEventListener('change', showBorrower);
         $('mb-borrower').addEventListener('input', showBorrower);
         $('mb-code').addEventListener('input', showTitle);
@@ -4880,7 +4877,7 @@ function updateStudentsTable(filterSection = 'all') {
       },
       preConfirm: async () => {
         const $ = id => document.getElementById(id).value.trim();
-        const body = { borrower_type: $('mb-type'), borrower_id: $('mb-borrower'), item_code: $('mb-code'), borrow_date: $('mb-borrow-date'), due_date: $('mb-due-date') };
+        const body = { borrower_type: $('mb-type'), borrower_id: $('mb-borrower'), item_category: $('mb-category'), item_code: $('mb-code'), borrow_date: $('mb-borrow-date'), due_date: $('mb-due-date') };
         if (!body.borrower_id || !body.item_code || !body.borrow_date || !body.due_date) {
           Swal.showValidationMessage('Fill in every field.');
           return false;
@@ -6246,18 +6243,6 @@ function updateStudentsTable(filterSection = 'all') {
       table.style.marginTop = '12px';
       table.style.tableLayout = 'fixed';
 
-      // Helper: convert number to uppercase Roman numerals (1->I, 2->II...)
-      function toRoman(num) {
-        if (!num || num <= 0) return '';
-        const romans = [['M',1000],['CM',900],['D',500],['CD',400],['C',100],['XC',90],['L',50],['XL',40],['X',10],['IX',9],['V',5],['IV',4],['I',1]];
-        let n = Math.floor(num);
-        let res = '';
-        for (const [r, v] of romans) {
-          while (n >= v) { res += r; n -= v; }
-        }
-        return res;
-      }
-
       const thead = document.createElement('thead');
 
       // First header row: No., Date Borrowed, Borrower's Name, merged Multimedia header, Due Date, Signature, Date Returned, Signature, Remarks
@@ -6278,7 +6263,7 @@ function updateStudentsTable(filterSection = 'all') {
 
       // Second header row: the individual multimedia columns
       const headerRow2 = document.createElement('tr');
-      ['COMPUTER','LAPTOP','TABLET','PRINTER','PROJECT','GLOBES','MAPS','OTHERS'].forEach(text=>{
+      ['COMPUTER','LAPTOP','TABLET','PRINTER','PROJECTOR','GLOBES','MAPS','OTHERS'].forEach(text=>{
         const th = makeTh(text);
         th.style.fontSize = '6pt';
         th.style.padding = '3px 4px';
@@ -6291,14 +6276,15 @@ function updateStudentsTable(filterSection = 'all') {
 
       // Aggregate records by date + borrower so multiple borrows on same day become one row
       const grouped = {};
-      const categories = ['Computer','Laptop','Tablet','Printer','Project','Globes','Maps','Others'];
+      const categories = ['Computer','Laptop','Tablet','Printer','Projector','Globes','Maps','Others'];
       (records || []).forEach(rec => {
         const key = `${rec.date_borrowed||''}||${rec.borrower_name||''}`;
         if (!grouped[key]) {
           grouped[key] = { date_borrowed: rec.date_borrowed || '', borrower_name: rec.borrower_name || '', counts: {}, due_date: rec.due_date || '', date_returned: rec.date_returned || '', remarks: '' };
           categories.forEach(c => grouped[key].counts[c] = 0);
         }
-        const cat = (rec.resource_category && categories.includes(rec.resource_category)) ? rec.resource_category : 'Others';
+        const recCat = rec.resource_category === 'Project' ? 'Projector' : rec.resource_category; // edit form, kiosk and seed data still save "Project"
+        const cat = categories.includes(recCat) ? recCat : 'Others';
         grouped[key].counts[cat] = (grouped[key].counts[cat] || 0) + 1;
         // prefer explicit due_date if present
         if (!grouped[key].due_date && rec.due_date) grouped[key].due_date = rec.due_date;
@@ -6313,15 +6299,14 @@ function updateStudentsTable(filterSection = 'all') {
         const tr = document.createElement('tr');
 
         const rowValues = [
-          toRoman(i + 1),
+          String(i + 1),
           grp.date_borrowed || '',
           grp.borrower_name || ''
         ];
 
-        // push multimedia columns as Roman numeral counts
         categories.forEach(c => {
           const cnt = grp.counts[c] || 0;
-          rowValues.push(cnt ? toRoman(cnt) : '');
+          rowValues.push(cnt ? String(cnt) : '');
         });
 
         rowValues.push(grp.due_date || '', '', grp.date_returned || '', '', grp.remarks || '');

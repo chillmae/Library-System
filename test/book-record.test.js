@@ -4,7 +4,23 @@ const assert = require('node:assert');
 // Set before server.js loads .env so these tests never touch the real database
 process.env.SUPABASE_URL = 'http://127.0.0.1:9';
 process.env.SUPABASE_KEY = 'test-key';
-const { buildBookRecord, renewalDueDate, reportMonth, inMonth } = require('../server');
+const { buildBookRecord, renewalDueDate, reportMonth, inMonth, buildOpacCatalog } = require('../server');
+
+test('OPAC groups copies under one title and marks only copies with an open loan as on loan', () => {
+    const books = [
+        { book_id: 'BK1', accession_number: '000002', title: 'Diksiyonaryo', author: 'Nicasio', copy_no: '2', call_number: 'GEN 400 N513', category: 'General References' },
+        { book_id: 'BK1', accession_number: '000001', title: 'Diksiyonaryo', author: 'Nicasio', copy_no: '1', call_number: 'GEN 400 N513', category: 'General References' },
+        // added before the OPAC import: no book_id, grouped by title + author
+        { accession_number: '000900', title: 'Abundance  of Katherines', author: 'John Green', call_number: 'FIC G796' },
+        { accession_number: '000901', title: 'abundance of katherines', author: 'John Green', call_number: 'FIC G796' }
+    ];
+    const titles = buildOpacCatalog(books, [{ item_code: '000002', due_date: '2026-10-30', student_name: 'Juan Dela Cruz' }, { item_code: '000901', due_date: null }]);
+    assert.deepStrictEqual(titles.map(t => [t.title, t.copies.length]), [['Abundance  of Katherines', 2], ['Diksiyonaryo', 2]]);
+    const dict = titles[1];
+    assert.deepStrictEqual(dict.copies.map(c => [c.copy_no, c.on_loan, c.due_date]), [['1', false, null], ['2', true, '2026-10-30']]);
+    assert.strictEqual(titles[0].copies.find(c => c.accession === '000901').on_loan, true); // pending loan, no due date yet
+    assert.ok(!JSON.stringify(titles).includes('Juan'), 'no borrower details in the public catalog');
+});
 
 test('report month: YYYY-MM or none; anything else is rejected', () => {
     assert.strictEqual(reportMonth({ query: { month: '2026-09' } }), '2026-09');

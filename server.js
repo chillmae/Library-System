@@ -159,6 +159,8 @@ function prepareBookImportRows(payload = []) {
 
     (payload || []).forEach(record => {
         const row = buildBookRecord(record);
+        // The upsert must not blank out details an existing book already has when the import didn't send that column
+        Object.keys(row).forEach(key => { if (row[key] === null && !Object.hasOwn(record, key)) delete row[key]; });
         if (!row.accession_number || !row.call_number || !row.title || !row.author || !row.category) {
             return;
         }
@@ -1853,6 +1855,62 @@ app.delete('/api/admin/inventory-weeding/:id', async (req, res) => {
     }
 });
 
+// ========== OPAC (public catalog) ==========
+
+// One entry per title with its copies; a copy with an open loan is on loan, every other copy is available
+function buildOpacCatalog(books, openLoans) {
+    const dueByCode = new Map(openLoans.map(loan => [loan.item_code, loan.due_date]));
+    const titles = new Map();
+    for (const book of books) {
+        // Copies share a book_id; books added before the OPAC import are grouped by title and author instead
+        const key = book.book_id || `${book.title}|${book.author}`.toLowerCase().replace(/\s+/g, ' ').trim();
+        if (!titles.has(key)) {
+            titles.set(key, {
+                id: key,
+                title: book.title,
+                author: book.author || '',
+                publisher: book.publisher || '',
+                year: book.copyright_year || '',
+                isbn: book.isbn || '',
+                edition: book.edition || '',
+                subject: book.subject || '',
+                call_number: book.call_number || book.ddc_no || '',
+                section: book.category || '',
+                loan_policy: book.loan_policy || '',
+                copies: []
+            });
+        }
+        titles.get(key).copies.push({
+            accession: book.accession_number,
+            copy_no: book.copy_no || '',
+            call_number: book.call_number || book.ddc_no || '',
+            on_loan: dueByCode.has(book.accession_number),
+            due_date: dueByCode.get(book.accession_number) || null
+        });
+    }
+
+    const byNumber = (a, b) => String(a).localeCompare(String(b), undefined, { numeric: true });
+    const list = [...titles.values()].sort((a, b) => byNumber(a.title, b.title));
+    list.forEach(t => t.copies.sort((a, b) => byNumber(a.copy_no || a.accession, b.copy_no || b.accession)));
+    return list;
+}
+
+// shortcut: sends the whole catalog (~1,500 copies) for the kiosk to search in the browser; switch to a
+// server-side search with paging if the collection grows past ~10,000 copies.
+// Public, so only catalog fields leave the server; who borrowed a copy never does.
+app.get('/api/opac/catalog', async (req, res) => {
+    try {
+        const [{ data: books, error: booksError }, { data: loans, error: loansError }] = await Promise.all([
+            fetchAll(() => supabase.from('books').select('*')), // '*' keeps this working before OPAC_INVENTORY_2026.sql adds its columns
+            fetchAll(() => supabase.from('borrow_records').select('id, item_code, due_date').eq('item_category', 'print').eq('status', 'borrowed'))
+        ]);
+        if (booksError || loansError) throw booksError || loansError;
+        res.json({ titles: buildOpacCatalog(books, loans) });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // ========== BORROWING/RETURNING ENDPOINTS ==========
 
 // 18a. Check if a book exists in the database
@@ -2219,30 +2277,33 @@ app.post('/api/admin/renew-borrow/:id', async (req, res) => {
 
 // Admin records a borrowing by hand (e.g. one from an earlier date); same lookups as the kiosk, already verified
 app.post('/api/admin/manual-borrow', async (req, res) => {
-    const { borrower_type, borrower_id, item_code, borrow_date, due_date } = req.body || {};
+    const { borrower_type, borrower_id, item_category, item_code, borrow_date, due_date } = req.body || {};
     const borrowerId = String(borrower_id || '').trim();
     const code = String(item_code || '').trim();
     const today = new Date().toLocaleDateString('sv');
     const isDate = value => /^\d{4}-\d{2}-\d{2}$/.test(value || '') && !Number.isNaN(new Date(`${value}T00:00:00Z`).getTime());
 
     if (!['student', 'faculty'].includes(borrower_type)) return res.status(400).json({ error: 'Choose whether the borrower is a student or faculty.' });
+    if (!['print', 'non-print'].includes(item_category)) return res.status(400).json({ error: 'Choose whether the resource is print or non-print.' });
     if (!borrowerId || !code) return res.status(400).json({ error: 'Borrower ID and accession number are required.' });
     if (!isDate(borrow_date) || borrow_date > today) return res.status(400).json({ error: 'Choose a borrow date that is today or earlier.' });
     if (!isDate(due_date) || due_date < borrow_date) return res.status(400).json({ error: 'Choose a due date on or after the borrow date.' });
 
     try {
         const isFaculty = borrower_type === 'faculty';
-        const [{ data: borrower, error: borrowerError }, { data: book, error: bookError }, { data: resource, error: resourceError }] = await Promise.all([
+        const isPrint = item_category === 'print';
+        const [{ data: borrower, error: borrowerError }, { data: found, error: itemError }] = await Promise.all([
             isFaculty
                 ? supabase.from('faculty').select('name').eq('faculty_id', borrowerId).maybeSingle()
                 : supabase.from('users').select('name, section').eq('student_id', borrowerId).eq('role', 'student').maybeSingle(),
-            supabase.from('books').select('title').eq('accession_number', code).maybeSingle(),
-            supabase.from('non_print_resources').select('title').eq('resource_code', code).maybeSingle()
+            isPrint
+                ? supabase.from('books').select('title').eq('accession_number', code).maybeSingle()
+                : supabase.from('non_print_resources').select('title').eq('resource_code', code).maybeSingle()
         ]);
-        if (borrowerError || bookError || resourceError) throw borrowerError || bookError || resourceError;
+        if (borrowerError || itemError) throw borrowerError || itemError;
         if (!borrower) return res.status(404).json({ error: `No ${isFaculty ? 'faculty member' : 'student'} has the ID ${borrowerId}.` });
-        const item = book ? { category: 'print', title: book.title } : resource ? { category: 'non-print', title: resource.title } : null;
-        if (!item) return res.status(404).json({ error: `No book or non-print resource has the code ${code}.` });
+        if (!found) return res.status(404).json({ error: `No ${isPrint ? 'print book' : 'non-print resource'} has the code ${code}.` });
+        const item = { category: item_category, title: found.title };
 
         const { data: openLoans, error: openError } = await supabase.from('borrow_records')
             .select('student_name')
@@ -3029,3 +3090,4 @@ module.exports.renewalDueDate = renewalDueDate; // for tests
 module.exports.reportMonth = reportMonth; // for tests
 module.exports.inMonth = inMonth; // for tests
 module.exports.issueAdminToken = issueAdminToken; // for tests
+module.exports.buildOpacCatalog = buildOpacCatalog; // for tests
