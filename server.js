@@ -2,7 +2,7 @@ require('dotenv').config();
 // All dates/times this server saves are Philippine time, even when the host (e.g. Vercel) runs in UTC
 process.env.TZ = 'Asia/Manila';
 const express = require('express');
-const { randomUUID } = require('crypto');
+const { createHmac, timingSafeEqual } = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
@@ -19,26 +19,36 @@ app.get('/', (req, res) => {
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
-// shortcut: tokens live in memory, so a server restart logs every admin out; move to a DB table if that becomes a problem
-const adminTokens = new Set();
+// Admin login token "<expiry ms>.<signature>", signed with the secret Supabase key. Any copy of the server can
+// check it without shared memory: Vercel runs many short-lived copies, so a token kept in memory got lost.
+const ADMIN_TOKEN_HOURS = 12;
+const signAdminToken = expires => createHmac('sha256', process.env.SUPABASE_KEY).update(`admin:${expires}`).digest('hex');
+
+function issueAdminToken() {
+    const expires = Date.now() + ADMIN_TOKEN_HOURS * 60 * 60 * 1000;
+    return `${expires}.${signAdminToken(expires)}`;
+}
+
+function isValidAdminToken(token) {
+    const [expires, signature] = String(token || '').split('.');
+    if (!(Number(expires) > Date.now()) || !signature) return false;
+    const expected = Buffer.from(signAdminToken(expires));
+    const given = Buffer.from(signature);
+    return given.length === expected.length && timingSafeEqual(given, expected);
+}
 
 app.use('/api/admin', (req, res, next) => {
     // The kiosk shows the calendar without an admin login
     if (req.method === 'GET' && req.path === '/calendar-activities') return next();
-    if (adminTokens.has(req.get('x-admin-token'))) return next();
+    if (isValidAdminToken(req.get('x-admin-token'))) return next();
     res.status(401).json({ error: 'Admin login required.' });
 });
 
+// shortcut: logout only drops the token in the browser; a copied token keeps working until it expires
+// (12 hours). Add a table of revoked tokens if admins must be able to end a session on another device.
 app.post('/api/admin/logout', (req, res) => {
-    adminTokens.delete(req.get('x-admin-token'));
     res.json({ success: true });
 });
-
-function issueAdminToken() {
-    const token = randomUUID();
-    adminTokens.add(token);
-    return token;
-}
 
 // Supabase returns at most 1000 rows per request, so page through until a short page comes back
 async function fetchAll(buildQuery) {
@@ -3018,3 +3028,4 @@ module.exports.buildBookRecord = buildBookRecord; // for tests
 module.exports.renewalDueDate = renewalDueDate; // for tests
 module.exports.reportMonth = reportMonth; // for tests
 module.exports.inMonth = inMonth; // for tests
+module.exports.issueAdminToken = issueAdminToken; // for tests
