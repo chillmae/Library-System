@@ -611,6 +611,9 @@
 
     tbody tr:last-child td { border-bottom: none; }
 
+    /* All Records has 11 columns: tighter side padding keeps the Auto-renew button on screen */
+    #all-records-section th, #all-records-section td { padding-left: 8px; padding-right: 8px; }
+
     tbody tr {
       transition: var(--transition);
     }
@@ -1053,14 +1056,6 @@
       color: #000;
     }
 
-    .card-footer {
-      text-align: center;
-      margin-top: 20px;
-      border-top: 2px solid #000;
-      padding-top: 10px;
-      font-size: 9pt;
-      color: #666;
-    }
 
     /* ─── PRINT STYLES ─────────────────────────────── */
     @media print {
@@ -1136,7 +1131,6 @@
       <li class="nav-item"><a class="nav-link" onclick="showSection('non-print', this)"><i class="nav-icon fas fa-toolbox"></i> Non-print Resources</a></li>
       <li class="nav-item"><a class="nav-link" onclick="showSection('inventory-weeding', this)"><i class="nav-icon fas fa-clipboard-list"></i> Inventory &amp; Weeding</a></li>
       <li class="nav-item"><a class="nav-link" onclick="showSection('borrowing', this)"><i class="nav-icon fas fa-arrows-rotate"></i> Borrowing</a></li>
-      <li class="nav-item"><a class="nav-link" onclick="showSection('active-borrowers', this)"><i class="nav-icon fas fa-user-clock"></i> Active Borrowers</a></li>
     </ul>
 
     <div class="nav-section-label" style="margin-top:10px">Insights</div>
@@ -1209,10 +1203,14 @@
 
       <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin:14px 0;">
         <div style="font-size:0.95rem; color:var(--text-mute);">Monthly summary & quick actions</div>
-        <div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
           <button id="export-monthly-stats-btn" class="btn-exquisite" title="Export School Library Monthly Statistics (Attendance)" onclick="exportMonthlyStatisticsPDF()">
             <i class="fas fa-file-pdf"></i>
             Export Monthly Statistics (Attendance)
+          </button>
+          <button id="export-circulation-report-btn" class="btn-exquisite" title="Export School Library Circulation Report" onclick="exportCirculationReportPDF()">
+            <i class="fas fa-file-pdf"></i>
+            Export Circulation Report
           </button>
         </div>
       </div>
@@ -1344,6 +1342,7 @@
             </label>
             <button class="btn btn-secondary" onclick="exportBorrowersLog()"><i class="fas fa-file-csv"></i> Export Borrower's Log (CSV)</button>
             <button class="btn btn-secondary" onclick="exportBorrowersPDF()"><i class="fas fa-file-pdf"></i> Export Borrower's Log (PDF)</button>
+            <button class="btn btn-secondary" onclick="downloadAllLibraryCards('learner')"><i class="fas fa-id-card"></i> Download All Learner Cards (PDF)</button>
           </div>
         </div>
         <div class="table-wrap" style="overflow:auto;">
@@ -1566,6 +1565,7 @@
             </label>
             <button class="btn btn-secondary" onclick="exportTeacherBorrowersLog()"><i class="fas fa-file-csv"></i> Export Teacher Borrower's Log (CSV)</button>
             <button class="btn btn-secondary" onclick="exportTeacherBorrowersPDF()"><i class="fas fa-file-pdf"></i> Export Teacher Borrower's Log (PDF)</button>
+            <button class="btn btn-secondary" onclick="downloadAllLibraryCards('teacher')"><i class="fas fa-id-card"></i> Download All Teacher Cards (PDF)</button>
           </div>
         </div>
         <div class="table-wrap">
@@ -1879,16 +1879,19 @@
         <p>Review, verify, and track all borrowing activity.</p>
       </div>
 
-      <div class="tab-bar">
-        <button class="tab-btn active" id="tab-pending-borrow" onclick="showBorrowingTab('pending-borrow')">
-          <i class="fas fa-clock"></i> Pending Borrows
-        </button>
-        <button class="tab-btn" id="tab-pending-return" onclick="showBorrowingTab('pending-return')">
-          <i class="fas fa-rotate-left"></i> Pending Returns
-        </button>
-        <button class="tab-btn" id="tab-all-records" onclick="showBorrowingTab('all-records')">
-          <i class="fas fa-table-list"></i> All Records
-        </button>
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+        <div class="tab-bar">
+          <button class="tab-btn active" id="tab-pending-borrow" onclick="showBorrowingTab('pending-borrow')">
+            <i class="fas fa-clock"></i> Pending Borrows
+          </button>
+          <button class="tab-btn" id="tab-pending-return" onclick="showBorrowingTab('pending-return')">
+            <i class="fas fa-rotate-left"></i> Pending Returns
+          </button>
+          <button class="tab-btn" id="tab-all-records" onclick="showBorrowingTab('all-records')">
+            <i class="fas fa-table-list"></i> All Records
+          </button>
+        </div>
+        <button class="btn btn-primary" onclick="openManualBorrow()"><i class="fas fa-plus"></i> Add Borrowing</button>
       </div>
 
       <div id="pending-borrow-section" class="tab-content active">
@@ -1908,12 +1911,12 @@
       <div id="pending-return-section" class="tab-content">
         <div class="card">
           <div class="card-header">
-            <div class="card-title"><div class="card-title-icon"><i class="fas fa-check-double"></i></div> Pending Return Verifications</div>
+            <div class="card-title"><div class="card-title-icon"><i class="fas fa-check-double"></i></div> Pending Returns</div>
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Student</th><th>ID</th><th>Item Title</th><th>Code</th><th>Borrowed</th><th>Return Date</th><th>Actions</th></tr></thead>
-              <tbody id="pending-returns-table"><tr><td colspan="7" style="text-align:center; color:var(--text-mute)">Loading…</td></tr></tbody>
+              <thead><tr><th>Borrower</th><th>ID</th><th>Item Title</th><th>Code</th><th>Borrowed</th><th>Due Date</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody id="pending-returns-table"><tr><td colspan="8" style="text-align:center; color:var(--text-mute)">Loading…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -1930,25 +1933,6 @@
               <tbody id="all-records-table"><tr><td colspan="11" style="text-align:center; color:var(--text-mute)">Loading…</td></tr></tbody>
             </table>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="active-borrowers" class="content-section">
-      <div class="page-header">
-        <h2>Current Borrowers</h2>
-        <p>List of students and items currently out on loan.</p>
-      </div>
-
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title"><div class="card-title-icon"><i class="fas fa-user-clock"></i></div> Active Borrowers</div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Student</th><th>ID</th><th>Item Title</th><th>Code</th><th>Borrowed</th><th>Due Date</th><th>Status</th></tr></thead>
-            <tbody id="active-borrowers-table"><tr><td colspan="7" style="text-align:center; color:var(--text-mute)">Loading…</td></tr></tbody>
-          </table>
         </div>
       </div>
     </section>
@@ -1970,6 +1954,9 @@
             </button>
             <button class="btn btn-secondary btn-sm" onclick="exportBookAnalyticsExcel()" style="white-space:nowrap;">
               <i class="fas fa-file-excel"></i> Export Excel
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="exportBookAnalyticsPDF()" style="white-space:nowrap;">
+              <i class="fas fa-file-pdf"></i> Export PDF
             </button>
           </div>
         </div>
@@ -2025,8 +2012,8 @@
             <div class="card-title-icon"><i class="fas fa-user-check"></i></div>
             Most Frequent Library User
           </div>
-          <button class="btn btn-secondary btn-sm" onclick="exportMostFrequentUserExcel()" style="white-space:nowrap;">
-            <i class="fas fa-file-excel"></i> Export Excel
+          <button class="btn btn-primary btn-sm" onclick="exportMostFrequentUserPDF()" style="white-space:nowrap;">
+            <i class="fas fa-file-pdf"></i> Export PDF
           </button>
         </div>
         <div class="table-wrap">
@@ -2047,8 +2034,8 @@
             <div class="card-title-icon"><i class="fas fa-users"></i></div>
             👥 Visitor Analytics — By Grade Level
           </div>
-          <button class="btn btn-secondary btn-sm" onclick="exportVisitorsByGradeExcel()" style="white-space:nowrap;">
-            <i class="fas fa-file-excel"></i> Export Excel
+          <button class="btn btn-primary btn-sm" onclick="exportVisitorsByGradePDF()" style="white-space:nowrap;">
+            <i class="fas fa-file-pdf"></i> Export PDF
           </button>
         </div>
         <div class="table-wrap">
@@ -2070,8 +2057,8 @@
             <div class="card-title-icon"><i class="fas fa-list"></i></div>
             📋 Visitor Analytics — By Purpose
           </div>
-          <button class="btn btn-secondary btn-sm" onclick="exportVisitorsByPurposeExcel()" style="white-space:nowrap;">
-            <i class="fas fa-file-excel"></i> Export Excel
+          <button class="btn btn-primary btn-sm" onclick="exportVisitorsByPurposePDF()" style="white-space:nowrap;">
+            <i class="fas fa-file-pdf"></i> Export PDF
           </button>
         </div>
         <div class="table-wrap">
@@ -2093,8 +2080,8 @@
             <div class="card-title-icon"><i class="fas fa-venus-mars"></i></div>
             ⚧ Visitor Analytics — By Gender
           </div>
-          <button class="btn btn-secondary btn-sm" onclick="exportVisitorsByGenderExcel()" style="white-space:nowrap;">
-            <i class="fas fa-file-excel"></i> Export Excel
+          <button class="btn btn-primary btn-sm" onclick="exportVisitorsByGenderPDF()" style="white-space:nowrap;">
+            <i class="fas fa-file-pdf"></i> Export PDF
           </button>
         </div>
         <div class="table-wrap">
@@ -2115,8 +2102,8 @@
             <div class="card-title-icon"><i class="fas fa-chart-bar"></i></div>
             Library Visits — This Month
           </div>
-          <button class="btn btn-secondary btn-sm" onclick="exportVisitsChartExcel()" style="white-space:nowrap;">
-            <i class="fas fa-file-excel"></i> Export Excel
+          <button class="btn btn-primary btn-sm" onclick="exportLibraryVisitsPDF()" style="white-space:nowrap;">
+            <i class="fas fa-file-pdf"></i> Export PDF
           </button>
         </div>
         <div class="chart-area" id="visits-chart">
@@ -2190,8 +2177,8 @@
           </div>
         </div>
         <div class="export-row">
-          <button class="btn btn-success" onclick="generateCSVReport()">
-            <i class="fas fa-file-csv"></i> Export CSV
+          <button class="btn btn-success" onclick="exportLearnerVisitsPDF()">
+            <i class="fas fa-file-pdf"></i> Learner Visits Report (PDF)
           </button>
           <!-- Monthly statistics removed -->
         </div>
@@ -2279,14 +2266,41 @@
     </div>
     <div class="modal-form">
       <input type="hidden" id="attendance-log-id">
-      <div class="form-group"><label>Name</label><input type="text" id="attendance-name"></div>
-      <div class="form-group"><label>Grade / Section</label><input type="text" id="attendance-grade-section"></div>
-      <div class="form-group"><label>Purpose</label><input type="text" id="attendance-purpose"></div>
+      <input type="hidden" id="attendance-user-id">
+      <div class="form-group"><label>SLRC ID</label>
+        <input type="text" id="attendance-slrc-id" placeholder="Type the SLRC ID" autocomplete="off" oninput="fillAttendancePerson()">
+        <div id="attendance-person-note" style="font-size:0.78rem; color:var(--danger); margin-top:4px;"></div>
+      </div>
+      <div class="form-group"><label>Name</label><input type="text" id="attendance-name" readonly placeholder="Filled in from the SLRC ID"></div>
+      <div class="form-group"><label>Grade / Section</label><input type="text" id="attendance-grade-section" readonly></div>
+      <div class="form-group"><label>Purpose</label>
+        <!-- Same purposes as the check-in kiosk (index.html) -->
+        <select id="attendance-purpose">
+          <option value="">Choose a purpose...</option>
+          <option value="Attend/Conduct SLRC/Book Club,Event/Activity">Attend/Conduct SLRC/Book Club,Event/Activity</option>
+          <option value="Attend SLRC Tour/Orientation">Attend SLRC Tour/Orientation</option>
+          <option value="Borrow Books/Resources">Borrow Books/Resources</option>
+          <option value="Computer/Digital Technology/Internet Use">Computer/Digital Technology/Internet Use</option>
+          <option value="Conduct/Attend Book Club Reading Activity">Conduct/Attend Book Club Reading Activity</option>
+          <option value="Conduct/Attend Meeting">Conduct/Attend Meeting</option>
+          <option value="Conduct/Attend Remedial Class">Conduct/Attend Remedial Class</option>
+          <option value="Conduct/Attend SLRC Reading/Math Remediation">Conduct/Attend SLRC Reading/Math Remediation</option>
+          <option value="Conduct/Attend Storytelling Session">Conduct/Attend Storytelling Session</option>
+          <option value="Conduct/Attend Writing/Research Workshop">Conduct/Attend Writing/Research Workshop</option>
+          <option value="Play Board Games(Scrabble, Chess, etc.)">Play Board Games(Scrabble, Chess, etc.)</option>
+          <option value="Donate Learning Resources">Donate Learning Resources</option>
+          <option value="Lesson Preparation">Lesson Preparation</option>
+          <option value="Print/Photocopy projects/notes/lesson plan/activities">Print/Photocopy projects/notes/lesson plan/activities</option>
+          <option value="Reading">Reading</option>
+          <option value="Return Books/Resources">Return Books/Resources</option>
+          <option value="SLRC Visitation/Assessment/Validation">SLRC Visitation/Assessment/Validation</option>
+          <option value="Study/Project/Activity Making">Study/Project/Activity Making</option>
+        </select>
+      </div>
       <div class="form-group"><label>Date</label><input type="date" id="attendance-date"></div>
       <div class="form-group"><label>Check-in Time</label><input type="time" id="attendance-checkin"></div>
       <div class="form-group"><label>Check-out Time</label><input type="time" id="attendance-checkout"></div>
-      <div class="form-group"><label>User Type</label><select id="attendance-user-type"><option value="student">Student</option><option value="faculty">Faculty</option><option value="stakeholder">Stakeholder</option></select></div>
-      <div class="form-group"><label>User ID</label><input type="number" id="attendance-user-id" min="1"></div>
+      <div class="form-group"><label>User Type</label><select id="attendance-user-type" disabled><option value="student">Student</option><option value="faculty">Faculty</option><option value="stakeholder">Stakeholder</option></select></div>
       <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:8px;">
         <button class="btn btn-ghost" onclick="closeModal('attendance-modal')">Cancel</button>
         <button class="btn btn-primary" onclick="saveAttendanceRecord()">Save</button>
@@ -2427,9 +2441,14 @@
         <div class="form-group"><label>Name</label><input type="text" id="edit_resource_name"></div>
         <div class="form-group"><label>Category</label>
           <select id="edit_resource_category">
-            <option value="Science Tool/Equipment">Science Tool/Equipment</option>
-            <option value="Math Tool/Equipment">Math Tool/Equipment</option>
-            <option value="Table Top Games">Table Top Games</option>
+            <option value="Computer">Computer</option>
+            <option value="Laptop">Laptop</option>
+            <option value="Tablet">Tablet</option>
+            <option value="Printer">Printer</option>
+            <option value="Project">Project</option>
+            <option value="Globes">Globes</option>
+            <option value="Maps">Maps</option>
+            <option value="Other">Other</option>
           </select>
         </div>
         <div class="form-group"><label>Condition</label>
@@ -2474,6 +2493,22 @@
 
 <!-- ─── SCRIPTS ──────────────────────────────────── -->
 <script>
+  // Admin session: index.html stores the token after login; every /api/admin call must send it
+  const adminToken = sessionStorage.getItem('adminToken');
+  if (!adminToken) window.location.replace('/index.html');
+  const nativeFetch = window.fetch.bind(window);
+  window.fetch = async (url, options = {}) => {
+    if (typeof url !== 'string' || !url.startsWith('/api/admin')) return nativeFetch(url, options);
+    const headers = new Headers(options.headers);
+    headers.set('x-admin-token', adminToken || '');
+    const res = await nativeFetch(url, { ...options, headers });
+    if (res.status === 401) {
+      sessionStorage.removeItem('adminToken');
+      window.location.replace('/index.html');
+    }
+    return res;
+  };
+
   // PDF generation library
   const script = document.createElement('script');
   script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
@@ -2502,7 +2537,6 @@
     'non-print': ['fa-toolbox','Non-print Resources'],
     'inventory-weeding': ['fa-clipboard-list','Inventory & Weeding Report'],
     borrowing: ['fa-arrows-rotate','Borrowing Management'],
-    'active-borrowers': ['fa-user-clock','Active Borrowers'],
     analytics: ['fa-book-bookmark','Book Analytics'],
     reports:   ['fa-chart-column','Reports & Analytics'],
     calendar:  ['fa-calendar-week','Calendar Activities'],
@@ -2535,7 +2569,6 @@
     if (id === 'calendar') loadCalendarActivities();
     if (id === 'inventory-weeding') loadInventoryWeedingReports();
     if (id === 'borrowing') loadPendingBorrows();
-    if (id === 'active-borrowers') loadActiveBorrowers();
     if (id === 'analytics') loadBookAnalytics();
   }
 
@@ -2742,7 +2775,7 @@ function updateStudentsTable(filterSection = 'all') {
       <td style="white-space:nowrap;">${s.age || '—'}</td>
       <td style="white-space:nowrap;">
         <div class="action-group">
-          <button class="btn btn-ghost btn-sm" onclick="exportLibraryCard(${s.id},'${s.student_id}','${s.name}','${s.grade}','${s.section}')"><i class="fas fa-download"></i></button>
+          <button class="btn btn-ghost btn-sm" onclick="exportLibraryCard(${s.id})"><i class="fas fa-download"></i></button>
           <button class="btn btn-ghost btn-sm" onclick="openEditModal(${s.id})"><i class="fas fa-pen"></i></button>
           <button class="btn btn-danger btn-sm" onclick="deleteStudent(${s.id},'${s.student_id}')"><i class="fas fa-trash"></i></button>
         </div>
@@ -2924,17 +2957,15 @@ function updateStudentsTable(filterSection = 'all') {
   }
 
   function exportStakeholdersCSV() {
-    if (!allStakeholders.length) return;
+    if (!allStakeholders.length) {
+      Swal.fire({ icon: 'info', title: 'No stakeholders to export', confirmButtonColor: '#5b6ef5', background: '#1a1e2b', color: '#e8eaf0' });
+      return;
+    }
     const header = ['ID', 'Full Name', 'Organization', 'Position', 'Contact', 'Email', 'Sex', 'Address', 'Birthdate', 'Age'];
     const rows = allStakeholders.map(s => [s.student_id || s.stakeholder_id || '', s.name || '', s.section || s.organization || '', s.grade || s.position || '', s.contact_number || '', s.email || '', s.sex || '', s.address || '', s.birthdate || '', s.age || '']);
-    const csv = [header.join(','), ...rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'stakeholders.csv';
-    link.click();
-    URL.revokeObjectURL(url);
+    // BOM so Excel reads names with ñ correctly
+    const csv = '﻿' + [header, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+    downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), 'stakeholders.csv');
   }
 
   /* ── Faculty Management ─────────────────────── */
@@ -3187,18 +3218,55 @@ function updateStudentsTable(filterSection = 'all') {
     }
   }
 
+  // A kiosk visit can have two purposes ("Reading | Study/…") or an old one not in the list:
+  // keep it as an extra choice so saving the form doesn't erase it
+  function setAttendancePurpose(purpose) {
+    const select = document.getElementById('attendance-purpose');
+    select.querySelectorAll('option[data-extra]').forEach(option => option.remove());
+    if (purpose && ![...select.options].some(option => option.value === purpose)) {
+      const option = new Option(purpose, purpose);
+      option.dataset.extra = '1';
+      select.add(option);
+    }
+    select.value = purpose;
+  }
+
+  // The learner, teacher or stakeholder with this SLRC ID (the ID typed at the check-in kiosk)
+  function findPersonBySlrcId(slrcId) {
+    const id = slrcId.trim().toLowerCase();
+    if (!id) return null;
+    const same = value => String(value || '').trim().toLowerCase() === id;
+    const student = allStudents.find(s => same(s.student_id));
+    if (student) return { user_type: 'student', user_id: student.id, name: student.name, grade_section: [student.grade, student.section].filter(Boolean).join(' / ') };
+    const faculty = allFaculty.find(f => same(f.faculty_id));
+    if (faculty) return { user_type: 'faculty', user_id: faculty.id, name: faculty.name, grade_section: faculty.position || '' };
+    const stakeholder = allStakeholders.find(s => same(s.student_id));
+    if (stakeholder) return { user_type: 'stakeholder', user_id: stakeholder.id, name: stakeholder.name, grade_section: stakeholder.section || '' };
+    return null;
+  }
+
+  // Typing the SLRC ID fills in who it is
+  function fillAttendancePerson() {
+    const slrcId = document.getElementById('attendance-slrc-id').value;
+    const person = findPersonBySlrcId(slrcId);
+    document.getElementById('attendance-name').value = person?.name || '';
+    document.getElementById('attendance-grade-section').value = person?.grade_section || '';
+    document.getElementById('attendance-user-type').value = person?.user_type || 'student';
+    document.getElementById('attendance-user-id').value = person?.user_id || '';
+    document.getElementById('attendance-person-note').textContent = slrcId.trim() && !person ? 'No learner, teacher or stakeholder has this SLRC ID.' : '';
+  }
+
   function openAttendanceModal() {
     document.getElementById('attendance-log-id').value = '';
     document.getElementById('attendance-modal-title').textContent = 'Add Attendance';
-    document.getElementById('attendance-name').value = '';
-    document.getElementById('attendance-grade-section').value = '';
-    document.getElementById('attendance-purpose').value = '';
+    document.getElementById('attendance-slrc-id').value = '';
+    fillAttendancePerson();
+    setAttendancePurpose('');
     document.getElementById('attendance-date').value = currentAttendanceDate || new Date().toLocaleDateString('sv');
     document.getElementById('attendance-checkin').value = '';
     document.getElementById('attendance-checkout').value = '';
-    document.getElementById('attendance-user-type').value = 'student';
-    document.getElementById('attendance-user-id').value = '';
     document.getElementById('attendance-modal').classList.add('active');
+    document.getElementById('attendance-slrc-id').focus();
   }
 
   async function editAttendanceRecord(id) {
@@ -3209,9 +3277,15 @@ function updateStudentsTable(filterSection = 'all') {
       const record = data.record;
       document.getElementById('attendance-log-id').value = record.id;
       document.getElementById('attendance-modal-title').textContent = 'Edit Attendance';
+      // Faculty ids are a separate number range from users (students and stakeholders)
+      const person = record.user_type === 'faculty'
+        ? allFaculty.find(f => String(f.id) === String(record.user_id))
+        : [...allStudents, ...allStakeholders].find(u => String(u.id) === String(record.user_id));
+      document.getElementById('attendance-slrc-id').value = (record.user_type === 'faculty' ? person?.faculty_id : person?.student_id) || '';
+      document.getElementById('attendance-person-note').textContent = '';
       document.getElementById('attendance-name').value = record.name || '';
       document.getElementById('attendance-grade-section').value = record.grade_section || '';
-      document.getElementById('attendance-purpose').value = record.visit_reason || '';
+      setAttendancePurpose(record.visit_reason || '');
       document.getElementById('attendance-date').value = record.action_date || '';
       document.getElementById('attendance-checkin').value = record.check_in_time || '';
       document.getElementById('attendance-checkout').value = record.check_out_time || '';
@@ -3236,6 +3310,7 @@ function updateStudentsTable(filterSection = 'all') {
         user_type: document.getElementById('attendance-user-type').value,
         user_id: document.getElementById('attendance-user-id').value
       };
+      if (!payload.user_id) throw new Error('Type a registered SLRC ID first.');
       const res = await fetch(id ? `/api/admin/attendance/${encodeURIComponent(id)}` : '/api/admin/attendance', {
         method: id ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -3514,7 +3589,7 @@ function updateStudentsTable(filterSection = 'all') {
         <div style="font-size:10px; margin-top:4px;">Division of Cebu Province</div>
         <div style="font-size:10px; margin-top:4px;">Bala National High School</div>
         <div style="font-size:16px; font-weight:800; margin-top:12px;">SCHOOL LIBRARY CALENDAR OF ACTIVITIES</div>
-        <div style="font-size:10px; margin-top:2px;">SY 2026-2027</div>
+        <div style="font-size:10px; margin-top:2px;">${getSchoolYear()}</div>
       `;
       container.appendChild(header);
 
@@ -3539,10 +3614,12 @@ function updateStudentsTable(filterSection = 'all') {
       thead.appendChild(headRow);
       table.appendChild(thead);
       const tbody = document.createElement('tbody');
-      const rows = activities.length ? activities : [{ activity_date: getCurrentDateTimeLocal(), activity_description: '', persons_involved: '', status: '' }];
+      const rows = activities.length ? activities : [{ placeholder: true, activity_description: 'No activities recorded' }];
       rows.forEach((item, index) => {
         const row = document.createElement('tr');
-        const values = [formatActivityDate(item.activity_date), item.activity_description || '', item.persons_involved || '', item.status || 'Planned'];
+        const values = item.placeholder
+          ? ['', item.activity_description, '', '']
+          : [formatActivityDate(item.activity_date), item.activity_description || '', item.persons_involved || '', item.status || 'Planned'];
         values.forEach((value, idx) => {
           const td = document.createElement('td');
           td.textContent = value;
@@ -3559,18 +3636,8 @@ function updateStudentsTable(filterSection = 'all') {
       });
       table.appendChild(tbody);
       container.appendChild(table);
-      document.body.appendChild(container);
 
-      const opt = {
-        margin: 0,
-        filename: `calendar_activities_${new Date().toISOString().slice(0,10)}.pdf`,
-        image: { type: 'jpeg', quality: 0.95 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-      };
-
-      await window.html2pdf().set(opt).from(container).save();
-      document.body.removeChild(container);
+      await savePdf(container, `calendar_activities_${new Date().toLocaleDateString('sv')}.pdf`, 'portrait');
     } catch (error) {
       Swal.fire({ icon: 'error', title: 'Export Error', text: error.message || error, confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0' });
     }
@@ -3619,9 +3686,11 @@ function updateStudentsTable(filterSection = 'all') {
       thead.appendChild(headRow);
       table.appendChild(thead);
       const tbody = document.createElement('tbody');
-      (completedActivities.length ? completedActivities : [{ activity_date: getCurrentDateTimeLocal(), activity_description: 'No completed activities recorded', persons_involved: '', status: 'Completed' }]).forEach((item) => {
+      (completedActivities.length ? completedActivities : [{ placeholder: true, activity_description: 'No completed activities recorded' }]).forEach((item) => {
         const row = document.createElement('tr');
-        const values = [formatActivityDate(item.activity_date), item.activity_description || '', item.persons_involved || '', item.status || 'Completed'];
+        const values = item.placeholder
+          ? ['', item.activity_description, '', '']
+          : [formatActivityDate(item.activity_date), item.activity_description || '', item.persons_involved || '', item.status || 'Completed'];
         values.forEach((value, idx) => {
           const td = document.createElement('td');
           td.textContent = value;
@@ -3638,18 +3707,8 @@ function updateStudentsTable(filterSection = 'all') {
       });
       table.appendChild(tbody);
       container.appendChild(table);
-      document.body.appendChild(container);
 
-      const opt = {
-        margin: 0,
-        filename: `completed_activities_${new Date().toISOString().slice(0,10)}.pdf`,
-        image: { type: 'jpeg', quality: 0.95 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-      };
-
-      await window.html2pdf().set(opt).from(container).save();
-      document.body.removeChild(container);
+      await savePdf(container, `completed_activities_${new Date().toLocaleDateString('sv')}.pdf`, 'portrait');
     } catch (error) {
       Swal.fire({ icon: 'error', title: 'Export Error', text: error.message || error, confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0' });
     }
@@ -3657,7 +3716,7 @@ function updateStudentsTable(filterSection = 'all') {
 
   function printCompletedCalendarActivities() {
     const completedActivities = getCompletedCalendarActivities();
-    const rows = completedActivities.length ? completedActivities : [{ activity_date: getCurrentDateTimeLocal(), activity_description: 'No completed activities recorded', persons_involved: '', status: 'Completed' }];
+    const rows = completedActivities.length ? completedActivities : [{ placeholder: true, activity_description: 'No completed activities recorded' }];
     const printWindow = window.open('', '_blank', 'width=900,height=700');
     if (!printWindow) {
       Swal.fire({ icon: 'warning', title: 'Print blocked', text: 'Please allow pop-ups to print the completed activities list.', confirmButtonColor: '#5b6ef5', background: '#1a1e2b', color: '#e8eaf0' });
@@ -3684,7 +3743,7 @@ function updateStudentsTable(filterSection = 'all') {
               <tr><th>Date</th><th>Activity</th><th>Person/s Involved</th><th>Status</th></tr>
             </thead>
             <tbody>
-              ${rows.map(item => `<tr><td>${formatActivityDate(item.activity_date)}</td><td>${(item.activity_description || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td><td>${(item.persons_involved || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td><td>${item.status || 'Completed'}</td></tr>`).join('')}
+              ${rows.map(item => `<tr><td>${item.placeholder ? '' : formatActivityDate(item.activity_date)}</td><td>${escapeHtml(item.activity_description || '')}</td><td>${escapeHtml(item.persons_involved || '')}</td><td>${item.placeholder ? '' : escapeHtml(item.status || 'Completed')}</td></tr>`).join('')}
             </tbody>
           </table>
         </body>
@@ -3694,46 +3753,38 @@ function updateStudentsTable(filterSection = 'all') {
     printWindow.print();
   }
 
+  // Date picked on the page, or a whole month: one attendance sheet per day that has visits
   async function exportDailyAttendancePDF() {
     try {
-      if (!window.html2pdfReady) throw new Error('PDF export loader is not initialized.');
-      await window.html2pdfReady;
-      if (typeof window.html2pdf !== 'function') throw new Error('PDF export library is not loaded yet.');
+      const date = document.getElementById('attendance-date-picker')?.value || new Date().toLocaleDateString('sv');
+      const month = await askReportMonth('Daily Attendance', { otherChoice: `Only ${date}`, initialMonth: date.slice(0, 7) });
+      if (month === null) return;
+      if (!month) {
+        const data = await fetchReport(`/api/admin/daily-attendance?date=${encodeURIComponent(date)}`, '');
+        await savePdf(dailyAttendanceSheet(date, data.attendance_records || []), `daily_attendance_${date}.pdf`, 'portrait');
+        return;
+      }
+      const data = await fetchReport(`/api/admin/daily-attendance?month=${month}`, month);
+      const byDate = new Map();
+      (data.attendance_records || []).forEach(record => {
+        if (!byDate.has(record.date)) byDate.set(record.date, []);
+        byDate.get(record.date).push(record);
+      });
+      if (!byDate.size) {
+        Swal.fire({ icon: 'info', title: 'No attendance that month', text: 'No library visits were recorded.', confirmButtonColor: '#5b6ef5', background: '#1a1e2b', color: '#e8eaf0' });
+        return;
+      }
+      await savePdf([...byDate].map(([day, records]) => dailyAttendanceSheet(day, records)), `daily_attendance_${month}.pdf`, 'portrait');
+    } catch (e) {
+      Swal.fire({ icon: 'error', title: 'Export Error', text: e.message || e, confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0' });
+    }
+  }
 
-      const dateInput = document.getElementById('attendance-date-picker');
-      const date = dateInput?.value || new Date().toLocaleDateString('sv');
-      const res = await fetch(`/api/admin/daily-attendance?date=${encodeURIComponent(date)}`);
-      if (!res.ok) throw new Error('Failed to fetch daily attendance.');
-      const data = await res.json();
-      const records = data.attendance_records || [];
-
+  // One day's attendance sheet (the paper form): at least 30 lines so it can be filled in by hand
+  function dailyAttendanceSheet(date, records) {
       const container = document.createElement('div');
-      container.style.background = '#fff';
-      container.style.color = '#000';
-      container.style.padding = '24px';
-      container.style.width = '100%';
-      container.style.maxWidth = '100%';
-
-      const header = document.createElement('div');
-      header.style.textAlign = 'center';
-      header.style.marginBottom = '12px';
-      const logo = document.createElement('img');
-      logo.src = '/images/Deped-Seal.png';
-      logo.style.height = '90px';
-      logo.style.objectFit = 'contain';
-      logo.style.marginBottom = '6px';
-      header.appendChild(logo);
-      header.innerHTML += `
-        <div style="font-weight:700; font-size:12px; margin-top:4px;">Republic of the Philippines</div>
-        <div style="font-weight:700; font-size:12px;">Department of Education</div>
-        <div style="font-size:10px; margin-top:4px;">Region VII - Central Visayas</div>
-        <div style="font-size:10px;">Sudlon, Lahug, Cebu City</div>
-        <div style="font-size:10px; margin-top:4px;">Division of Cebu Province</div>
-        <div style="font-size:10px; margin-top:4px;">Bala National High School</div>
-        <div style="font-size:16px; font-weight:800; margin-top:12px;">SCHOOL LIBRARY DAILY ATTENDANCE</div>
-        <div style="font-size:10px; margin-top:2px;">SY 2026-2027</div>
-      `;
-      container.appendChild(header);
+      container.style.fontFamily = 'Times New Roman, serif';
+      container.innerHTML = reportHeaderHtml('SCHOOL LIBRARY DAILY ATTENDANCE', `Date: ${escapeHtml(date)} &nbsp; ${getSchoolYear(new Date(date + 'T00:00:00'))}`);
 
       const table = document.createElement('table');
       table.style.width = '100%';
@@ -3762,8 +3813,8 @@ function updateStudentsTable(filterSection = 'all') {
         const record = records[i] || {};
         const row = document.createElement('tr');
         const fields = [
-          record.no || i + 1,
-          record.date || date,
+          i + 1,
+          record.date || '',
           record.name || '',
           record.grade_section || '',
           record.purpose || ''
@@ -3785,21 +3836,7 @@ function updateStudentsTable(filterSection = 'all') {
       }
       table.appendChild(tbody);
       container.appendChild(table);
-      document.body.appendChild(container);
-
-      const opt = {
-        margin: 0,
-        filename: `daily_attendance_${date}.pdf`,
-        image: { type: 'jpeg', quality: 0.95 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-      };
-
-      await window.html2pdf().set(opt).from(container).save();
-      document.body.removeChild(container);
-    } catch (e) {
-      Swal.fire({ icon: 'error', title: 'Export Error', text: e.message || e, confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0' });
-    }
+      return container;
   }
 
   async function loadVisitorAnalytics() {
@@ -3947,11 +3984,14 @@ function updateStudentsTable(filterSection = 'all') {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      if (!res.ok) throw new Error('Could not save book change.');
-      allBooks = allBooks.map(item => item.id === bookId ? { ...item, [field]: newValue } : item);
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || 'Could not save book change.');
+      // The server may tidy the value (e.g. "fiction" -> "Fiction"), so show what it saved
+      allBooks = allBooks.map(item => item.id === bookId ? (body.book || { ...item, [field]: newValue }) : item);
       updateBooksTable();
     } catch (e) {
       console.error(e);
+      updateBooksTable(); // put the cell back to the saved value
       Swal.fire({ icon: 'error', title: 'Save Error', text: e.message || 'Could not save change.', confirmButtonColor: '#f43f5e' });
     }
   }
@@ -4083,7 +4123,7 @@ function updateStudentsTable(filterSection = 'all') {
     try {
       const res = await fetch(`/api/admin/books/${currentEditBookId}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({accession_number,call_number: call_number || ddc_no || '',title,author,category,copyright_year:copyright_year||null,isbn:isbn||null,date_received:date_received||null,ddc_no:ddc_no||null,edition:edition||null,volumes:volumes||null,pages:pages||null,source_of_fund:source_of_fund||null,price:price||null,publisher:publisher||null,remarks:remarks||null})});
       if(res.ok){Swal.fire({icon:'success',title:'Updated!',confirmButtonColor:'#5b6ef5',background:'#1a1e2b',color:'#e8eaf0'}).then(()=>{closeModal('edit-book-modal');loadBooks();});}
-      else{Swal.fire({icon:'error',title:'Error',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'});}
+      else{const d=await res.json().catch(()=>({}));Swal.fire({icon:'error',title:'Error',text:d.error||'Could not update the book.',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'});}
     }catch(e){Swal.fire({icon:'error',title:'Connection Error',confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'});}
   }
 
@@ -4252,7 +4292,7 @@ function updateStudentsTable(filterSection = 'all') {
         <div style="font-size:10px; margin-top:4px;">Division of Cebu Province</div>
         <div style="font-size:10px; margin-top:4px;">Bala National High School</div>
         <div style="font-size:16px; font-weight:800; margin-top:12px;">INVENTORY AND WEEDING REPORT</div>
-        <div style="font-size:10px; margin-top:2px;">SY 2026-2027</div>
+        <div style="font-size:10px; margin-top:2px;">${getSchoolYear()}</div>
       `;
       container.appendChild(header);
 
@@ -4296,17 +4336,8 @@ function updateStudentsTable(filterSection = 'all') {
       });
       table.appendChild(tbody);
       container.appendChild(table);
-      document.body.appendChild(container);
 
-      const opt = {
-        margin: [0.2, 0.2, 0.2, 0.2],
-        filename: `inventory_weeding_report_${new Date().toISOString().slice(0, 10)}.pdf`,
-        image: { type: 'jpeg', quality: 0.95 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
-      };
-      await window.html2pdf().set(opt).from(container).save();
-      document.body.removeChild(container);
+      await savePdf(container, `inventory_weeding_report_${new Date().toLocaleDateString('sv')}.pdf`, 'landscape');
     } catch (e) {
       Swal.fire({ icon: 'error', title: 'Export Error', text: e.message || e, confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0' });
     }
@@ -4723,49 +4754,20 @@ function updateStudentsTable(filterSection = 'all') {
     } catch(e) { console.error(e); }
   }
 
-  async function loadActiveBorrowers() {
-    try {
-      const r = await fetch('/api/admin/active-borrowers');
-      const d = await r.json();
-      updateActiveBorrowersTable(d.records);
-    } catch(e) { console.error(e); }
-  }
-
-  function updateActiveBorrowersTable(records) {
-    const tbody = document.getElementById('active-borrowers-table');
-    if (!records || !records.length) {
-      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-text">No active borrowers</div></div></td></tr>`;
-      return;
-    }
-
-    tbody.innerHTML = records.map(rec => {
-      const bd = new Date(rec.borrow_date).toLocaleDateString();
-      const due = rec.due_date ? new Date(rec.due_date).toLocaleDateString() : '—';
-      const status = rec.admin_verified
-        ? '<span class="badge badge-success">Active</span>'
-        : '<span class="badge badge-warning">Pending Verification</span>';
-      return `<tr>
-        <td><strong>${rec.student_name}</strong></td><td><code>${rec.student_id}</code></td>
-        <td>${rec.item_title}</td><td><code>${rec.item_code}</code></td>
-        <td>${bd}</td><td>${due}</td><td>${status}</td>
-      </tr>`;
-    }).join('');
-  }
-
   function updatePendingBorrowsTable(records) {
     const tbody = document.getElementById('pending-borrows-table');
     if (!records||!records.length) { tbody.innerHTML=`<tr><td colspan="9"><div class="empty-state"><div class="empty-text">No pending borrows</div></div></td></tr>`; return; }
     tbody.innerHTML = records.map(rec => {
       const bd = new Date(rec.borrow_date).toLocaleDateString();
       const due = rec.due_date ? new Date(rec.due_date).toLocaleDateString() : '—';
-      const gs = rec.grade + (rec.section?` - ${rec.section}`:'');
+      const gs = escapeHtml(rec.section || '—');
       const cat = rec.item_category==='print'
         ? '<span class="badge badge-blue">📖 Print</span>'
         : '<span class="badge badge-purple">🎮 Non-Print</span>';
       return `<tr>
-        <td><strong>${rec.student_name}</strong></td><td><code>${rec.student_id}</code></td>
-        <td>${gs}</td><td>${cat}</td><td>${rec.item_title}</td>
-        <td><code>${rec.item_code}</code></td><td>${bd}</td><td>${due}</td>
+        <td><strong>${escapeHtml(rec.student_name)}</strong></td><td><code>${escapeHtml(rec.student_id)}</code></td>
+        <td>${gs}</td><td>${cat}</td><td>${escapeHtml(rec.item_title)}</td>
+        <td><code>${escapeHtml(rec.item_code)}</code></td><td>${bd}</td><td>${due}</td>
         <td><button class="btn btn-success btn-sm" onclick="verifyBorrow('${rec.id}')"><i class="fas fa-check"></i> Verify</button> <button class="btn btn-danger btn-sm" onclick="deleteBorrowRecord('${rec.id}','pending-borrow')"><i class="fas fa-trash"></i></button></td>
       </tr>`;
     }).join('');
@@ -4779,19 +4781,125 @@ function updateStudentsTable(filterSection = 'all') {
     } catch(e) { console.error(e); }
   }
 
+  const showDate = value => value ? new Date(`${value}T00:00:00`).toLocaleDateString() : '—';
+  const renewalTag = rec => rec.renewed_from ? ' <span class="badge badge-purple">Renewal</span>' : '';
+
   function updatePendingReturnsTable(records) {
     const tbody = document.getElementById('pending-returns-table');
-    if(!records||!records.length){tbody.innerHTML=`<tr><td colspan="7"><div class="empty-state"><div class="empty-text">No pending returns</div></div></td></tr>`;return;}
+    if(!records||!records.length){tbody.innerHTML=`<tr><td colspan="8"><div class="empty-state"><div class="empty-text">No pending returns</div></div></td></tr>`;return;}
+    const today = new Date().toLocaleDateString('sv');
     tbody.innerHTML = records.map(rec=>{
-      const bd = new Date(rec.borrow_date).toLocaleDateString();
-      const rd = new Date(rec.return_date).toLocaleDateString();
+      // Still out: take it back at the desk or renew it. Returned at the kiosk: only the condition check is left
+      const stillOut = rec.status === 'borrowed';
+      const status = !stillOut ? '<span class="badge badge-blue">Returned at kiosk - check condition</span>'
+        : rec.due_date && rec.due_date < today ? '<span class="badge badge-danger">Overdue</span>'
+        : '<span class="badge badge-warning">On loan</span>';
+      const actions = stillOut
+        ? `<button class="btn btn-success btn-sm" onclick="verifyReturn('${rec.id}')"><i class="fas fa-check"></i> Return</button> <button class="btn btn-secondary btn-sm" onclick="renewBorrow('${rec.id}')"><i class="fas fa-rotate"></i> Auto-renew</button>`
+        : `<button class="btn btn-success btn-sm" onclick="verifyReturn('${rec.id}')"><i class="fas fa-check"></i> Verify</button> <button class="btn btn-danger btn-sm" onclick="deleteBorrowRecord('${rec.id}','pending-return')"><i class="fas fa-trash"></i></button>`;
       return `<tr>
-        <td><strong>${rec.student_name}</strong></td><td><code>${rec.student_id}</code></td>
-        <td>${rec.item_title}</td><td><code>${rec.item_code}</code></td>
-        <td>${bd}</td><td>${rd}</td>
-        <td><button class="btn btn-success btn-sm" onclick="verifyReturn('${rec.id}')"><i class="fas fa-check"></i> Verify</button> <button class="btn btn-danger btn-sm" onclick="deleteBorrowRecord('${rec.id}','pending-return')"><i class="fas fa-trash"></i></button></td>
+        <td><strong>${escapeHtml(rec.student_name)}</strong></td><td><code>${escapeHtml(rec.student_id)}</code></td>
+        <td>${escapeHtml(rec.item_title)}</td><td><code>${escapeHtml(rec.item_code)}</code></td>
+        <td>${showDate(rec.borrow_date)}</td><td>${showDate(rec.due_date)}</td><td>${status}${renewalTag(rec)}</td>
+        <td style="white-space:nowrap;">${actions}</td>
       </tr>`;
     }).join('');
+  }
+
+  async function renewBorrow(id) {
+    const { isConfirmed } = await Swal.fire({
+      title: 'Auto-renew this loan?',
+      text: 'The due date moves 3 days later for learners or 5 days later for faculty, counted from the current due date. A renewal record is added to the borrower\'s card.',
+      icon: 'question', showCancelButton: true, confirmButtonText: 'Renew',
+      confirmButtonColor: '#5b6ef5', cancelButtonColor: '#3d4260', background: '#1a1e2b', color: '#e8eaf0'
+    });
+    if (!isConfirmed) return;
+    try {
+      const res = await fetch(`/api/admin/renew-borrow/${encodeURIComponent(id)}`, { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Could not renew this loan.');
+      Swal.fire({ icon: 'success', title: 'Renewed', text: data.message, confirmButtonColor: '#5b6ef5', background: '#1a1e2b', color: '#e8eaf0' });
+      loadPendingReturns();
+      loadAllBorrowRecords();
+    } catch (e) {
+      Swal.fire({ icon: 'error', title: 'Renewal failed', text: e.message, confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0' });
+    }
+  }
+
+  // Same idea as the kiosk: type the accession number and the title fills in; past borrow dates are allowed
+  async function openManualBorrow() {
+    if (!allStudents.length) await loadStudents();
+    if (!allFaculty.length) await loadFaculty();
+    const today = new Date().toLocaleDateString('sv');
+    const field = 'width:100%; margin:4px 0 0; box-sizing:border-box;';
+    const label = (id, text) => `<label for="${id}" style="display:block; text-align:left; margin:12px 0 0; font-size:0.85rem;">${text}</label>`;
+    const hint = id => `<div id="${id}" style="text-align:left; font-size:0.8rem; margin-top:4px; min-height:1.1em; color:#9aa0b4;"></div>`;
+    const { value: saved, isConfirmed } = await Swal.fire({
+      title: 'Add Borrowing',
+      html: `
+        ${label('mb-type', 'Borrower type')}
+        <select id="mb-type" class="swal2-select" style="${field} display:block;"><option value="student">Student</option><option value="faculty">Faculty</option></select>
+        ${label('mb-borrower', 'Borrower ID')}
+        <input id="mb-borrower" class="swal2-input" style="${field}" placeholder="Student ID or Faculty Library ID" autocomplete="off">
+        ${hint('mb-borrower-name')}
+        ${label('mb-code', 'Accession number')}
+        <input id="mb-code" class="swal2-input" style="${field}" placeholder="e.g. 000265" autocomplete="off">
+        ${hint('mb-title')}
+        ${label('mb-borrow-date', 'Borrow date')}
+        <input id="mb-borrow-date" type="date" class="swal2-input" style="${field}" max="${today}" value="${today}">
+        ${label('mb-due-date', 'Due date')}
+        <input id="mb-due-date" type="date" class="swal2-input" style="${field}" min="${today}">`,
+      focusConfirm: false,
+      showCancelButton: true,
+      confirmButtonText: 'Save Borrowing',
+      confirmButtonColor: '#5b6ef5', cancelButtonColor: '#3d4260', background: '#1a1e2b', color: '#e8eaf0',
+      didOpen: () => {
+        const $ = id => document.getElementById(id);
+        const showBorrower = () => {
+          const id = $('mb-borrower').value.trim();
+          const isFaculty = $('mb-type').value === 'faculty';
+          const match = isFaculty ? allFaculty.find(f => f.faculty_id === id) : allStudents.find(s => s.student_id === id);
+          $('mb-borrower-name').textContent = !id ? '' : match ? match.name : `No ${isFaculty ? 'faculty member' : 'student'} with this ID`;
+        };
+        let titleTimer;
+        const showTitle = () => {
+          clearTimeout(titleTimer);
+          const code = $('mb-code').value.trim();
+          if (!code) { $('mb-title').textContent = ''; return; }
+          titleTimer = setTimeout(async () => {
+            const res = await fetch('/api/validate-book', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accession_number: code }) });
+            const data = await res.json().catch(() => ({}));
+            if ($('mb-code').value.trim() !== code) return; // typed on since this lookup started
+            $('mb-title').textContent = data.valid ? `Title: ${(data.book || data.resource).title}` : 'Not found in the catalog';
+          }, 300);
+        };
+        $('mb-type').addEventListener('change', showBorrower);
+        $('mb-borrower').addEventListener('input', showBorrower);
+        $('mb-code').addEventListener('input', showTitle);
+        $('mb-borrow-date').addEventListener('change', () => { $('mb-due-date').min = $('mb-borrow-date').value; });
+      },
+      preConfirm: async () => {
+        const $ = id => document.getElementById(id).value.trim();
+        const body = { borrower_type: $('mb-type'), borrower_id: $('mb-borrower'), item_code: $('mb-code'), borrow_date: $('mb-borrow-date'), due_date: $('mb-due-date') };
+        if (!body.borrower_id || !body.item_code || !body.borrow_date || !body.due_date) {
+          Swal.showValidationMessage('Fill in every field.');
+          return false;
+        }
+        try {
+          const res = await fetch('/api/admin/manual-borrow', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) { Swal.showValidationMessage(data.error || 'Could not save the borrowing.'); return false; }
+          return data;
+        } catch (e) {
+          Swal.showValidationMessage('Connection error. Please try again.');
+          return false;
+        }
+      }
+    });
+    if (!isConfirmed) return;
+    Swal.fire({ icon: 'success', title: 'Borrowing recorded', text: saved.message, confirmButtonColor: '#5b6ef5', background: '#1a1e2b', color: '#e8eaf0' });
+    loadPendingReturns();
+    loadAllBorrowRecords();
   }
 
   async function loadAllBorrowRecords() {
@@ -4804,23 +4912,26 @@ function updateStudentsTable(filterSection = 'all') {
 
   function updateAllBorrowRecordsTable(records) {
     const tbody = document.getElementById('all-records-table');
-    if(!records||!records.length){tbody.innerHTML=`<tr><td colspan="10"><div class="empty-state"><div class="empty-text">No records found</div></div></td></tr>`;return;}
+    if(!records||!records.length){tbody.innerHTML=`<tr><td colspan="11"><div class="empty-state"><div class="empty-text">No records found</div></div></td></tr>`;return;}
+    const today = new Date().toLocaleDateString('sv');
     tbody.innerHTML = records.map(rec=>{
-      const bd = new Date(rec.borrow_date).toLocaleDateString();
-      const rd = rec.return_date ? new Date(rec.return_date).toLocaleDateString() : '—';
-      const due = rec.due_date ? new Date(rec.due_date).toLocaleDateString() : '—';
-      const status = rec.status==='borrowed'? '<span class="badge badge-warning">Borrowed</span>'
-                   : rec.status==='returned'? '<span class="badge badge-success">Returned</span>'
-                   : '<span class="badge badge-danger">Overdue</span>';
+      const status = rec.status==='renewed' ? '<span class="badge badge-blue">Renewed</span>'
+                   : rec.status==='returned' ? '<span class="badge badge-success">Returned</span>'
+                   : rec.due_date && rec.due_date < today ? '<span class="badge badge-danger">Overdue</span>'
+                   : '<span class="badge badge-warning">Borrowed</span>';
       const verified = rec.admin_verified
         ? '<span class="badge badge-success"><i class="fas fa-check"></i> Yes</span>'
         : '<span class="badge badge-warning">Pending</span>';
+      // Only verified loans still out can be renewed; returned and renewed records are history
+      const action = rec.status === 'borrowed' && rec.admin_verified
+        ? `<button class="btn btn-secondary btn-sm" title="Auto-renew: +3 days for learners, +5 days for faculty" onclick="renewBorrow('${rec.id}')"><i class="fas fa-rotate"></i> Auto-renew</button>`
+        : '<span style="color:var(--text-mute)">—</span>';
       return `<tr>
-        <td><strong>${rec.student_name}</strong></td><td><code>${rec.student_id}</code></td>
-        <td>${rec.item_title}</td><td><code>${rec.item_code}</code></td>
+        <td><strong>${escapeHtml(rec.student_name)}</strong></td><td><code>${escapeHtml(rec.student_id)}</code></td>
+        <td>${escapeHtml(rec.item_title)}</td><td><code>${escapeHtml(rec.item_code)}</code></td>
         <td>${rec.item_category==='print'?'📖 Print':'🎮 Non-Print'}</td>
-        <td>${bd}</td><td>${rd}</td><td>${due}</td><td>${status}</td><td>${verified}</td>
-        <td><button class="btn btn-danger btn-sm" onclick="deleteBorrowRecord('${rec.id}','all-records')"><i class="fas fa-trash"></i> Delete</button></td>
+        <td>${showDate(rec.borrow_date)}</td><td>${showDate(rec.return_date)}</td><td>${showDate(rec.due_date)}</td><td>${status}${renewalTag(rec)}</td><td>${verified}</td>
+        <td style="white-space:nowrap;">${action}</td>
       </tr>`;
     }).join('');
   }
@@ -4926,19 +5037,10 @@ function updateStudentsTable(filterSection = 'all') {
   }
 
   /* ── Export ─────────────────────────────────── */
-  function generateCSVReport() {
-    let csv = 'Student ID,Name,Grade,Strand,Total Visits\n';
-    allStudents.forEach(s => {
-      const visits = allLogs.filter(l => l.user_id === s.id).length;
-      csv += `${s.student_id},${s.name},${s.grade},${s.strand},${visits}\n`;
-    });
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'slrc-report.csv'; a.click();
-  }
-
-  async function getMostFrequentLibraryUsers() {
-    if (!allLogs.length) await loadActivityLogs();
+  // month 'YYYY-MM' limits it to that month; '' = every visit
+  async function getMostFrequentLibraryUsers(month = '') {
+    const { from, to } = month ? monthBounds(month) : {};
+    const logs = await fetchLogs(month ? `from=${from}&to=${to}` : 'all=1');
     if (!allStudents.length) await loadStudents();
     if (!allFaculty.length) await loadFaculty();
 
@@ -4946,7 +5048,7 @@ function updateStudentsTable(filterSection = 'all') {
     const facultyMap = new Map(allFaculty.map(f => [f.id, f]));
     const counts = new Map();
 
-    allLogs.forEach(log => {
+    logs.forEach(log => {
       const key = `${log.user_type || 'unknown'}::${log.user_id || ''}`;
       const existing = counts.get(key) || {
         userType: log.user_type || 'unknown',
@@ -5122,16 +5224,18 @@ function updateStudentsTable(filterSection = 'all') {
         'EDITION',
         'VOLUMES',
         'PAGES',
-        'SOURCE OF FOUND',
+        'SOURCE OF FUND',
         'PRICE',
         'PUBLISHER',
         'COPYRIGHT YEAR',
         'REMARKS'
       ];
 
-      headers.forEach(text => {
+      const widths = ['7%', '7%', '6%', '11%', '18%', '6%', '5%', '5%', '8%', '5%', '10%', '6%', '6%'];
+      headers.forEach((text, idx) => {
         const th = document.createElement('th');
         th.textContent = text;
+        th.style.width = widths[idx];
         th.style.border = '1px solid #000';
         th.style.padding = '4px';
         th.style.textAlign = 'center';
@@ -5151,15 +5255,12 @@ function updateStudentsTable(filterSection = 'all') {
         return d.toISOString().split('T')[0];
       };
       const searchValue = document.getElementById('books-search-input')?.value?.trim().toLowerCase() || '';
-      const exportBooks = (allBooks || []).filter(book => {
-        const value = book?.date_received;
-        const matchesSearch = !searchValue || String(book?.accession_number || '').toLowerCase().includes(searchValue);
-        return matchesSearch && value !== null && value !== undefined && String(value).trim() !== '';
-      });
+      const exportBooks = (allBooks || [])
+        .filter(book => !searchValue || String(book?.accession_number || '').toLowerCase().includes(searchValue))
+        .sort((a, b) => String(a.accession_number || '').localeCompare(String(b.accession_number || ''), undefined, { numeric: true }));
 
       if (!exportBooks.length) {
-        Swal.fire({ icon: 'info', title: 'No books to export', text: 'Add a Date Received to at least one book before exporting the accession record.', confirmButtonColor: '#5b6ef5', background: '#1a1e2b', color: '#e8eaf0' });
-        if (container.parentNode) container.parentNode.removeChild(container);
+        Swal.fire({ icon: 'info', title: 'No books to export', text: searchValue ? 'No books match the accession number search.' : 'Add at least one book before exporting the accession record.', confirmButtonColor: '#5b6ef5', background: '#1a1e2b', color: '#e8eaf0' });
         return;
       }
 
@@ -5196,20 +5297,7 @@ function updateStudentsTable(filterSection = 'all') {
       table.appendChild(tbody);
       container.appendChild(table);
 
-      const opts = {
-        margin: 0,
-        filename: 'accession_record.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
-      };
-
-      document.body.appendChild(container);
-      try {
-        await window.html2pdf().set(opts).from(container).save();
-      } finally {
-        if (container.parentNode) container.parentNode.removeChild(container);
-      }
+      await savePdf(container, 'accession_record.pdf', 'landscape');
     } catch (e) {
       console.error(e);
       Swal.fire({ icon: 'error', title: 'Export Error', text: e.message || e, confirmButtonColor: '#f43f5e' });
@@ -5221,15 +5309,29 @@ function updateStudentsTable(filterSection = 'all') {
       if (!window.html2pdfReady) throw new Error('PDF export loader is not initialized.');
       await window.html2pdfReady;
       if (typeof window.html2pdf !== 'function') throw new Error('PDF export library is not loaded yet.');
-      if (!allLogs.length) await loadActivityLogs();
+      const { value: pickedMonth, isConfirmed } = await Swal.fire({
+        title: 'Monthly Statistics',
+        text: 'Choose the month to export.',
+        input: 'month',
+        inputValue: new Date().toLocaleDateString('sv').slice(0, 7),
+        showCancelButton: true,
+        confirmButtonText: 'Export PDF',
+        confirmButtonColor: '#5b6ef5',
+        cancelButtonColor: '#3d4260',
+        background: '#1a1e2b',
+        color: '#e8eaf0'
+      });
+      if (!isConfirmed || !pickedMonth) return;
+
+      const [targetYear, monthNumber] = pickedMonth.split('-').map(Number);
+      const targetMonth = monthNumber - 1;
+      const lastDay = new Date(targetYear, monthNumber, 0).getDate();
+      const monthLogs = await fetchLogs(`from=${pickedMonth}-01&to=${pickedMonth}-${String(lastDay).padStart(2, '0')}`);
       if (!allStudents.length) await loadStudents();
       if (!allFaculty.length) await loadFaculty();
       if (!allStakeholders.length) await loadStakeholders();
 
       const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-      const today = new Date();
-      const targetMonth = today.getMonth();
-      const targetYear = today.getFullYear();
       const monthLabel = `${monthNames[targetMonth]} ${targetYear}`;
       const weekCount = 5;
 
@@ -5243,7 +5345,7 @@ function updateStudentsTable(filterSection = 'all') {
       const facultyMap = new Map(allFaculty.map(f => [String(f.id), f]));
       const stakeholderMap = new Map((allStakeholders || []).map(s => [String(s.id || s.user_id || ''), s]).filter(([k]) => k));
 
-      const getLogDate = log => new Date(log.action_date || log.checked_at || log.created_at || log.timestamp || log.date || log.actionDate || null);
+      const getLogDate = log => new Date(`${log.action_date}T00:00:00`); // local date, not UTC
       const getWeekIndex = d => {
         if (!(d instanceof Date) || Number.isNaN(d.getTime())) return -1;
         if (d.getMonth() !== targetMonth || d.getFullYear() !== targetYear) return -1;
@@ -5260,32 +5362,30 @@ function updateStudentsTable(filterSection = 'all') {
       };
 
       const classifyTeacherLevel = faculty => {
-        const gradeLevel = (faculty?.grade_level || faculty?.gradeLevel || faculty?.grade || '').toString().trim();
-        const subjectArea = (faculty?.subject_area || faculty?.subjectArea || faculty?.subject || '').toString().trim();
-        const probe = `${gradeLevel} ${subjectArea} ${faculty?.position || ''}`.toLowerCase();
+        // The faculty form stores the level in Position: SHS, JHS or Non-Teaching
+        const position = (faculty?.position || '').toString().toLowerCase();
+        if (/non[- ]?teaching/.test(position)) return 'non-teaching';
+        if (/\bshs\b|senior/.test(position)) return 'SHS';
+        if (/\bjhs\b|junior/.test(position)) return 'JHS';
 
-        if (!gradeLevel && !subjectArea) return 'non-teaching';
+        const probe = `${faculty?.grade_level || ''} ${faculty?.subject_area || ''}`.toLowerCase();
+        if (!probe.trim()) return 'non-teaching';
         if (/11|12|shs|senior/.test(probe)) return 'SHS';
-        if (/7|8|9|10|jhs|junior/.test(probe)) return 'JHS';
         return 'JHS';
       };
 
       const formatCount = value => (value === null || value === undefined || value === '' ? '0' : String(value));
 
-      allLogs.forEach(log => {
+      monthLogs.forEach(log => {
         const d = getLogDate(log);
         const wi = getWeekIndex(d);
         if (wi < 0) return;
 
+        // Faculty ids overlap student ids, so trust user_type rather than looking ids up everywhere
         const userType = (log.user_type || '').toString().toLowerCase();
-        const uid = String(log.user_id || log.userId || log.student_id || log.faculty_id || '');
+        const uid = String(log.user_id || '');
 
-        if (userType === 'stakeholder' || stakeholderMap.has(uid)) {
-          otherBuckets.Stakeholders[wi] += 1;
-          return;
-        }
-
-        if (userType === 'faculty' || facultyMap.has(uid)) {
+        if (userType === 'faculty') {
           const faculty = facultyMap.get(uid) || {};
           const bucket = classifyTeacherLevel(faculty);
           if (bucket === 'non-teaching') otherBuckets['Non-Teaching Staff'][wi] += 1;
@@ -5293,7 +5393,13 @@ function updateStudentsTable(filterSection = 'all') {
           return;
         }
 
-        if (userType === 'student' || studentMap.has(uid)) {
+        // Older stakeholder check-ins were saved as 'student', so also check the stakeholder list
+        if (userType === 'stakeholder' || stakeholderMap.has(uid)) {
+          otherBuckets.Stakeholders[wi] += 1;
+          return;
+        }
+
+        if (userType === 'student') {
           const student = studentMap.get(uid) || {};
           const gnum = extractGradeNumber(student.grade || student.section || student.session || log.grade || log.raw_grade);
           if (gnum >= 7 && gnum <= 12) {
@@ -5338,7 +5444,7 @@ function updateStudentsTable(filterSection = 'all') {
       const topEmblem = document.createElement('div');
       topEmblem.style.textAlign = 'center';
       topEmblem.style.marginBottom = '0px';
-      const topImg = document.createElement('img'); topImg.src = '/images/Deped-Seal.png'; topImg.style.height = '100px'; topImg.style.objectFit = 'contain'; topImg.style.marginTop = '-100px';
+      const topImg = document.createElement('img'); topImg.src = '/images/Deped-Seal.png'; topImg.style.height = '100px'; topImg.style.objectFit = 'contain';
       topEmblem.appendChild(topImg);
       container.appendChild(topEmblem);
 
@@ -5354,10 +5460,10 @@ function updateStudentsTable(filterSection = 'all') {
         <div style="font-size:10px">Sudlon, Lahug, Cebu City</div>
         <div style="font-size:10px;margin-top:4px"> Division of Cebu Province</div>
         <div style="font-size:10px; margin-top:4px">Bala National High School</div>
-        <div style="margin-top:8px; font-weight:800; font-size:16px">School Library Monthly Statistics(Attendance)</div>
+        <div style="margin-top:8px; font-weight:800; font-size:16px">School Library Monthly Statistics (Attendance)</div>
         <div style="font-size:10px; margin-top:4px; display:flex; justify-content:center; gap:12px;">
           <span>Month: ${monthLabel}</span>
-          <span>SY ${targetYear}-${targetYear + 1}</span>
+          <span>${getSchoolYear(new Date(targetYear, targetMonth, 1))}</span>
         </div>
       `;
       container.appendChild(centerBlock);
@@ -5504,20 +5610,258 @@ function updateStudentsTable(filterSection = 'all') {
       table.appendChild(tbody);
       container.appendChild(table);
 
-      const opts = {
-        margin: 0,
-        filename: `school_library_monthly_statistics_${targetYear}_${targetMonth+1}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
-      };
-      document.body.appendChild(container);
-      await window.html2pdf().set(opts).from(container).save();
-      document.body.removeChild(container);
+      await savePdf(container, `school_library_monthly_statistics_${pickedMonth}.pdf`, 'landscape');
     } catch (e) {
       console.error(e);
       Swal.fire({ icon: 'error', title: 'Export Error', text: e.message || e, confirmButtonColor: '#f43f5e' });
     }
+  }
+
+  async function exportCirculationReportPDF() {
+    try {
+      const thisMonth = new Date().toLocaleDateString('sv').slice(0, 7);
+      const dialog = { showCancelButton: true, confirmButtonColor: '#5b6ef5', cancelButtonColor: '#3d4260', background: '#1a1e2b', color: '#e8eaf0' };
+      const { value: month, isConfirmed } = await Swal.fire({
+        ...dialog,
+        title: 'Circulation Report',
+        text: 'Choose the month to report.',
+        input: 'month',
+        inputValue: thisMonth,
+        inputAttributes: { max: thisMonth },
+        inputValidator: value => !value ? 'Choose a month.' : value > thisMonth ? 'That month has not started yet.' : undefined,
+        confirmButtonText: 'Next'
+      });
+      if (!isConfirmed) return;
+
+      const res = await fetch(`/api/admin/circulation-report?month=${encodeURIComponent(month)}`);
+      // An HTML reply (not JSON) means the running server is older than this page: it needs a restart
+      const data = await res.json().catch(() => null);
+      if (!data) throw new Error(`The server does not have the circulation report yet (HTTP ${res.status}). Restart the server (or redeploy it), then try again.`);
+      if (!res.ok) throw new Error(data.error || 'Failed to load circulation data.');
+
+      // The system doesn't track these, so they are pre-filled with its best value and can be corrected
+      const numberField = (id, label, value, hint) => `
+        <label for="${id}" style="display:block; text-align:left; margin:14px 0 4px; font-size:0.85rem;">${label}</label>
+        <input id="${id}" type="number" min="0" step="1" value="${value}" class="swal2-input" style="margin:0; width:100%;">
+        <div style="text-align:left; font-size:0.75rem; color:#9aa0b4; margin-top:4px;">${hint}</div>`;
+      const { value: manual, isConfirmed: confirmed } = await Swal.fire({
+        ...dialog,
+        title: 'Check these numbers',
+        html: numberField('circ-enrollment', 'Total School Enrollment', data.registered_students, 'Pre-filled with the learners registered in the system.')
+          + numberField('circ-renewals', 'Total Renewals', data.renewals ?? 0, 'Pre-filled with the Auto-renewals recorded this month.')
+          + numberField('circ-lost', 'Lost / Damaged Items Replaced', data.damaged_returns, 'Pre-filled with items returned "Damaged" this month.'),
+        focusConfirm: false,
+        confirmButtonText: 'Export PDF',
+        preConfirm: () => {
+          const values = ['circ-enrollment', 'circ-renewals', 'circ-lost'].map(id => document.getElementById(id).value.trim());
+          if (values.some(v => !/^\d+$/.test(v))) {
+            Swal.showValidationMessage('Enter whole numbers (0 or more).');
+            return false;
+          }
+          const [enrollment, renewals, lost] = values.map(Number);
+          return { enrollment, renewals, lost };
+        }
+      });
+      if (!confirmed) return;
+
+      const total = data.total_checkouts;
+      const fmt = n => Number(n).toLocaleString('en-US');
+      const pct = (part, whole) => `${whole ? (part / whole * 100).toFixed(1) : '0.0'}%`;
+      const longDate = iso => new Date(`${iso}T00:00:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      const item = (label, value) => `<li style="margin:3px 0;"><strong>${label}:</strong> ${value}</li>`;
+      const list = items => `<ul style="margin:6px 0 4px; padding-left:28px; list-style:disc;">${items.join('')}</ul>`;
+      const heading = text => `<div style="font-weight:700; margin-top:12px;">${text}</div>`;
+      const rule = '<div style="border-top:1px solid #999; margin:12px 0;"></div>';
+      const cell = 'border:1px solid #000; padding:8px 10px; text-align:left; vertical-align:top; background:#fff;';
+
+      const gradeItems = [7, 8, 9, 10, 11, 12].map(g => item(`Grade ${g}`, `${fmt(data.by_grade[g])} (${pct(data.by_grade[g], total)})`));
+      if (data.other_grade) gradeItems.push(item('Grade not recorded', `${fmt(data.other_grade)} (${pct(data.other_grade, total)})`));
+      const categoryItems = data.by_category.length
+        ? data.by_category.map(c => item(escapeHtml(c.category), `${fmt(c.count)} (${pct(c.count, total)})`))
+        : ['<li style="margin:3px 0;">No print materials were borrowed this month.</li>'];
+
+      const container = document.createElement('div');
+      container.style.fontFamily = 'Times New Roman, serif';
+      container.style.fontSize = '11pt';
+      container.style.lineHeight = '1.35';
+      container.innerHTML = `
+        ${reportHeaderHtml('SCHOOL LIBRARY CIRCULATION REPORT', getSchoolYear(new Date(`${data.start}T00:00:00`)))}
+        ${list([
+          item('Reporting Period (Monthly)', `${longDate(data.start)} – ${longDate(data.end)}`),
+          item('School Name', 'Bala National High School'),
+          item('Total School Enrollment', fmt(manual.enrollment)),
+          item('Active Borrowers This Month', `${fmt(data.active_borrowers)} ${data.active_borrowers === 1 ? 'student' : 'students'} (${pct(data.active_borrowers, manual.enrollment)} student participation)`)
+        ])}
+        ${rule}
+        ${heading('1. Overall Activity Metrics')}
+        ${list([
+          item('Total Checkouts', fmt(total)),
+          item('Total Renewals', fmt(manual.renewals)),
+          item('Overdue Items at Month End', fmt(data.overdue_at_month_end)),
+          item('Lost / Damaged Items Replaced', fmt(manual.lost))
+        ])}
+        ${rule}
+        ${heading('2. Borrowing Breakdown by Grade Level')}
+        ${list(gradeItems)}
+        ${heading('3. Circulation by Top Categories')}
+        ${list(categoryItems)}
+        ${heading('4. Print vs. Non-Print Materials')}
+        <table style="width:100%; border-collapse:collapse; table-layout:fixed; margin-top:8px;">
+          <thead><tr>
+            <th style="${cell} width:55%;">Material Format</th>
+            <th style="${cell} width:25%;">Total Borrowing</th>
+            <th style="${cell} width:20%;">Percentage</th>
+          </tr></thead>
+          <tbody>
+            <tr><td style="${cell}">Print (Books)</td><td style="${cell}">${fmt(data.print)}</td><td style="${cell}">${pct(data.print, total)}</td></tr>
+            <tr><td style="${cell}">Non-Print (Science &amp; Math Equipment and Tools, Multimedia equipment)</td><td style="${cell}">${fmt(data.non_print)}</td><td style="${cell}">${pct(data.non_print, total)}</td></tr>
+          </tbody>
+        </table>`;
+
+      await savePdf(container, `school_library_circulation_report_${month}.pdf`, 'portrait');
+    } catch (e) {
+      Swal.fire({ icon: 'error', title: 'Export Error', text: e.message || e, confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0' });
+    }
+  }
+
+  // DepEd school year starts in June: Oct 2026 -> "SY 2026-2027", Mar 2027 -> "SY 2026-2027"
+  function getSchoolYear(date = new Date()) {
+    const start = date.getMonth() >= 5 ? date.getFullYear() : date.getFullYear() - 1;
+    return `SY ${start}-${start + 1}`;
+  }
+
+  // The DepEd header of the report forms
+  function reportHeaderHtml(title, subtitle) {
+    return `
+      <div style="text-align:center; line-height:1.2; margin-bottom:14px;">
+        <img src="/images/Deped-Seal.png" style="height:90px; object-fit:contain; margin-bottom:6px;">
+        <div style="font-weight:700; font-size:12px;">Republic of the Philippines</div>
+        <div style="font-weight:700; font-size:12px;">Department of Education</div>
+        <div style="font-size:10px; margin-top:4px;">Region VII - Central Visayas</div>
+        <div style="font-size:10px;">Sudlon, Lahug, Cebu City</div>
+        <div style="font-size:10px; margin-top:4px;">Division of Cebu Province</div>
+        <div style="font-size:10px; margin-top:4px;">Bala National High School</div>
+        <div style="font-size:16px; font-weight:800; margin-top:12px;">${title}</div>
+        <div style="font-size:10px; margin-top:2px;">${subtitle}</div>
+      </div>`;
+  }
+
+  // First and last day of 'YYYY-MM'
+  function monthBounds(month) {
+    const [year, monthNumber] = month.split('-').map(Number);
+    return { from: `${month}-01`, to: new Date(year, monthNumber, 0).toLocaleDateString('sv') }; // day 0 of next month = last day of this one
+  }
+
+  // Asks which month a report covers. Resolves to 'YYYY-MM', '' for the other button (all months), or null when cancelled.
+  async function askReportMonth(title, { otherChoice = 'All Months', initialMonth } = {}) {
+    const thisMonth = new Date().toLocaleDateString('sv').slice(0, 7);
+    const result = await Swal.fire({
+      title,
+      text: `Download one month, or choose "${otherChoice}".`,
+      input: 'month',
+      inputValue: initialMonth || thisMonth,
+      inputAttributes: { max: thisMonth },
+      inputValidator: value => !value ? 'Choose a month.' : value > thisMonth ? 'That month has not started yet.' : undefined,
+      showDenyButton: true,
+      showCancelButton: true,
+      confirmButtonText: 'Download Month',
+      denyButtonText: otherChoice,
+      confirmButtonColor: '#5b6ef5', denyButtonColor: '#3d4260', cancelButtonColor: '#3d4260', background: '#1a1e2b', color: '#e8eaf0'
+    });
+    return result.isConfirmed ? result.value : result.isDenied ? '' : null;
+  }
+
+  // A report's JSON. A server older than this page ignores ?month and would label every month's numbers as one month's.
+  async function fetchReport(url, month) {
+    const res = await fetch(url);
+    const data = await res.json().catch(() => null);
+    if (!data) throw new Error(`Could not load the report (HTTP ${res.status}).`);
+    if (!res.ok || data.error) throw new Error(data.error || 'Failed to load the report.');
+    if (month && data.month !== month) throw new Error('The server does not have monthly reports yet. Restart the server (or redeploy it), then try again.');
+    return data;
+  }
+
+  // A one-table report: DepEd header, reporting period and summary lines, then a bordered table.
+  // columns: [{ label, width, align }]; rows: arrays of plain values (escaped here).
+  function reportPage({ title, month, summary = [], heading = '', columns, rows, empty }) {
+    const longDate = iso => new Date(`${iso}T00:00:00`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    const { from, to } = month ? monthBounds(month) : {};
+    const lines = [month ? ['Reporting Period (Monthly)', `${longDate(from)} – ${longDate(to)}`] : ['Reporting Period', 'All months on record'], ...summary];
+    const cell = 'border:1px solid #000; padding:4px 8px; vertical-align:top; background:#fff;';
+    const td = (value, column) => `<td style="${cell} text-align:${column.align || 'left'};">${escapeHtml(value ?? '')}</td>`;
+    const container = document.createElement('div');
+    container.style.fontFamily = 'Times New Roman, serif';
+    container.style.fontSize = '11pt';
+    container.style.lineHeight = '1.35';
+    container.innerHTML = `
+      ${reportHeaderHtml(title, getSchoolYear(month ? new Date(`${from}T00:00:00`) : new Date()))}
+      <ul style="margin:6px 0 4px; padding-left:28px; list-style:disc;">
+        ${lines.map(([label, value]) => `<li style="margin:3px 0;"><strong>${label}:</strong> ${escapeHtml(value)}</li>`).join('')}
+      </ul>
+      ${heading ? `<div style="font-weight:700; margin:12px 0 8px;">${heading}</div>` : '<div style="height:8px;"></div>'}
+      <table style="width:100%; border-collapse:collapse; table-layout:fixed; font-size:10.5pt; line-height:1.25;">
+        <thead><tr>${columns.map(c => `<th style="${cell} width:${c.width}; text-align:${c.align || 'left'};">${c.label}</th>`).join('')}</tr></thead>
+        <tbody>${rows.length
+          ? rows.map(row => `<tr>${row.map((value, i) => td(value, columns[i])).join('')}</tr>`).join('')
+          : `<tr><td colspan="${columns.length}" style="${cell} text-align:center;">${empty}</td></tr>`}</tbody>
+      </table>`;
+    return container;
+  }
+
+  // Every report goes through here: A4 with 0.5in margins on every page, fixed width so the
+  // PDF looks the same on any screen, and table rows are never cut in half at a page break.
+  // `content` is one element, or a list (e.g. library cards) where each one starts on a new page.
+  async function savePdf(content, filename, orientation = 'landscape') {
+    if (!window.html2pdfReady) throw new Error('PDF export loader is not initialized.');
+    await window.html2pdfReady;
+    const parts = Array.isArray(content) ? content : [content];
+    // Off-screen holder so the report can be measured without flashing on the page
+    const holder = document.createElement('div');
+    holder.style.cssText = 'position:fixed; left:-20000px; top:0;';
+    parts.forEach(container => {
+      container.style.boxSizing = 'border-box';
+      container.style.width = orientation === 'landscape' ? '10.69in' : '7.27in';
+      container.style.padding = '0';
+      container.style.margin = '0';
+      container.style.background = '#fff';
+      container.style.color = '#000';
+      // The dashboard's own table styles (letter-spacing, big cell font, rounded corners) must not leak into reports
+      container.classList.add('pdf-report');
+      const reset = document.createElement('style');
+      // overflow-wrap lets long unbroken text (codes, URLs) wrap inside its cell instead of being cut off
+      reset.textContent = `.pdf-report thead tr th, .pdf-report tbody tr td { font-size: inherit; letter-spacing: normal; text-transform: none; color: #000; }
+        .pdf-report th, .pdf-report td { overflow-wrap: break-word; }
+        .pdf-report, .pdf-report * { border-radius: 0 !important; }`;
+      container.prepend(reset);
+      holder.appendChild(container);
+    });
+    document.body.appendChild(holder);
+    try {
+      // Browsers can't draw canvases much taller than ~32,000px, so very long reports render at a lower scale
+      const scale = Math.min(2, 30000 / Math.max(...parts.map(p => p.offsetHeight), 1));
+      let worker = window.html2pdf().set({
+        margin: 0.5,
+        filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale, useCORS: true, logging: false },
+        jsPDF: { unit: 'in', format: 'a4', orientation },
+        pagebreak: { mode: ['css', 'legacy'], avoid: 'tr' }
+      }).from(parts[0]).toPdf();
+      // Each further part gets its own canvas (one canvas for a whole batch would be too tall) on a new page
+      for (const part of parts.slice(1)) {
+        worker = worker.get('pdf').then(pdf => pdf.addPage()).from(part).toContainer().toCanvas().toPdf();
+      }
+      await worker.save();
+    } finally {
+      holder.remove();
+    }
+  }
+
+  // Full visit log (not just the latest 100) for reports
+  async function fetchLogs(query) {
+    const res = await fetch(`/api/admin/logs?${query}`);
+    if (!res.ok) throw new Error('Failed to load visit logs.');
+    return (await res.json()).logs || [];
   }
 
   // Download helper
@@ -5577,7 +5921,7 @@ function updateStudentsTable(filterSection = 'all') {
       const topEmblem = document.createElement('div');
       topEmblem.style.textAlign = 'center';
       topEmblem.style.marginBottom = '0px';
-      const topImg = document.createElement('img'); topImg.src = '/images/Deped-Seal.png'; topImg.style.height = '100px'; topImg.style.objectFit = 'contain'; topImg.style.marginTop = '-100px';
+      const topImg = document.createElement('img'); topImg.src = '/images/Deped-Seal.png'; topImg.style.height = '100px'; topImg.style.objectFit = 'contain';
       topEmblem.appendChild(topImg);
       container.appendChild(topEmblem);
 
@@ -5593,7 +5937,7 @@ function updateStudentsTable(filterSection = 'all') {
         <div style="font-size:10px;margin-top:4px"> Division of Cebu Province</div>
         <div style="font-size:10px; margin-top:4px">Bala National High School</div>
         <div style="margin-top:8px; font-weight:800; font-size:16px">TEACHER BORROWER'S LOG</div>
-        <div style="font-size:10px; margin-top:4px">SY 2026-2027</div>
+        <div style="font-size:10px; margin-top:4px">${getSchoolYear()}</div>
       `;
       container.appendChild(centerBlock);
 
@@ -5626,7 +5970,7 @@ function updateStudentsTable(filterSection = 'all') {
       table.appendChild(thead);
 
       const tbody = document.createElement('tbody');
-      const rowsToShow = Math.max(records.length, 18);
+      const rowsToShow = Math.max(records.length, 17); // 17 blank template rows fill exactly one page
       for (let i = 0; i < rowsToShow; i++) {
         const rec = records[i] || {};
         const tr = document.createElement('tr');
@@ -5653,9 +5997,7 @@ function updateStudentsTable(filterSection = 'all') {
 
       table.appendChild(tbody);
       container.appendChild(table);
-      const footerLine = document.createElement('div'); footerLine.style.height = '10px'; container.appendChild(footerLine);
-      const opt = { margin:0, filename:'teacher_borrowers_log.pdf', image:{type:'jpeg',quality:0.95}, html2canvas:{scale:2, useCORS:true}, jsPDF:{unit:'in', format:'a4', orientation:'landscape'} };
-      await window.html2pdf().set(opt).from(container).save();
+      await savePdf(container, 'teacher_borrowers_log.pdf', 'landscape');
     } catch (e) { Swal.fire({icon:'error',title:'Export Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
   }
 
@@ -5686,7 +6028,7 @@ function updateStudentsTable(filterSection = 'all') {
         <div style="font-size:10px">Division of Cebu Province</div>
         <div style="font-size:10px; margin-top:4px; font-weight:700">Bala National High School</div>
         <div style="font-size:16px; font-weight:800; margin-top:10px">FACULTY & STAFF PROFILE</div>
-        <div style="font-size:10px; font-style:italic; margin-top:4px">School Year 2026-2027</div>
+        <div style="font-size:10px; font-style:italic; margin-top:4px">${getSchoolYear()}</div>
       `;
       container.appendChild(header);
 
@@ -5757,15 +6099,7 @@ function updateStudentsTable(filterSection = 'all') {
       table.appendChild(tbody);
       container.appendChild(table);
 
-      const opt = {
-        margin: 0.5,
-        filename: 'faculty_profile_report.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
-      };
-
-      await window.html2pdf().set(opt).from(container).save();
+      await savePdf(container, 'faculty_profile_report.pdf', 'landscape');
     } catch (error) {
       Swal.fire({ icon: 'error', title: 'Export Error', text: error.message || error, confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0' });
     }
@@ -5790,7 +6124,7 @@ function updateStudentsTable(filterSection = 'all') {
       const topEmblem = document.createElement('div');
       topEmblem.style.textAlign = 'center';
       topEmblem.style.marginBottom = '0px';
-      const topImg = document.createElement('img'); topImg.src = '/images/Deped-Seal.png'; topImg.style.height = '100px'; topImg.style.objectFit = 'contain'; topImg.style.marginTop = '-100px';
+      const topImg = document.createElement('img'); topImg.src = '/images/Deped-Seal.png'; topImg.style.height = '100px'; topImg.style.objectFit = 'contain';
       topEmblem.appendChild(topImg);
       container.appendChild(topEmblem);
 
@@ -5807,7 +6141,7 @@ function updateStudentsTable(filterSection = 'all') {
         <div style="font-size:10px;margin-top:4px"> Division of Cebu Province</div>
         <div style="font-size:10px; margin-top:4px">Bala National High School</div>
         <div style="margin-top:8px; font-weight:800; font-size:16px">LEARNER BORROWER'S LOG</div>
-        <div style="font-size:10px; margin-top:4px">SY 2026-2027</div>
+        <div style="font-size:10px; margin-top:4px">${getSchoolYear()}</div>
       `;
       container.appendChild(centerBlock);
 
@@ -5816,15 +6150,16 @@ function updateStudentsTable(filterSection = 'all') {
       table.style.width = '100%';
       table.style.borderCollapse = 'collapse';
       table.style.marginTop = '10px';
-      table.style.tableLayout = 'auto'; // Allow table to auto-layout based on content
-
+      table.style.tableLayout = 'fixed'; // fixed widths + wrapping so long titles stay on the page
 
       const thead = document.createElement('thead');
       const cols = ['DATE BORROWED','BORROWER\'S NAME','SUBJECT AREA','GRADE LEVEL','AUTHOR','TITLE','COPYRIGHT','DUE DATE','SIGNATURE','DATE RETURNED','SIGNATURE','REMARKS'];
+      const colWidths = ['7%','12%','7%','9%','10%','15%','6%','7%','6%','7%','6%','8%'];
       const htr = document.createElement('tr');
-      cols.forEach(c=>{
+      cols.forEach((c, idx)=>{
         const th = document.createElement('th');
         th.textContent = c;
+        th.style.width = colWidths[idx];
         th.style.border = '0.5px solid #000';
         th.style.padding = '6px 4px';
         th.style.fontSize = '5pt';
@@ -5832,14 +6167,14 @@ function updateStudentsTable(filterSection = 'all') {
         th.style.textAlign = 'center';
         th.style.background = '#e9f2ef';
         th.style.verticalAlign = 'middle';
-        th.style.whiteSpace = 'nowrap';
+        th.style.whiteSpace = 'normal';
         htr.appendChild(th);
       });
       thead.appendChild(htr);
       table.appendChild(thead);
 
       const tbody = document.createElement('tbody');
-      const rowsToShow = Math.max(records.length, 18);
+      const rowsToShow = Math.max(records.length, 17); // 17 blank template rows fill exactly one page
       for (let i = 0; i < rowsToShow; i++) {
         const rec = records[i] || {};
         const tr = document.createElement('tr');
@@ -5853,10 +6188,9 @@ function updateStudentsTable(filterSection = 'all') {
           td.style.fontSize = '7pt';
           td.style.verticalAlign = 'middle';
           td.style.height = '26px';
-          td.style.overflow = 'hidden';
-          td.style.whiteSpace = 'nowrap';
+          td.style.whiteSpace = 'normal';
+          td.style.wordBreak = 'break-word';
           tr.appendChild(td);
-          
         });
         tbody.appendChild(tr);
       }
@@ -5864,12 +6198,7 @@ function updateStudentsTable(filterSection = 'all') {
       table.appendChild(tbody);
       container.appendChild(table);
 
-      // Small footer note spacing
-      const footerLine = document.createElement('div'); footerLine.style.height = '10px'; container.appendChild(footerLine);
-
-      // export with html2pdf: rely on container's 1" padding; set jsPDF/html2pdf margin to 0 to avoid double margins
-      const opt = { margin:0, filename:'borrowers_log.pdf', image:{type:'jpeg',quality:0.95}, html2canvas:{scale:2, useCORS:true}, jsPDF:{unit:'in', format:'a4', orientation:'landscape'} };
-      await window.html2pdf().set(opt).from(container).save();
+      await savePdf(container, 'borrowers_log.pdf', 'landscape');
     } catch (e) { Swal.fire({icon:'error',title:'Export Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
   }
 
@@ -5896,7 +6225,6 @@ function updateStudentsTable(filterSection = 'all') {
 
       const header = document.createElement('div');
       header.style.textAlign = 'center';
-      header.style.marginTop = '-50px';
       header.innerHTML = `
        <div class="logo-area">
               <img src="images/Deped-Seal.png" alt="DepEd Seal" style="height: 100px; width: auto;">
@@ -5908,7 +6236,7 @@ function updateStudentsTable(filterSection = 'all') {
         <div style="font-size:9pt;">Division of Cebu Province</div>
         <div style="font-size:9pt; margin-top:4px;">Bala National High School</div>
         <div style="font-size:10pt; margin-top:8px; font-weight:800;">MULTIMEDIA AND NON-PRINT MATERIALS BORROWER'S LOG</div>
-        <div style="font-size:9pt;">SY: 2026-2027</div>
+        <div style="font-size:9pt;">${getSchoolYear()}</div>
       `;
       container.appendChild(header);
 
@@ -5934,17 +6262,18 @@ function updateStudentsTable(filterSection = 'all') {
 
       // First header row: No., Date Borrowed, Borrower's Name, merged Multimedia header, Due Date, Signature, Date Returned, Signature, Remarks
       const headerRow1 = document.createElement('tr');
-      const makeTh = (txt, opts={})=>{ const th=document.createElement('th'); th.textContent=txt; th.style.border='0.5px solid #000'; th.style.padding='4px 4px'; th.style.fontSize='6.5pt'; th.style.fontWeight='700'; th.style.textAlign='center'; th.style.verticalAlign='middle'; th.style.background='#f5f5f5'; th.style.whiteSpace='nowrap'; if (opts.colSpan) th.colSpan = opts.colSpan; if (opts.rowSpan) th.rowSpan = opts.rowSpan; if (opts.width) th.style.width = opts.width; return th };
+      const makeTh = (txt, opts={})=>{ const th=document.createElement('th'); th.textContent=txt; th.style.border='0.5px solid #000'; th.style.padding='4px 4px'; th.style.fontSize='6.5pt'; th.style.fontWeight='700'; th.style.textAlign='center'; th.style.verticalAlign='middle'; th.style.background='#f5f5f5'; th.style.whiteSpace='normal'; if (opts.colSpan) th.colSpan = opts.colSpan; if (opts.rowSpan) th.rowSpan = opts.rowSpan; if (opts.width) th.style.width = opts.width; return th };
 
+      // Fixed columns take 58%; the 8 category columns share the remaining 42% so their names fit
       headerRow1.appendChild(makeTh('No.', { rowSpan: 2, width: '3%' }));
-      headerRow1.appendChild(makeTh('DATE BORROWED', { rowSpan: 2, width: '12%' }));
-      headerRow1.appendChild(makeTh("BORROWER'S NAME", { rowSpan: 2, width: '18%' }));
+      headerRow1.appendChild(makeTh('DATE BORROWED', { rowSpan: 2, width: '8%' }));
+      headerRow1.appendChild(makeTh("BORROWER'S NAME", { rowSpan: 2, width: '14%' }));
       headerRow1.appendChild(makeTh('MULTIMEDIA AND NON-PRINT MATERIALS', { colSpan: 8 }));
-      headerRow1.appendChild(makeTh('DUE DATE', { rowSpan: 2, width: '7%' }));
-      headerRow1.appendChild(makeTh('SIGNATURE', { rowSpan: 2, width: '7%' }));
-      headerRow1.appendChild(makeTh('DATE RETURNED', { rowSpan: 2, width: '7%' }));
-      headerRow1.appendChild(makeTh('SIGNATURE', { rowSpan: 2, width: '7%' }));
-      headerRow1.appendChild(makeTh('REMARKS', { rowSpan: 2, width: '12%' }));
+      headerRow1.appendChild(makeTh('DUE DATE', { rowSpan: 2, width: '6%' }));
+      headerRow1.appendChild(makeTh('SIGNATURE', { rowSpan: 2, width: '6%' }));
+      headerRow1.appendChild(makeTh('DATE RETURNED', { rowSpan: 2, width: '6%' }));
+      headerRow1.appendChild(makeTh('SIGNATURE', { rowSpan: 2, width: '6%' }));
+      headerRow1.appendChild(makeTh('REMARKS', { rowSpan: 2, width: '9%' }));
       thead.appendChild(headerRow1);
 
       // Second header row: the individual multimedia columns
@@ -5978,7 +6307,7 @@ function updateStudentsTable(filterSection = 'all') {
       });
 
       const groupedArray = Object.values(grouped);
-      const rowsToShow = Math.max(groupedArray.length, 20);
+      const rowsToShow = Math.max(groupedArray.length, 17); // 17 blank template rows fill exactly one page
       for (let i = 0; i < rowsToShow; i++) {
         const grp = groupedArray[i] || { date_borrowed: '', borrower_name: '', counts: categories.reduce((m,c)=>{m[c]=0;return m;},{}) , due_date: '', date_returned: '', remarks: '' };
         const tr = document.createElement('tr');
@@ -6017,15 +6346,7 @@ function updateStudentsTable(filterSection = 'all') {
       table.appendChild(tbody);
       container.appendChild(table);
 
-      const opt = {
-        margin: 0,
-        filename: 'non_print_borrowers_log.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
-      };
-
-      await window.html2pdf().set(opt).from(container).save();
+      await savePdf(container, 'non_print_borrowers_log.pdf', 'landscape');
     } catch (error) {
       Swal.fire({ icon: 'error', title: 'Export Error', text: error.message || error, confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0' });
     }
@@ -6091,66 +6412,147 @@ function updateStudentsTable(filterSection = 'all') {
     return wb;
   }
 
-  async function exportMostFrequentUserExcel() {
+  /* ── Reports page PDFs: each asks for one month or all months ── */
+  const reportExportError = e => Swal.fire({ icon: 'error', title: 'Export Error', text: e.message || e, confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0' });
+  const visitsText = n => `${Number(n || 0).toLocaleString('en-US')} ${n === 1 ? 'visit' : 'visits'}`;
+
+  async function exportMostFrequentUserPDF() {
     try {
-      await ensureXLSX();
-      const stats = await getMostFrequentLibraryUsers();
-      const headers = ['Rank','Library ID','Name','Type','Age','Grade','Section','Session','Position','Employee No','Subject Area','Grade Level','Total Visits','Last Visit'];
-      const rows = stats.topUsers.map((u, idx) => [
-        idx + 1,
-        u.details.library_id || '',
+      const month = await askReportMonth('Most Frequent Library User');
+      if (month === null) return;
+      const { topUsers } = await getMostFrequentLibraryUsers(month);
+      const rows = topUsers.map((u, i) => [
+        i + 1,
+        u.details.library_id,
         u.details.name || u.label,
         u.typeLabel,
-        u.details.age || '',
-        u.details.grade || '',
-        u.details.section || '',
-        u.details.session || '',
-        u.details.position || '',
-        u.details.employee_no || '',
-        u.details.subject_area || '',
-        u.details.grade_level || '',
+        u.typeLabel === 'Learner' ? [u.details.grade, u.details.section].filter(Boolean).join(' - ') : u.details.position,
         u.count,
         u.lastVisit || ''
       ]);
-      const wb = createExcelWorkbook('FrequentUsers', headers, rows.length ? rows : [['No data available', '', '', '', '', '', '', '', '', '', '', '', '', '']]);
-      XLSX.writeFile(wb, 'most_frequent_library_user.xlsx');
-    } catch(e) { Swal.fire({icon:'error',title:'Export Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+      await savePdf(reportPage({
+        title: 'MOST FREQUENT LIBRARY USERS',
+        month,
+        columns: [
+          { label: 'Rank', width: '8%', align: 'center' },
+          { label: 'Library ID', width: '16%' },
+          { label: 'Name', width: '24%' },
+          { label: 'Type', width: '10%' },
+          { label: 'Grade / Position', width: '18%' },
+          { label: 'Total Visits', width: '10%', align: 'center' },
+          { label: 'Last Visit', width: '14%' }
+        ],
+        rows,
+        empty: 'No library visits were recorded.'
+      }), `most_frequent_library_users_${month || 'all_months'}.pdf`, 'portrait');
+    } catch (e) { reportExportError(e); }
   }
 
-  async function exportVisitorsByGradeExcel() {
+  // Grade, purpose and gender reports share one shape: a label, visits and a share of all visits
+  async function exportVisitorsPDF({ title, path, listKey, labelHeading, label, extraColumn, filename }) {
     try {
-      await ensureXLSX();
-      const res = await fetch('/api/admin/visitors-by-grade');
-      const data = await res.json();
-      const headers = ['Grade Level','Total Visits','Unique Students','Percentage'];
-      const rows = (data.grades || []).map(g => [g.grade || 'N/A', g.visits, g.unique_students, g.percentage + '%']);
-      const wb = createExcelWorkbook('VisitorsByGrade', headers, rows.length ? rows : [['No data available', '', '', '']]);
-      XLSX.writeFile(wb, 'visitors_by_grade.xlsx');
-    } catch(e) { Swal.fire({icon:'error',title:'Export Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+      const month = await askReportMonth(title);
+      if (month === null) return;
+      const data = await fetchReport(`/api/admin/${path}${month ? `?month=${month}` : ''}`, month);
+      const list = data[listKey] || [];
+      const total = list.reduce((sum, item) => sum + item.visits, 0);
+      const columns = [{ label: labelHeading, width: extraColumn ? '40%' : '55%' }, { label: 'Total Visits', width: '20%', align: 'center' }];
+      if (extraColumn) columns.push({ label: extraColumn.label, width: '20%', align: 'center' });
+      columns.push({ label: '% of Total', width: extraColumn ? '20%' : '25%', align: 'center' });
+      await savePdf(reportPage({
+        title: title.toUpperCase(),
+        month,
+        summary: [['Total Visits', visitsText(total)]],
+        columns,
+        rows: list.map(item => [label(item), item.visits, ...(extraColumn ? [extraColumn.value(item)] : []), `${item.percentage}%`]),
+        empty: 'No library visits were recorded.'
+      }), `${filename}_${month || 'all_months'}.pdf`, 'portrait');
+    } catch (e) { reportExportError(e); }
   }
 
-  async function exportVisitorsByPurposeExcel() {
-    try {
-      await ensureXLSX();
-      const res = await fetch('/api/admin/visitors-by-purpose');
-      const data = await res.json();
-      const headers = ['Purpose','Total Visits','Percentage'];
-      const rows = (data.purposes || []).map(p => [p.purpose || 'N/A', p.visits, p.percentage + '%']);
-      const wb = createExcelWorkbook('VisitorsByPurpose', headers, rows.length ? rows : [['No data available', '', '']]);
-      XLSX.writeFile(wb, 'visitors_by_purpose.xlsx');
-    } catch(e) { Swal.fire({icon:'error',title:'Export Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+  function exportVisitorsByGradePDF() {
+    return exportVisitorsPDF({
+      title: 'Visitor Analytics by Grade Level', path: 'visitors-by-grade', listKey: 'grades', labelHeading: 'Grade Level',
+      label: g => /^\d+$/.test(g.grade) ? `Grade ${g.grade}` : (g.grade || 'Unknown'),
+      extraColumn: { label: 'Unique Learners', value: g => g.unique_students },
+      filename: 'visitors_by_grade'
+    });
   }
 
-  async function exportVisitorsByGenderExcel() {
+  function exportVisitorsByPurposePDF() {
+    return exportVisitorsPDF({
+      title: 'Visitor Analytics by Purpose', path: 'visitors-by-purpose', listKey: 'purposes', labelHeading: 'Purpose',
+      label: p => p.purpose || 'Not Specified', filename: 'visitors_by_purpose'
+    });
+  }
+
+  function exportVisitorsByGenderPDF() {
+    return exportVisitorsPDF({
+      title: 'Visitor Analytics by Gender', path: 'visitors-by-gender', listKey: 'genders', labelHeading: 'Gender',
+      label: g => g.sex || 'Unknown', filename: 'visitors_by_gender'
+    });
+  }
+
+  // Month: visits on each day that had any. All months: visits per month.
+  async function exportLibraryVisitsPDF() {
     try {
-      await ensureXLSX();
-      const res = await fetch('/api/admin/visitors-by-gender');
-      const data = await res.json();
-      const headers = ['Gender','Total Visits','Percentage'];
-      const rows = (data.genders || []).map(g => [g.sex || 'N/A', g.visits, g.percentage + '%']);
-      const wb = createExcelWorkbook('VisitorsByGender', headers, rows.length ? rows : [['No data available', '', '']]);
-      XLSX.writeFile(wb, 'visitors_by_gender.xlsx');
-    } catch(e) { Swal.fire({icon:'error',title:'Export Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+      const month = await askReportMonth('Library Visits');
+      if (month === null) return;
+      const { from, to } = month ? monthBounds(month) : {};
+      const logs = await fetchLogs(month ? `from=${from}&to=${to}` : 'all=1');
+      const counts = new Map();
+      logs.forEach(log => {
+        const key = month ? log.action_date : String(log.action_date).slice(0, 7);
+        counts.set(key, (counts.get(key) || 0) + 1);
+      });
+      const rows = [...counts].sort().map(([key, n]) => month
+        ? [key, new Date(`${key}T00:00:00`).toLocaleDateString('en-US', { weekday: 'long' }), n]
+        : [new Date(`${key}-01T00:00:00`).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }), n]);
+      const columns = month
+        ? [{ label: 'Date', width: '35%' }, { label: 'Day', width: '35%' }, { label: 'Visits', width: '30%', align: 'center' }]
+        : [{ label: 'Month', width: '70%' }, { label: 'Visits', width: '30%', align: 'center' }];
+      await savePdf(reportPage({
+        title: 'LIBRARY VISITS REPORT',
+        month,
+        summary: [['Total Visits', visitsText(logs.length)], ['Days with Visits', String(new Set(logs.map(l => l.action_date)).size)]],
+        columns,
+        rows,
+        empty: 'No library visits were recorded.'
+      }), `library_visits_${month || 'all_months'}.pdf`, 'portrait');
+    } catch (e) { reportExportError(e); }
+  }
+
+  // Every registered learner who visited, with their number of visits
+  async function exportLearnerVisitsPDF() {
+    try {
+      const month = await askReportMonth('Learner Visits');
+      if (month === null) return;
+      if (!allStudents.length) await loadStudents();
+      const { from, to } = month ? monthBounds(month) : {};
+      const logs = await fetchLogs(month ? `from=${from}&to=${to}` : 'all=1');
+      const visits = new Map();
+      logs.filter(l => l.user_type === 'student').forEach(l => visits.set(l.user_id, (visits.get(l.user_id) || 0) + 1));
+      const rows = allStudents.filter(s => visits.has(s.id)).map((s, i) => [i + 1, s.student_id, s.name, s.grade, s.section, visits.get(s.id)]);
+      await savePdf(reportPage({
+        title: 'LEARNER VISITS REPORT',
+        month,
+        summary: [
+          ['Registered Learners', String(allStudents.length)],
+          ['Learners Who Visited', String(rows.length)],
+          ['Total Learner Visits', visitsText(rows.reduce((sum, r) => sum + r[5], 0))]
+        ],
+        columns: [
+          { label: 'No.', width: '7%', align: 'center' },
+          { label: 'Student ID', width: '18%' },
+          { label: 'Name', width: '35%' },
+          { label: 'Grade', width: '10%', align: 'center' },
+          { label: 'Section', width: '18%' },
+          { label: 'Visits', width: '12%', align: 'center' }
+        ],
+        rows,
+        empty: 'No learner visits were recorded.'
+      }), `learner_visits_${month || 'all_months'}.pdf`, 'portrait');
+    } catch (e) { reportExportError(e); }
   }
 
   async function exportBookAnalyticsExcel() {
@@ -6165,16 +6567,48 @@ function updateStudentsTable(filterSection = 'all') {
     } catch(e) { Swal.fire({icon:'error',title:'Export Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
   }
 
-  async function exportVisitsChartExcel() {
+  // Most read books of one month, with that month's reading sessions and unique books read
+  async function exportBookAnalyticsPDF() {
     try {
-      await ensureXLSX();
-      const res = await fetch('/api/admin/analytics');
-      const d = await res.json();
-      const headers = ['Day','Visits'];
-      const rows = (d.chart_data || []).map(item => [item.day || 'N/A', item.visits || 0]);
-      const wb = createExcelWorkbook('VisitsChart', headers, rows.length ? rows : [['No data available', 0]]);
-      XLSX.writeFile(wb, 'visits_chart.xlsx');
-    } catch(e) { Swal.fire({icon:'error',title:'Export Error',text:e.message||e,confirmButtonColor:'#f43f5e',background:'#1a1e2b',color:'#e8eaf0'}); }
+      const thisMonth = new Date().toLocaleDateString('sv').slice(0, 7);
+      const { value: month, isConfirmed } = await Swal.fire({
+        title: 'Book Analytics Report',
+        text: 'Choose the month to report.',
+        input: 'month',
+        inputValue: thisMonth,
+        inputAttributes: { max: thisMonth },
+        inputValidator: value => !value ? 'Choose a month.' : value > thisMonth ? 'That month has not started yet.' : undefined,
+        showCancelButton: true,
+        confirmButtonText: 'Export PDF',
+        confirmButtonColor: '#5b6ef5', cancelButtonColor: '#3d4260', background: '#1a1e2b', color: '#e8eaf0'
+      });
+      if (!isConfirmed) return;
+
+      const data = await fetchReport(`/api/book-analytics?month=${encodeURIComponent(month)}`, month);
+      const books = data.analytics || [];
+      const container = reportPage({
+        title: 'BOOK ANALYTICS REPORT',
+        month,
+        summary: [
+          ['Total Reading Sessions This Month', (data.total_reading_sessions || 0).toLocaleString('en-US')],
+          ['Number of Unique Books Read This Month', (data.total_unique_books || 0).toLocaleString('en-US')]
+        ],
+        heading: `Most Read Books${books.length ? ` (Top ${books.length})` : ''}`,
+        columns: [
+          { label: 'Rank', width: '8%', align: 'center' },
+          { label: 'Accession No.', width: '12%' },
+          { label: 'Book Title', width: '37%' },
+          { label: 'Author', width: '21%' },
+          { label: 'Category', width: '12%', align: 'center' },
+          { label: 'Read Count', width: '10%', align: 'center' }
+        ],
+        rows: books.map((b, i) => [i + 1, b.accession_number, b.title, b.author, b.category, b.read_count]),
+        empty: 'No reading sessions were recorded this month.'
+      });
+      await savePdf(container, `book_analytics_report_${month}.pdf`, 'portrait');
+    } catch (e) {
+      Swal.fire({ icon: 'error', title: 'Export Error', text: e.message || e, confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0' });
+    }
   }
 
   /* ── Modals ─────────────────────────────────── */
@@ -6182,69 +6616,23 @@ function updateStudentsTable(filterSection = 'all') {
   document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => { if(e.target===m) m.classList.remove('active'); }));
 
   /* ── Library Card Export ─────────────────────── */
-  async function exportLibraryCard(studentId, studentCode, studentName, grade, section) {
-    try {
-      // Fetch student details using database id
-      const studentRes = await fetch(`/api/admin/students/${studentId}`);
-      if (!studentRes.ok) throw new Error('Failed to load student');
-      
-      const studentData = await studentRes.json();
-      if (!studentData || !studentData.student) {
-        alert('Error loading student data');
-        return;
-      }
-
-      const student = studentData.student;
-
-      // Fetch borrowing records using student_id (the ID code like "2026-0001")
-      let borrowRecords = [];
-      try {
-        const borrowRes = await fetch(`/api/admin/student-borrow-records/${encodeURIComponent(studentCode)}`);
-        if (borrowRes.ok) {
-          const borrowData = await borrowRes.json();
-          borrowRecords = borrowData.records || [];
-        }
-      } catch (e) {
-        console.log('Could not fetch borrowing records:', e);
-      }
-
-      // Generate table rows (ensure at least 10 rows for the card)
-      const tableRows = [];
-      for (let i = 0; i < Math.max(10, borrowRecords.length); i++) {
-        const record = borrowRecords[i];
-        if (record) {
-          const borrowDate = record.borrow_date ? new Date(record.borrow_date).toLocaleDateString() : '';
-          const dueDate = record.return_date ? new Date(record.return_date).toLocaleDateString() : '';
-          tableRows.push(`
-            <tr>
-              <td>${borrowDate}</td>
-              <td>${record.call_number || ''}</td>
-              <td>${record.item_code || ''}</td>
-              <td>${record.author || ''}</td>
-              <td>${record.item_title || ''}</td>
-              <td>${record.due_date || dueDate}</td>
-              <td>${record.remarks || ''}</td>
-            </tr>
-          `);
-        } else {
-          tableRows.push(`
-            <tr>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-            </tr>
-          `);
-        }
-      }
-
-      // Build the card HTML
-      const cardHTML = `
+  // One card's HTML. The single-card preview and the batch PDF both use it, so they always match.
+  function libraryCardHtml(title, infoLeft, infoRight, records) {
+    const toDate = value => value ? new Date(`${value}T00:00:00`).toLocaleDateString() : '';
+    const field = ([label, value]) => `
+              <div class="card-student-field">
+                <label>${label}</label>
+                <div class="value">${escapeHtml(value || '')}</div>
+              </div>`;
+    // At least 10 lines so a new card has room to be filled in by hand
+    const rows = Array.from({ length: Math.max(10, records.length) }, (_, i) => {
+      const r = records[i];
+      return r
+        ? `<tr><td>${toDate(r.borrow_date)}</td><td>${escapeHtml(r.call_number || '')}</td><td>${escapeHtml(r.item_code || '')}</td><td>${escapeHtml(r.author || '')}</td><td>${escapeHtml(r.item_title || '')}</td><td>${toDate(r.due_date)}</td><td>${escapeHtml(r.remarks || '')}</td></tr>`
+        : '<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
+    }).join('');
+    return `
         <div class="library-card-template">
-          <!-- Header Section -->
           <div class="card-header-deped">
             <div class="logo-area">
               <img src="images/Deped-Seal.png" alt="DepEd Seal" style="height: 100px; width: auto;">
@@ -6253,43 +6641,19 @@ function updateStudentsTable(filterSection = 'all') {
             <div class="org-sub">Department of Education</div>
             <div class="org-sub" style="font-weight: bold;">Region VII - Central Visayas</div>
             <div class="org-location">Sudlon, Lahug, Cebu City</div>
-            <div class="card-subtitle">Division of Cebu Province </div>
+            <div class="card-subtitle">Division of Cebu Province</div>
             <div class="card-subtitle">Bala National High School</div>
-            <div class="card-title1">LEARNER LIBRARY CARD</div>
-            <div class="card-subtitle">SY 2026-2027 </div>
+            <div class="card-title1">${title}</div>
+            <div class="card-subtitle">${getSchoolYear()}</div>
           </div>
 
-          <!-- School Information -->
-
-          <!-- Student Information -->
           <div class="card-student-info">
-            <div class="card-student-column">
-              <div class="card-student-field">
-                <label>NAME:</label>
-                <div class="value">${escapeHtml(student.name || '')}</div>
-              </div>
-              <div class="card-student-field">
-                <label>ADDRESS:</label>
-                <div class="value">${escapeHtml(student.address || '')}</div>
-              </div>
+            <div class="card-student-column">${infoLeft.map(field).join('')}
             </div>
-            <div class="card-student-column">
-              <div class="card-student-field">
-                <label>CONTACT NO.:</label>
-                <div class="value">${escapeHtml(student.contact_number || '')}</div>
-              </div>
-              <div class="card-student-field">
-                <label>GR. & SEC.:</label>
-                <div class="value">${escapeHtml((student.grade || '') + (student.section ? ' - ' + student.section : ''))}</div>
-              </div>
-              <div class="card-student-field">
-                <label>ADVISER:</label>
-                <div class="value">${escapeHtml(student.adviser || '')}</div>
-              </div>
+            <div class="card-student-column">${infoRight.map(field).join('')}
             </div>
           </div>
 
-          <!-- Borrowing History Table -->
           <div class="card-table-wrapper">
             <table class="card-borrow-table">
               <thead>
@@ -6303,26 +6667,51 @@ function updateStudentsTable(filterSection = 'all') {
                   <th style="width: 15%;">REMARKS</th>
                 </tr>
               </thead>
-              <tbody>
-                ${tableRows.join('')}
-              </tbody>
+              <tbody>${rows}</tbody>
             </table>
           </div>
+        </div>`;
+  }
 
-          <!-- Footer -->
-          <div class="card-footer">
-            <div style="margin-top: 10px;">School Learning Resources Center - Cebu City</div>
-          </div>
-        </div>
-      `;
+  const learnerCardHtml = (student, records) => libraryCardHtml('LEARNER LIBRARY CARD',
+    [['NAME:', student.name], ['ADDRESS:', student.address]],
+    [['CONTACT NO.:', student.contact_number], ['GR. & SEC.:', (student.grade || '') + (student.section ? ' - ' + student.section : '')], ['ADVISER:', student.adviser]],
+    records);
 
-      currentLibraryCardName = (student.name || 'learner-library-card').replace(/[^a-z0-9]+/gi, '_').toLowerCase();
+  const teacherCardHtml = (faculty, records) => libraryCardHtml('TEACHER LIBRARY CARD',
+    [['NAME:', faculty.name], ['ADDRESS:', faculty.address]],
+    [['CONTACT NO.:', faculty.contact_number], ['EMPLOYEE NO.:', faculty.employee_no], ['EMAIL ADDRESS:', faculty.email]],
+    records);
 
-      // Display in preview modal
-      document.getElementById('library-card-preview').innerHTML = cardHTML;
-      document.getElementById('library-card-content').innerHTML = cardHTML;
-      document.getElementById('library-card-modal').classList.add('active');
+  function showLibraryCard(cardHTML, name) {
+    currentLibraryCardName = name.replace(/[^a-z0-9]+/gi, '_').toLowerCase();
+    document.getElementById('library-card-preview').innerHTML = cardHTML;
+    document.getElementById('library-card-content').innerHTML = cardHTML;
+    document.getElementById('library-card-modal').classList.add('active');
+  }
 
+  async function loadCardRecords(borrowerId) {
+    try {
+      const res = await fetch(`/api/admin/student-borrow-records/${encodeURIComponent(borrowerId || '')}`);
+      return res.ok ? (await res.json()).records || [] : [];
+    } catch (e) {
+      console.log('Could not fetch borrowing records:', e);
+      return [];
+    }
+  }
+
+  async function exportLibraryCard(studentId) {
+    try {
+      // Fetch student details using database id
+      const studentRes = await fetch(`/api/admin/students/${studentId}`);
+      if (!studentRes.ok) throw new Error('Failed to load student');
+      const studentData = await studentRes.json();
+      if (!studentData || !studentData.student) {
+        alert('Error loading student data');
+        return;
+      }
+      const student = studentData.student;
+      showLibraryCard(learnerCardHtml(student, await loadCardRecords(student.student_id)), student.name || 'learner-library-card');
     } catch (error) {
       console.error('Error exporting library card:', error);
       alert('Error loading library card: ' + error.message);
@@ -6335,133 +6724,40 @@ function updateStudentsTable(filterSection = 'all') {
       if (!faculty) {
         throw new Error('Teacher not found');
       }
-
-      let borrowRecords = [];
-      try {
-        const borrowIdentifier = faculty.faculty_id || faculty.employee_no || faculty.id;
-        const borrowRes = await fetch(`/api/admin/student-borrow-records/${encodeURIComponent(borrowIdentifier)}`);
-        if (borrowRes.ok) {
-          const borrowData = await borrowRes.json();
-          borrowRecords = borrowData.records || [];
-        }
-      } catch (borrowError) {
-        console.warn('Could not fetch teacher borrow records:', borrowError);
-      }
-
-      const tableRows = [];
-      for (let i = 0; i < Math.max(10, borrowRecords.length); i++) {
-        const record = borrowRecords[i];
-        if (record) {
-          const borrowDate = record.borrow_date ? new Date(record.borrow_date).toLocaleDateString() : '';
-          const dueDate = record.return_date ? new Date(record.return_date).toLocaleDateString() : '';
-          tableRows.push(`
-            <tr>
-              <td>${borrowDate}</td>
-              <td>${record.call_number || ''}</td>
-              <td>${record.item_code || ''}</td>
-              <td>${record.author || ''}</td>
-              <td>${record.item_title || ''}</td>
-              <td>${record.due_date || dueDate}</td>
-              <td>${record.remarks || ''}</td>
-            </tr>
-          `);
-        } else {
-          tableRows.push(`
-            <tr>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-              <td></td>
-            </tr>
-          `);
-        }
-      }
-
-      const cardHTML = `
-        <div class="library-card-template">
-          <div class="card-header-deped">
-            <div class="logo-area">
-              <img src="images/Deped-Seal.png" alt="DepEd Seal" style="height: 100px; width: auto;">
-            </div>
-            <div class="org-name">Republic of the Philippines</div>
-            <div class="org-sub">Department of Education</div>
-            <div class="org-sub" style="font-weight: bold;">Region VII - Central Visayas</div>
-            <div class="org-location">Sudlon, Lahug, Cebu City</div>
-            <div class="card-subtitle">Division of Cebu Province</div>
-            <div class="card-subtitle">Bala National High School</div>
-            <div class="card-title1">TEACHER LIBRARY CARD</div>
-            <div class="card-subtitle">SY 2026-2027</div>
-          </div>
-
-          <div class="card-student-info">
-            <div class="card-student-column">
-              <div class="card-student-field">
-                <label>NAME:</label>
-                <div class="value">${escapeHtml(faculty.name || '')}</div>
-              </div>
-              <div class="card-student-field">
-                <label>ADDRESS:</label>
-                <div class="value">${escapeHtml(faculty.address || '')}</div>
-              </div>
-            </div>
-            <div class="card-student-column">
-              <div class="card-student-field">
-                <label>CONTACT NO.:</label>
-                <div class="value">${escapeHtml(faculty.contact_number || '')}</div>
-              </div>
-              <div class="card-student-field">
-                <label>EMPLOYEE NO.:</label>
-                <div class="value">${escapeHtml(faculty.employee_no || '')}</div>
-              </div>
-              <div class="card-student-field">
-                <label>EMAIL ADDRESS:</label>
-                <div class="value">${escapeHtml(faculty.email || '')}</div>
-              </div>
-            
-            </div>
-          </div>
-
-          <div class="card-table-wrapper">
-            <table class="card-borrow-table">
-              <thead>
-                <tr>
-                  <th style="width: 11%;">DATE<br>BORROWED</th>
-                  <th style="width: 11%;">CALL<br>NO.</th>
-                  <th style="width: 11%;">ACC.<br>NO.</th>
-                  <th style="width: 13%;">AUTHOR</th>
-                  <th style="width: 25%;">TITLE</th>
-                  <th style="width: 14%;">DUE<br>DATE</th>
-                  <th style="width: 15%;">REMARKS</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${tableRows.join('')}
-              </tbody>
-            </table>
-          </div>
-
-          <div class="card-footer">
-            <div style="margin-top: 10px;">School Learning Resources Center - Cebu City</div>
-          </div>
-        </div>
-      `;
-
-      currentLibraryCardName = (faculty.name || 'teacher-library-card').replace(/[^a-z0-9]+/gi, '_').toLowerCase();
-      document.getElementById('library-card-preview').innerHTML = cardHTML;
-      document.getElementById('library-card-content').innerHTML = cardHTML;
-      document.getElementById('library-card-modal').classList.add('active');
+      const records = await loadCardRecords(faculty.faculty_id || faculty.employee_no || faculty.id);
+      showLibraryCard(teacherCardHtml(faculty, records), faculty.name || 'teacher-library-card');
     } catch (error) {
       console.error('Error exporting teacher library card:', error);
       alert('Error loading teacher library card: ' + error.message);
     }
   }
 
-  function escapeHtml(text) {
-    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-    return String(text).replace(/[&<>"']/g, m => map[m]);
+  // Every card of one kind in one PDF, one card per page, only for people with at least one borrow record
+  async function downloadAllLibraryCards(type) {
+    const label = type === 'teacher' ? 'teacher' : 'learner';
+    const theme = { background: '#1a1e2b', color: '#e8eaf0' };
+    try {
+      const res = await fetch(`/api/admin/library-cards?type=${type}`);
+      const data = await res.json().catch(() => null);
+      if (!data) throw new Error(`The server does not have batch library cards yet (HTTP ${res.status}). Restart the server (or redeploy it), then try again.`);
+      if (!res.ok) throw new Error(data.error || 'Could not load the library cards.');
+      if (!data.cards.length) {
+        Swal.fire({ icon: 'info', title: `No ${label} has a borrowing record yet`, confirmButtonColor: '#5b6ef5', ...theme });
+        return;
+      }
+
+      Swal.fire({ title: `Preparing ${data.cards.length} ${label} card${data.cards.length === 1 ? '' : 's'}…`, text: 'This can take a moment.', allowOutsideClick: false, didOpen: () => Swal.showLoading(), ...theme });
+      const pages = data.cards.map(({ person, records }) => {
+        const page = document.createElement('div');
+        page.innerHTML = type === 'teacher' ? teacherCardHtml(person, records) : learnerCardHtml(person, records);
+        page.firstElementChild.style.padding = '0'; // the PDF page margins already frame the card
+        return page;
+      });
+      await savePdf(pages, `${label}_library_cards.pdf`, 'portrait');
+      Swal.fire({ icon: 'success', title: `${data.cards.length} ${label} card${data.cards.length === 1 ? '' : 's'} downloaded`, text: 'One card per page.', confirmButtonColor: '#5b6ef5', ...theme });
+    } catch (e) {
+      Swal.fire({ icon: 'error', title: 'Download failed', text: e.message || e, confirmButtonColor: '#f43f5e', ...theme });
+    }
   }
 
   function saveLibraryCardAsPdf() {
@@ -6471,20 +6767,13 @@ function updateStudentsTable(filterSection = 'all') {
       return;
     }
 
-    if (typeof window.html2pdf !== 'function') {
-      Swal.fire({ icon: 'error', title: 'PDF library not ready', text: 'Please try again in a moment.', confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0' });
-      return;
-    }
-
-    const opt = {
-      margin: [1, 1, 1, 1],
-      filename: `${currentLibraryCardName || 'learner-library-card'}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, logging: false },
-      jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
-    };
-
-    window.html2pdf().set(opt).from(preview).save();
+    // Copy the card so the preview stays in the dialog; portrait keeps the whole card on one page
+    const card = document.createElement('div');
+    const template = (preview.querySelector('.library-card-template') || preview).cloneNode(true);
+    template.style.padding = '0'; // the PDF page margins already frame the card
+    card.appendChild(template);
+    return savePdf(card, `${currentLibraryCardName || 'learner-library-card'}.pdf`, 'portrait')
+      .catch(e => Swal.fire({ icon: 'error', title: 'Export Error', text: e.message || e, confirmButtonColor: '#f43f5e', background: '#1a1e2b', color: '#e8eaf0' }));
   }
 
   function printLibraryCardNow() {
@@ -6507,7 +6796,12 @@ function updateStudentsTable(filterSection = 'all') {
   /* ── Logout ─────────────────────────────────── */
   function logout() {
     Swal.fire({title:'Sign Out?',text:'You will be redirected to the login page.',icon:'question',showCancelButton:true,confirmButtonColor:'#5b6ef5',cancelButtonColor:'#3d4260',confirmButtonText:'Sign Out',background:'#1a1e2b',color:'#e8eaf0'})
-    .then(r=>{ if(r.isConfirmed) window.location.href='/index.html'; });
+    .then(async r=>{
+      if(!r.isConfirmed) return;
+      await fetch('/api/admin/logout', { method: 'POST' }).catch(() => {});
+      sessionStorage.removeItem('adminToken');
+      window.location.href='/index.html';
+    });
   }
 </script>
 </body>

@@ -1,16 +1,14 @@
 require('dotenv').config();
+// All dates/times this server saves are Philippine time, even when the host (e.g. Vercel) runs in UTC
+process.env.TZ = 'Asia/Manila';
 const express = require('express');
-const cors = require('cors');
-const fs = require('fs');
-const path = require('path');
 const { randomUUID } = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 
 // Middleware (grouped cleanly together)
-app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '5mb' })); // bulk imports send the whole sheet in one request
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public')); // Serves your frontend files
 
@@ -21,18 +19,85 @@ app.get('/', (req, res) => {
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
+// shortcut: tokens live in memory, so a server restart logs every admin out; move to a DB table if that becomes a problem
+const adminTokens = new Set();
+
+app.use('/api/admin', (req, res, next) => {
+    // The kiosk shows the calendar without an admin login
+    if (req.method === 'GET' && req.path === '/calendar-activities') return next();
+    if (adminTokens.has(req.get('x-admin-token'))) return next();
+    res.status(401).json({ error: 'Admin login required.' });
+});
+
+app.post('/api/admin/logout', (req, res) => {
+    adminTokens.delete(req.get('x-admin-token'));
+    res.json({ success: true });
+});
+
+function issueAdminToken() {
+    const token = randomUUID();
+    adminTokens.add(token);
+    return token;
+}
+
+// Supabase returns at most 1000 rows per request, so page through until a short page comes back
+async function fetchAll(buildQuery) {
+    const rows = [];
+    for (let from = 0; ; from += 1000) {
+        const { data, error } = await buildQuery().order('id').range(from, from + 999);
+        if (error) return { data: null, error };
+        rows.push(...data);
+        if (data.length < 1000) return { data: rows, error: null };
+    }
+}
+
+// A report's ?month=YYYY-MM: '' when none was asked for, null when it is malformed
+function reportMonth(req) {
+    const month = String(req.query.month || '');
+    return !month || /^\d{4}-(0[1-9]|1[0-2])$/.test(month) ? month : null;
+}
+
+// Limits a query to one month by its action_date; no month = every month
+function inMonth(query, month) {
+    if (!month) return query;
+    const [year, monthNumber] = month.split('-').map(Number);
+    const nextMonthStart = new Date(year, monthNumber, 1).toLocaleDateString('sv'); // monthNumber is 1-based, so this is next month
+    return query.gte('action_date', `${month}-01`).lt('action_date', nextMonthStart);
+}
+
+const BAD_MONTH_MESSAGE = 'Choose a month, e.g. 2026-09.';
+
+const BOOK_CATEGORIES = ['Filipiniana', 'General References', 'Learning Area References', 'Supplementary Reading Remediation Materials', 'Fiction', 'Learning Activity Sheets'];
+// Shelf code at the start of a DDC/call number, e.g. "GEN 400 N513"
+const CATEGORY_BY_SHELF_CODE = { GEN: 'General References', FIL: 'Filipiniana', LAR: 'Learning Area References', FIC: 'Fiction' };
+const SHELF_CODE_BY_CATEGORY = Object.fromEntries(Object.entries(CATEGORY_BY_SHELF_CODE).map(([code, name]) => [name, code]));
+const INVALID_CATEGORY_MESSAGE = `Category must be one of: ${BOOK_CATEGORIES.join(', ')}.`;
+
+// A valid category name, or '' when none can be worked out (the caller rejects the book)
+function normalizeBookCategory(category, shelfNumber) {
+    const typed = String(category || '').trim().toLowerCase();
+    return BOOK_CATEGORIES.find(c => c.toLowerCase() === typed)
+        || CATEGORY_BY_SHELF_CODE[String(shelfNumber || '').trim().split(' ')[0].toUpperCase()]
+        || '';
+}
+
 function buildBookRecord(input = {}) {
     const remarksValue = (input.remarks ?? input.remark ?? input.remarks_text ?? input.notes ?? '').toString().trim();
+    const collapse = value => (value ?? '').toString().trim().replace(/\s+/g, ' ');
+    const ddcNo = collapse(input.ddc_no || input.ddc);
+    const typedCallNumber = collapse(input.call_number || input.callNumber || input.call_no);
+    // "1", "-" or blank were typed just to fill a required box (384 books imported that way), so use the DDC No.
+    const callNumber = /^[-.\s]*\d?[-.\s]*$/.test(typedCallNumber) ? ddcNo : typedCallNumber;
     return {
         accession_number: (input.accession_number || input.accessionNumber || '').toString().trim(),
-        call_number: (input.call_number || input.callNumber || input.call_no || input.ddc_no || input.ddc || '').toString().trim(),
+        call_number: callNumber,
         title: (input.title || input.name || '').toString().trim(),
         author: (input.author || '').toString().trim(),
-        category: (input.category || '').toString().trim(),
+        category: normalizeBookCategory(input.category, ddcNo || callNumber),
         copyright_year: input.copyright_year ? parseInt(input.copyright_year, 10) : null,
         isbn: (input.isbn || '').toString().trim() || null,
         date_received: input.date_received || null,
-        ddc_no: (input.ddc_no || input.ddc || '').toString().trim() || null,
+        ddc_no: ddcNo || null,
         edition: (input.edition || '').toString().trim() || null,
         volumes: (input.volumes || '').toString().trim() || null,
         pages: (input.pages || '').toString().trim() || null,
@@ -57,10 +122,6 @@ function isMissingTableError(error) {
         (normalized.includes('does not exist') && normalized.includes('table'));
 }
 
-function getInventoryWeedingStorePath() {
-    return path.join(__dirname, 'data', 'inventory_weeding_reports.json');
-}
-
 function normalizeCalendarActivityValue(value) {
     if (!value) return new Date().toISOString();
 
@@ -80,42 +141,6 @@ function normalizeCalendarActivityValue(value) {
     }
 
     return new Date().toISOString();
-}
-
-function ensureInventoryWeedingStoreFile() {
-    const filePath = getInventoryWeedingStorePath();
-    const dirPath = path.dirname(filePath);
-    if (!fs.existsSync(dirPath)) {
-        fs.mkdirSync(dirPath, { recursive: true });
-    }
-    if (!fs.existsSync(filePath)) {
-        fs.writeFileSync(filePath, '[]', 'utf8');
-    }
-    return filePath;
-}
-
-function readInventoryWeedingReportsFromDisk() {
-    try {
-        ensureInventoryWeedingStoreFile();
-        const raw = fs.readFileSync(getInventoryWeedingStorePath(), 'utf8');
-        const parsed = JSON.parse(raw);
-        return Array.isArray(parsed) ? parsed : [];
-    } catch (error) {
-        return [];
-    }
-}
-
-function writeInventoryWeedingReportsToDisk(reports) {
-    ensureInventoryWeedingStoreFile();
-    fs.writeFileSync(getInventoryWeedingStorePath(), JSON.stringify(reports, null, 2), 'utf8');
-}
-
-function sortInventoryWeedingReports(reports = []) {
-    return [...reports].sort((a, b) => {
-        const left = new Date(a.date_of_inventory || a.created_at || 0).getTime();
-        const right = new Date(b.date_of_inventory || b.created_at || 0).getTime();
-        return right - left;
-    });
 }
 
 function prepareBookImportRows(payload = []) {
@@ -181,7 +206,7 @@ app.post('/api/authenticate', async (req, res) => {
             if (!password || user.password !== password) {
                 return res.status(401).json({ error: 'Invalid admin password. Access denied.' });
             }
-            return res.json({ status: 'success', role: 'admin', user_id: user.id, name: user.name });
+            return res.json({ status: 'success', role: 'admin', user_id: user.id, name: user.name, token: issueAdminToken() });
         }
         return res.status(401).json({ error: 'Not an admin account.' });
     }
@@ -295,7 +320,7 @@ app.post('/api/authenticate', async (req, res) => {
         if (!password || user.password !== password) {
             return res.status(401).json({ error: 'Invalid admin password. Access denied.' });
         }
-        return res.json({ status: 'success', role: 'admin', user_id: user.id, name: user.name });
+        return res.json({ status: 'success', role: 'admin', user_id: user.id, name: user.name, token: issueAdminToken() });
     }
 
     // IF STUDENT: Skip password entirely and manage check-in/out log status
@@ -595,25 +620,25 @@ app.get('/api/current-users', async (req, res) => {
         if (allUserIds.length > 0) {
             const { data: readings, error: readingsError } = await supabase
                 .from('reading_sessions')
-                .select('user_id, book_accession')
+                .select('user_id, user_type, book_accession')
                 .in('user_id', allUserIds)
                 .eq('action_date', today);
 
             if (!readingsError && readings && readings.length > 0) {
                 readings.forEach(reading => {
-                    if (!userBooksMap[reading.user_id]) {
-                        userBooksMap[reading.user_id] = [];
+                    const key = `${reading.user_type === 'faculty' ? 'faculty' : 'user'}:${reading.user_id}`;
+                    if (!userBooksMap[key]) {
+                        userBooksMap[key] = [];
                     }
-                    userBooksMap[reading.user_id].push(reading.book_accession);
+                    userBooksMap[key].push(reading.book_accession);
                 });
             }
         }
 
-        // Step 7: Combine the data
-        const userMap = { ...studentMap, ...facultyMap, ...stakeholderMap };
-
+        // Step 7: Combine the data (faculty ids overlap users ids, so look up by type)
         const formattedUsers = activeUsers.map(log => {
-            const userData = userMap[log.user_id] || {};
+            const isFaculty = log.user_type === 'faculty';
+            const userData = (isFaculty ? facultyMap[log.user_id] : (stakeholderMap[log.user_id] || studentMap[log.user_id])) || {};
             return {
                 log_id: log.id,
                 user_id: log.user_id,
@@ -630,7 +655,7 @@ app.get('/api/current-users', async (req, res) => {
                 user_type: userData.user_type || userData.role || log.user_type || 'student',
                 check_in_time: log.check_in_time,
                 visit_reason: log.visit_reason,
-                books: userBooksMap[log.user_id] || []
+                books: userBooksMap[`${isFaculty ? 'faculty' : 'user'}:${log.user_id}`] || []
             };
         });
 
@@ -676,11 +701,11 @@ app.post('/api/admin/add-student', async (req, res) => {
 // 5. Admin: Get all students
 app.get('/api/admin/students', async (req, res) => {
     try {
-        const { data: students, error } = await supabase
+        const { data: students, error } = await fetchAll(() => supabase
             .from('users')
             .select('*')
             .eq('role', 'student')
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false }));
 
         if (error) return res.status(500).json({ error: error.message });
 
@@ -747,10 +772,12 @@ app.delete('/api/admin/students/:id', async (req, res) => {
 
     try {
         // 1. Delete the student's library history first so the constraint doesn't trip
+        // Faculty logs reuse the same user_id numbers, so leave them alone
         const { error: logsError } = await supabase
             .from('library_logs')
             .delete()
-            .eq('user_id', studentId); // Assuming user_id links to student ID
+            .eq('user_id', studentId)
+            .neq('user_type', 'faculty');
 
         if (logsError) throw logsError;
 
@@ -790,6 +817,52 @@ app.get('/api/admin/students/:id', async (req, res) => {
     }
 });
 
+// One line of a library card: catalog call number/author/title, a due date, and remarks in words
+function toCardRecord(record, book, resource) {
+    let due_date = record.due_date || record.return_date || '';
+    if (!due_date && record.borrow_date) {
+        const due = new Date(`${record.borrow_date}T00:00:00Z`);
+        due.setUTCDate(due.getUTCDate() + 7);
+        due_date = due.toISOString().slice(0, 10);
+    }
+    const remarks = record.status === 'returned'
+        ? ({ Damaged: 'Returned Damaged', 'Good Condition': 'Returned in Good Condition' }[record.return_condition] || 'Returned')
+        : record.status === 'borrowed' ? (record.renewed_from ? 'Renewal - On loan' : 'On loan')
+        : record.status === 'renewed' ? 'Renewed'
+        : (record.status || '');
+    const isPrint = record.item_category === 'print';
+    return {
+        ...record,
+        item_title: (isPrint && book?.title) || record.item_title, // the title typed at the kiosk is sometimes wrong
+        call_number: isPrint ? (book?.call_number || '') : (record.item_category === 'non-print' ? (resource?.resource_code || '') : ''),
+        author: isPrint ? (book?.author || '') : '',
+        due_date,
+        return_condition: record.return_condition || '',
+        remarks
+    };
+}
+
+// Card lines for many borrow records, looking the catalog up in chunks instead of once per record
+async function toCardRecords(records) {
+    const codes = [...new Set(records.map(r => r.item_code).filter(Boolean))];
+    const lookup = async (table, column, columns) => {
+        const rows = [];
+        for (let i = 0; i < codes.length; i += 200) {
+            const { data, error } = await supabase.from(table).select(columns).in(column, codes.slice(i, i + 200));
+            if (error) throw error;
+            rows.push(...data);
+        }
+        return rows;
+    };
+    const [books, resources] = await Promise.all([
+        lookup('books', 'accession_number', 'accession_number, call_number, author, title'),
+        lookup('non_print_resources', 'resource_code', 'resource_code')
+    ]);
+    const bookMap = new Map(books.map(b => [b.accession_number, b]));
+    const resourceMap = new Map(resources.map(r => [r.resource_code, r]));
+    return records.map(r => toCardRecord(r, bookMap.get(r.item_code), resourceMap.get(r.item_code)));
+}
+
 // Get borrowing records for a student (for library card export)
 app.get('/api/admin/student-borrow-records/:studentId', async (req, res) => {
     const { studentId } = req.params;
@@ -798,69 +871,46 @@ app.get('/api/admin/student-borrow-records/:studentId', async (req, res) => {
             .from('borrow_records')
             .select('*')
             .eq('student_id', studentId)
-            .order('borrow_date', { ascending: false });
+            .order('borrow_date', { ascending: false })
+            .order('borrow_time', { ascending: false });
 
         if (error) {
             return res.status(500).json({ error: error.message });
         }
 
-        const enrichedRecords = await Promise.all((records || []).map(async (record) => {
-            let call_number = '';
-            let author = '';
-            let due_date = record.due_date || record.return_date || '';
-            let return_condition = record.return_condition || '';
-            let remarks = record.status === 'returned' ? 'Returned' : (record.status === 'borrowed' ? 'On loan' : (record.status || ''));
+        res.json({ records: await toCardRecords(records || []) });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
-            if (record.status === 'returned') {
-                if (return_condition === 'Damaged') {
-                    remarks = 'Returned Damaged';
-                } else if (return_condition === 'Good Condition') {
-                    remarks = 'Returned in Good Condition';
-                } else {
-                    remarks = 'Returned';
-                }
-            }
+// Every library card of one kind at once, only for people with at least one borrow record. ?type=learner|teacher
+app.get('/api/admin/library-cards', async (req, res) => {
+    const { type } = req.query;
+    if (!['learner', 'teacher'].includes(type)) {
+        return res.status(400).json({ error: 'type must be learner or teacher.' });
+    }
+    const isTeacher = type === 'teacher';
+    try {
+        const [peopleResult, recordsResult] = await Promise.all([
+            isTeacher
+                ? fetchAll(() => supabase.from('faculty').select('faculty_id, employee_no, name, address, contact_number, email'))
+                : fetchAll(() => supabase.from('users').select('student_id, name, address, contact_number, grade, section, adviser').eq('role', 'student')),
+            fetchAll(() => supabase.from('borrow_records').select('*').order('borrow_date', { ascending: false }).order('borrow_time', { ascending: false }))
+        ]);
+        if (peopleResult.error) throw peopleResult.error;
+        if (recordsResult.error) throw recordsResult.error;
 
-            if (record.item_category === 'print') {
-                const { data: book } = await supabase
-                    .from('books')
-                    .select('call_number, author')
-                    .eq('accession_number', record.item_code)
-                    .maybeSingle();
+        const idOf = person => isTeacher ? person.faculty_id : person.student_id;
+        const people = new Map(peopleResult.data.map(p => [idOf(p), p]));
+        const lines = await toCardRecords(recordsResult.data.filter(r => people.has(r.student_id)));
 
-                if (book) {
-                    call_number = book.call_number || '';
-                    author = book.author || '';
-                }
-            } else if (record.item_category === 'non-print') {
-                const { data: resource } = await supabase
-                    .from('non_print_resources')
-                    .select('resource_code')
-                    .eq('resource_code', record.item_code)
-                    .maybeSingle();
-
-                if (resource) {
-                    call_number = resource.resource_code || '';
-                }
-            }
-
-            if (!due_date && record.borrow_date) {
-                const due = new Date(record.borrow_date);
-                due.setDate(due.getDate() + 7);
-                due_date = due.toISOString().split('T')[0];
-            }
-
-            return {
-                ...record,
-                call_number,
-                author,
-                due_date,
-                return_condition,
-                remarks
-            };
-        }));
-
-        res.json({ records: enrichedRecords || [] });
+        const cards = new Map();
+        lines.forEach(line => {
+            if (!cards.has(line.student_id)) cards.set(line.student_id, { person: people.get(line.student_id), records: [] });
+            cards.get(line.student_id).records.push(line);
+        });
+        res.json({ cards: [...cards.values()].sort((a, b) => (a.person.name || '').localeCompare(b.person.name || '')) });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -1065,7 +1115,8 @@ app.delete('/api/admin/stakeholders/:id', async (req, res) => {
         const { error: logsError } = await supabase
             .from('library_logs')
             .delete()
-            .eq('user_id', stakeholderId);
+            .eq('user_id', stakeholderId)
+            .neq('user_type', 'faculty');
 
         if (logsError) throw logsError;
 
@@ -1086,8 +1137,10 @@ app.delete('/api/admin/stakeholders/:id', async (req, res) => {
 // 8. Admin: Get analytics data (Fixed Local Time Implementation)
 app.get('/api/admin/analytics', async (req, res) => {
     try {
-        const today = new Date().toLocaleDateString('sv'); 
+        const today = new Date().toLocaleDateString('sv');
         const thisMonth = today.substring(0, 7);
+        const [year, month] = thisMonth.split('-').map(Number);
+        const nextMonthStart = new Date(year, month, 1).toLocaleDateString('sv'); // month is 1-based, so this is next month
 
         // Total students count
         const { count: totalStudents, error: err1 } = await supabase
@@ -1120,18 +1173,18 @@ app.get('/api/admin/analytics', async (req, res) => {
             .from('library_logs')
             .select('*', { count: 'exact', head: true })
             .gte('action_date', `${thisMonth}-01`)
-            .lte('action_date', `${thisMonth}-31`);
+            .lt('action_date', nextMonthStart);
 
         // Fetch logs for the last 7 days to build the chart
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
         const startDateStr = sevenDaysAgo.toLocaleDateString('sv');
 
-        const { data: chartLogs, error: err6 } = await supabase
+        const { data: chartLogs, error: err6 } = await fetchAll(() => supabase
             .from('library_logs')
             .select('action_date')
             .gte('action_date', startDateStr)
-            .lte('action_date', today);
+            .lte('action_date', today));
 
         // Loop backward to build an organized array of the last 7 calendar days
         const weeklyChartData = [];
@@ -1167,34 +1220,38 @@ app.get('/api/admin/analytics', async (req, res) => {
     }
 });
 
-// 9. Admin: Get all activity logs with student and faculty details
+// 9. Admin: Get activity logs with student and faculty details
+// Default: the latest 100. With ?all=1 or ?from=YYYY-MM-DD&to=YYYY-MM-DD: every log in that range (for reports).
 app.get('/api/admin/logs', async (req, res) => {
     try {
-        const { data: logs, error } = await supabase
-            .from('library_logs')
-            .select(`
-                id,
-                user_id,
-                user_type,
-                action_date,
-                check_in_time,
-                check_out_time,
-                visit_reason
-            `)
-            .order('check_in_time', { ascending: false })
-            .limit(100);
+        const { all, from, to } = req.query;
+        const columns = 'id, user_id, user_type, action_date, check_in_time, check_out_time, visit_reason';
+        const { data: logs, error } = (all || from || to)
+            ? await fetchAll(() => {
+                let query = supabase.from('library_logs').select(columns);
+                if (from) query = query.gte('action_date', from);
+                if (to) query = query.lte('action_date', to);
+                return query.order('action_date', { ascending: false }).order('check_in_time', { ascending: false });
+            })
+            : await supabase
+                .from('library_logs')
+                .select(columns)
+                .order('action_date', { ascending: false })
+                .order('check_in_time', { ascending: false })
+                .limit(100);
 
         if (error) return res.status(500).json({ error: error.message });
 
-        const studentIds = [...new Set(logs.filter(log => log.user_type === 'student').map(log => log.user_id))];
+        // Students and stakeholders live in users; faculty ids are a separate number range
+        const userIds = [...new Set(logs.filter(log => log.user_type !== 'faculty').map(log => log.user_id))];
         const facultyIds = [...new Set(logs.filter(log => log.user_type === 'faculty').map(log => log.user_id))];
 
         const [studentResult, facultyResult] = await Promise.all([
-            studentIds.length
-                ? supabase.from('users').select('id, name, student_id').in('id', studentIds)
+            userIds.length
+                ? fetchAll(() => supabase.from('users').select('id, name, student_id').in('id', userIds))
                 : Promise.resolve({ data: [], error: null }),
             facultyIds.length
-                ? supabase.from('faculty').select('id, name, faculty_id').in('id', facultyIds)
+                ? fetchAll(() => supabase.from('faculty').select('id, name, faculty_id').in('id', facultyIds))
                 : Promise.resolve({ data: [], error: null })
         ]);
 
@@ -1206,12 +1263,10 @@ app.get('/api/admin/logs', async (req, res) => {
 
         const formattedLogs = logs.map(log => {
             let studentName = 'Unknown';
-            if (log.user_type === 'student') {
-                studentName = studentMap.get(log.user_id)?.name || `Student ${log.user_id}`;
-            } else if (log.user_type === 'faculty') {
+            if (log.user_type === 'faculty') {
                 studentName = facultyMap.get(log.user_id)?.name || `Faculty ${log.user_id}`;
             } else {
-                studentName = `User ${log.user_id}`;
+                studentName = studentMap.get(log.user_id)?.name || `${log.user_type === 'stakeholder' ? 'Stakeholder' : 'Student'} ${log.user_id}`;
             }
 
             return {
@@ -1235,10 +1290,10 @@ app.get('/api/admin/logs', async (req, res) => {
 // 10. Admin: Get attendance date history for daily reports
 app.get('/api/admin/attendance-dates', async (req, res) => {
     try {
-        const { data, error } = await supabase
+        const { data, error } = await fetchAll(() => supabase
             .from('library_logs')
-            .select('*')
-            .limit(200);
+            .select('action_date')
+            .order('action_date', { ascending: false }));
 
         if (error) throw error;
 
@@ -1252,28 +1307,28 @@ app.get('/api/admin/attendance-dates', async (req, res) => {
     }
 });
 
-// 11. Admin: Get daily attendance records for a selected date
+// 11. Admin: Get daily attendance records for a selected date, or every day of ?month=YYYY-MM
 app.get('/api/admin/daily-attendance', async (req, res) => {
     try {
+        const month = reportMonth(req);
+        if (month === null) return res.status(400).json({ error: BAD_MONTH_MESSAGE });
         const date = req.query.date || new Date().toLocaleDateString('sv');
+        const columns = 'id, user_id, user_type, action_date, check_in_time, check_out_time, visit_reason';
 
-        const { data: logs, error } = await supabase
-            .from('library_logs')
-            .select(`
-                id,
-                user_id,
-                user_type,
-                action_date,
-                check_in_time,
-                check_out_time,
-                visit_reason
-            `)
-            .eq('action_date', date)
-            .order('check_in_time', { ascending: true });
+        const { data: logs, error } = month
+            ? await fetchAll(() => inMonth(supabase.from('library_logs').select(columns), month)
+                .order('action_date', { ascending: true })
+                .order('check_in_time', { ascending: true }))
+            : await supabase
+                .from('library_logs')
+                .select(columns)
+                .eq('action_date', date)
+                .order('check_in_time', { ascending: true });
 
         if (error) throw error;
 
-        const studentIds = [...new Set((logs || []).filter(log => log.user_type === 'student').map(log => log.user_id))];
+        // Students and stakeholders live in users; faculty ids are a separate number range
+        const studentIds = [...new Set((logs || []).filter(log => log.user_type !== 'faculty').map(log => log.user_id))];
         const facultyIds = [...new Set((logs || []).filter(log => log.user_type === 'faculty').map(log => log.user_id))];
 
         const [studentResult, facultyResult] = await Promise.all([
@@ -1292,8 +1347,8 @@ app.get('/api/admin/daily-attendance', async (req, res) => {
         const facultyMap = new Map((facultyResult.data || []).map(f => [f.id, f]));
 
         const attendance_records = (logs || []).map((log, index) => {
-            const student = studentMap.get(log.user_id);
-            const faculty = facultyMap.get(log.user_id);
+            const student = log.user_type !== 'faculty' ? studentMap.get(log.user_id) : null;
+            const faculty = log.user_type === 'faculty' ? facultyMap.get(log.user_id) : null;
             const name = student?.name || faculty?.name || `User ${log.user_id}`;
             const grade_section = student
                 ? `${student.grade || ''}${student.grade && student.section ? ' / ' : ''}${student.section || ''}`.trim()
@@ -1315,7 +1370,7 @@ app.get('/api/admin/daily-attendance', async (req, res) => {
             };
         });
 
-        res.json({ date, attendance_records });
+        res.json({ date, month: month || null, attendance_records });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -1331,19 +1386,16 @@ app.get('/api/admin/attendance/:id', async (req, res) => {
 
         if (error) throw error;
 
-        const userLookup = data.user_type === 'student'
-            ? supabase.from('users').select('id, name, grade, section').eq('id', data.user_id).single()
-            : data.user_type === 'faculty'
-                ? supabase.from('faculty').select('id, name, position').eq('id', data.user_id).single()
-                : Promise.resolve({ data: null, error: null });
-
-        const userResult = await userLookup;
+        const isFaculty = data.user_type === 'faculty';
+        const userResult = isFaculty
+            ? await supabase.from('faculty').select('id, name, position').eq('id', data.user_id).maybeSingle()
+            : await supabase.from('users').select('id, name, grade, section').eq('id', data.user_id).maybeSingle();
         if (userResult.error) throw userResult.error;
 
         const record = {
             ...data,
             name: userResult.data?.name || `User ${data.user_id}`,
-            grade_section: data.user_type === 'student'
+            grade_section: !isFaculty
                 ? `${userResult.data?.grade || ''}${userResult.data?.grade && userResult.data?.section ? ' / ' : ''}${userResult.data?.section || ''}`.trim()
                 : userResult.data?.position || ''
         };
@@ -1480,10 +1532,10 @@ app.delete('/api/admin/calendar-activities/:id', async (req, res) => {
 // 10. Get all books
 app.get('/api/admin/books', async (req, res) => {
     try {
-        const { data: books, error } = await supabase
+        const { data: books, error } = await fetchAll(() => supabase
             .from('books')
             .select('*')
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false }));
 
         if (error) return res.status(500).json({ error: error.message });
 
@@ -1496,19 +1548,21 @@ app.get('/api/admin/books', async (req, res) => {
 // 11. Add a new book
 app.post('/api/admin/add-book', async (req, res) => {
     const payload = buildBookRecord({ ...req.body, remarks: req.body?.remarks ?? req.body?.remark ?? req.body?.remarks_text ?? req.body?.notes ?? '' });
-    const normalizedPayload = { ...payload, call_number: payload.call_number || payload.ddc_no || payload.ddc || '' };
     console.log('[ADD-BOOK] Received request body:', req.body);
     console.log('[ADD-BOOK] Built payload:', payload);
     console.log('[ADD-BOOK] Category value:', payload.category);
 
-    if (!normalizedPayload.accession_number || !normalizedPayload.call_number || !normalizedPayload.title || !normalizedPayload.author || !normalizedPayload.category) {
-        return res.status(400).json({ error: 'Accession Number, Call Number, Title, Author, and Category are required.' });
+    if (!payload.accession_number || !payload.call_number || !payload.title || !payload.author) {
+        return res.status(400).json({ error: 'Accession Number, Call Number (or DDC No.), Title, and Author are required.' });
+    }
+    if (!payload.category) {
+        return res.status(400).json({ error: INVALID_CATEGORY_MESSAGE });
     }
 
     try {
         const { data, error } = await supabase
             .from('books')
-            .insert([normalizedPayload])
+            .insert([payload])
             .select('*');
 
         if (error) {
@@ -1552,6 +1606,10 @@ app.put('/api/admin/books/:id', async (req, res) => {
     console.log('[UPDATE-BOOK] Built payload:', payload);
     console.log('[UPDATE-BOOK] Category value:', payload.category);
 
+    if (!payload.category) {
+        return res.status(400).json({ error: INVALID_CATEGORY_MESSAGE });
+    }
+
     try {
         const { data, error } = await supabase
             .from('books')
@@ -1571,7 +1629,7 @@ app.put('/api/admin/books/:id', async (req, res) => {
         }
 
         console.log('[UPDATE-BOOK] Book updated successfully');
-        res.json({ message: 'Book updated successfully!' });
+        res.json({ message: 'Book updated successfully!', book: data?.[0] || null });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -1724,8 +1782,14 @@ app.delete('/api/admin/non-print-resources/:id', async (req, res) => {
 // ========== INVENTORY & WEEDING REPORTS ==========
 app.get('/api/admin/inventory-weeding', async (req, res) => {
     try {
-        const reports = sortInventoryWeedingReports(readInventoryWeedingReportsFromDisk());
-        res.json({ reports });
+        const { data, error } = await supabase
+            .from('inventory_weeding_reports')
+            .select('*')
+            .order('date_of_inventory', { ascending: false })
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        res.json({ reports: data || [] });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -1738,16 +1802,9 @@ app.post('/api/admin/inventory-weeding', async (req, res) => {
             return res.status(400).json({ error: 'Accession No., Title, and Date of Inventory are required.' });
         }
 
-        const reports = readInventoryWeedingReportsFromDisk();
-        const record = {
-            id: randomUUID(),
-            ...payload,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-        };
-        reports.unshift(record);
-        writeInventoryWeedingReportsToDisk(reports);
-        res.json({ message: 'Inventory report saved successfully.', report: record });
+        const { data, error } = await supabase.from('inventory_weeding_reports').insert([payload]).select('*');
+        if (error) throw error;
+        res.json({ message: 'Inventory report saved successfully.', report: data?.[0] || null });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -1760,15 +1817,17 @@ app.put('/api/admin/inventory-weeding/:id', async (req, res) => {
             return res.status(400).json({ error: 'Accession No., Title, and Date of Inventory are required.' });
         }
 
-        const reports = readInventoryWeedingReportsFromDisk();
-        const index = reports.findIndex(item => item.id === req.params.id);
-        if (index < 0) {
+        const { data, error } = await supabase
+            .from('inventory_weeding_reports')
+            .update({ ...payload, updated_at: new Date().toISOString() })
+            .eq('id', req.params.id)
+            .select('*');
+
+        if (error) throw error;
+        if (!data?.length) {
             return res.status(404).json({ error: 'Inventory report not found.' });
         }
-
-        reports[index] = { ...reports[index], ...payload, updated_at: new Date().toISOString() };
-        writeInventoryWeedingReportsToDisk(reports);
-        res.json({ message: 'Inventory report updated successfully.', report: reports[index] });
+        res.json({ message: 'Inventory report updated successfully.', report: data[0] });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -1776,8 +1835,8 @@ app.put('/api/admin/inventory-weeding/:id', async (req, res) => {
 
 app.delete('/api/admin/inventory-weeding/:id', async (req, res) => {
     try {
-        const reports = readInventoryWeedingReportsFromDisk().filter(item => item.id !== req.params.id);
-        writeInventoryWeedingReportsToDisk(reports);
+        const { error } = await supabase.from('inventory_weeding_reports').delete().eq('id', req.params.id);
+        if (error) throw error;
         res.json({ message: 'Inventory report deleted successfully.' });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -1894,7 +1953,7 @@ app.post('/api/borrow', async (req, res) => {
         }
 
         const now = new Date();
-        const borrow_date = now.toISOString().split('T')[0]; // YYYY-MM-DD
+        const borrow_date = now.toLocaleDateString('sv'); // YYYY-MM-DD, local like borrow_time
         
         // Format time as HH:MM:SS
         const hours = String(now.getHours()).padStart(2, '0');
@@ -1918,6 +1977,10 @@ app.post('/api/borrow', async (req, res) => {
 
         if (error) {
             console.error('[BORROW] Database error:', error);
+            // Unique index on open borrows (SUPABASE_SETUP.sql) rejects a second copy, e.g. from a double tap
+            if (error.code === '23505') {
+                return res.status(409).json({ error: 'This item is currently borrowed and cannot be borrowed again until it is returned.' });
+            }
             throw error;
         }
 
@@ -1925,23 +1988,6 @@ app.post('/api/borrow', async (req, res) => {
         res.json({ message: 'Borrow recorded successfully!', record: data });
     } catch (error) {
         console.error('[BORROW] Error:', error.message);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// 20. Get all active borrowers for admin view
-app.get('/api/admin/active-borrowers', async (req, res) => {
-    try {
-        const { data, error } = await supabase
-            .from('borrow_records')
-            .select('*')
-            .eq('status', 'borrowed')
-            .order('borrow_date', { ascending: false });
-
-        if (error) throw error;
-
-        res.json({ records: data || [] });
-    } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
@@ -2035,7 +2081,7 @@ app.post('/api/return-item', async (req, res) => {
 
         // Update with return information
         const now = new Date();
-        const return_date = now.toISOString().split('T')[0];
+        const return_date = now.toLocaleDateString('sv');
         
         // Format time as HH:MM:SS
         const hours = String(now.getHours()).padStart(2, '0');
@@ -2076,21 +2122,21 @@ app.post('/api/return-item', async (req, res) => {
     }
 });
 
-// 24. Admin gets pending returns for verification
+// 24. Admin gets everything still to be returned: verified loans still out, plus items returned at the kiosk
+// whose condition has not been checked yet (those come first, then loans by due date, most overdue first)
 app.get('/api/admin/pending-returns', async (req, res) => {
     try {
-        const { data, error } = await supabase
+        const { data, error } = await fetchAll(() => supabase
             .from('borrow_records')
             .select('*')
-            .eq('status', 'returned')
-            .order('return_date', { ascending: true });
+            .in('status', ['borrowed', 'returned']));
 
         if (error) throw error;
 
-        const pendingReturns = (data || []).filter(rec => {
-            const condition = (rec.return_condition || '').toString().trim();
-            return !condition;
-        });
+        const pendingReturns = data
+            .filter(rec => rec.status === 'borrowed' ? rec.admin_verified : !(rec.return_condition || '').toString().trim())
+            .sort((a, b) => (a.status === 'returned' ? 0 : 1) - (b.status === 'returned' ? 0 : 1)
+                || String(a.due_date || '9999-12-31').localeCompare(String(b.due_date || '9999-12-31')));
 
         res.json({ records: pendingReturns });
     } catch (error) {
@@ -2098,361 +2144,351 @@ app.get('/api/admin/pending-returns', async (req, res) => {
     }
 });
 
+// New due date for a renewal, counted from the date the item was due: 3 days for learners, 5 for faculty
+function renewalDueDate(dueDate, isFaculty) {
+    const date = new Date(`${dueDate}T00:00:00Z`);
+    date.setUTCDate(date.getUTCDate() + (isFaculty ? 5 : 3));
+    return date.toISOString().slice(0, 10);
+}
+
+const RENEWAL_COLUMN_SQL = 'ALTER TABLE borrow_records ADD COLUMN IF NOT EXISTS renewed_from UUID REFERENCES borrow_records(id) ON DELETE SET NULL;';
+
+// Auto-renew: closes the current loan as "renewed" and adds a new record for the same borrower and item
+app.post('/api/admin/renew-borrow/:id', async (req, res) => {
+    try {
+        const { data: loan, error: findError } = await supabase.from('borrow_records').select('*').eq('id', req.params.id).maybeSingle();
+        if (findError) throw findError;
+        if (!loan) return res.status(404).json({ error: 'Borrow record not found.' });
+        if (loan.status !== 'borrowed') return res.status(400).json({ error: 'Only items still on loan can be renewed.' });
+        if (!loan.admin_verified || !loan.due_date) return res.status(400).json({ error: 'Verify this borrow and set its due date before renewing it.' });
+
+        // Renewals are linked through borrow_records.renewed_from, a column that has to be added once in Supabase
+        const { error: columnError } = await supabase.from('borrow_records').select('renewed_from').limit(1);
+        if (columnError) return res.status(500).json({ error: `Renewals need one database change first. In the Supabase SQL Editor run: ${RENEWAL_COLUMN_SQL}` });
+
+        const { data: facultyRow, error: facultyError } = await supabase.from('faculty').select('id').eq('faculty_id', loan.student_id).maybeSingle();
+        if (facultyError) throw facultyError;
+        const isFaculty = Boolean(facultyRow);
+        const now = new Date();
+
+        // Close the current loan first: only one open loan per item is allowed
+        const { data: closed, error: closeError } = await supabase.from('borrow_records')
+            .update({ status: 'renewed', updated_at: now.toISOString() })
+            .eq('id', loan.id)
+            .eq('status', 'borrowed')
+            .select('id');
+        if (closeError) throw closeError;
+        if (!closed.length) return res.status(409).json({ error: 'This loan was already renewed or returned.' });
+
+        const renewal = {
+            student_id: loan.student_id,
+            student_name: loan.student_name,
+            section: loan.section,
+            item_category: loan.item_category,
+            item_title: loan.item_title,
+            item_code: loan.item_code,
+            borrow_date: loan.due_date, // the renewal period starts on the date the item was due
+            borrow_time: now.toTimeString().slice(0, 8),
+            due_date: renewalDueDate(loan.due_date, isFaculty),
+            status: 'borrowed',
+            admin_verified: true,
+            renewed_from: loan.id
+        };
+        const { data: created, error: insertError } = await supabase.from('borrow_records').insert([renewal]).select('*');
+        if (insertError) {
+            // Reopen the original loan so the borrower never ends up with no open record
+            await supabase.from('borrow_records').update({ status: 'borrowed' }).eq('id', loan.id);
+            throw insertError;
+        }
+
+        res.json({ message: `Renewed for ${isFaculty ? 5 : 3} days. New due date: ${renewal.due_date}.`, record: created?.[0] || null });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Admin records a borrowing by hand (e.g. one from an earlier date); same lookups as the kiosk, already verified
+app.post('/api/admin/manual-borrow', async (req, res) => {
+    const { borrower_type, borrower_id, item_code, borrow_date, due_date } = req.body || {};
+    const borrowerId = String(borrower_id || '').trim();
+    const code = String(item_code || '').trim();
+    const today = new Date().toLocaleDateString('sv');
+    const isDate = value => /^\d{4}-\d{2}-\d{2}$/.test(value || '') && !Number.isNaN(new Date(`${value}T00:00:00Z`).getTime());
+
+    if (!['student', 'faculty'].includes(borrower_type)) return res.status(400).json({ error: 'Choose whether the borrower is a student or faculty.' });
+    if (!borrowerId || !code) return res.status(400).json({ error: 'Borrower ID and accession number are required.' });
+    if (!isDate(borrow_date) || borrow_date > today) return res.status(400).json({ error: 'Choose a borrow date that is today or earlier.' });
+    if (!isDate(due_date) || due_date < borrow_date) return res.status(400).json({ error: 'Choose a due date on or after the borrow date.' });
+
+    try {
+        const isFaculty = borrower_type === 'faculty';
+        const [{ data: borrower, error: borrowerError }, { data: book, error: bookError }, { data: resource, error: resourceError }] = await Promise.all([
+            isFaculty
+                ? supabase.from('faculty').select('name').eq('faculty_id', borrowerId).maybeSingle()
+                : supabase.from('users').select('name, section').eq('student_id', borrowerId).eq('role', 'student').maybeSingle(),
+            supabase.from('books').select('title').eq('accession_number', code).maybeSingle(),
+            supabase.from('non_print_resources').select('title').eq('resource_code', code).maybeSingle()
+        ]);
+        if (borrowerError || bookError || resourceError) throw borrowerError || bookError || resourceError;
+        if (!borrower) return res.status(404).json({ error: `No ${isFaculty ? 'faculty member' : 'student'} has the ID ${borrowerId}.` });
+        const item = book ? { category: 'print', title: book.title } : resource ? { category: 'non-print', title: resource.title } : null;
+        if (!item) return res.status(404).json({ error: `No book or non-print resource has the code ${code}.` });
+
+        const { data: openLoans, error: openError } = await supabase.from('borrow_records')
+            .select('student_name')
+            .eq('item_code', code)
+            .eq('item_category', item.category)
+            .eq('status', 'borrowed')
+            .limit(1);
+        if (openError) throw openError;
+        if (openLoans.length) return res.status(409).json({ error: `This item is still on loan to ${openLoans[0].student_name}. Record its return first.` });
+
+        const { data, error } = await supabase.from('borrow_records').insert([{
+            student_id: borrowerId,
+            student_name: borrower.name,
+            section: isFaculty ? 'Faculty' : (borrower.section || ''),
+            item_category: item.category,
+            item_title: item.title,
+            item_code: code,
+            borrow_date,
+            borrow_time: new Date().toTimeString().slice(0, 8),
+            due_date,
+            status: 'borrowed',
+            admin_verified: true
+        }]).select('*');
+        if (error) {
+            if (error.code === '23505') return res.status(409).json({ error: 'This item is currently borrowed and cannot be borrowed again until it is returned.' });
+            throw error;
+        }
+
+        res.json({ message: `Recorded: "${item.title}" borrowed by ${borrower.name}.`, record: data?.[0] || null });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// CSV with a BOM so Excel shows names like "Peñaranda" correctly
+function toCsv(header, rows) {
+    const cell = value => `"${(value ?? '').toString().replace(/"/g, '""')}"`;
+    return '﻿' + [header.map(cell).join(','), ...rows.map(row => row.map(cell).join(','))].join('\r\n');
+}
+
+function sendCsv(res, filename, csv) {
+    res.setHeader('Content-disposition', `attachment; filename=${filename}`);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.send(csv);
+}
+
+function returnRemarks(rec) {
+    if (rec.status === 'renewed') return 'Renewed';
+    if (rec.status !== 'returned') return '';
+    if (rec.return_condition === 'Damaged') return 'Returned Damaged';
+    if (rec.return_condition === 'Good Condition') return 'Returned in Good Condition';
+    return 'Returned';
+}
+
 // Export all students as CSV
 app.get('/api/admin/export/students', async (req, res) => {
     try {
-        const { data: students, error } = await supabase
+        const { data: students, error } = await fetchAll(() => supabase
             .from('users')
-            .select('student_id,name,grade,section,session,adviser,address,contact_number,sex,birthdate,age,role')
+            .select('student_id,name,grade,section,session,adviser,address,contact_number,sex,birthdate,age')
             .eq('role', 'student')
-            .order('name', { ascending: true });
+            .order('name', { ascending: true }));
 
         if (error) throw error;
 
-        const rows = (students || []).map(s => ({
-            student_id: s.student_id || '',
-            name: s.name || '',
-            grade: s.grade || '',
-            section: s.section || '',
-            session: s.session || '',
-            adviser: s.adviser || '',
-            address: s.address || '',
-            contact_number: s.contact_number || '',
-            sex: s.sex || '',
-            birthdate: s.birthdate || '',
-            age: s.age || ''
-        }));
-
-        const header = Object.keys(rows[0] || {
-            student_id: '', name: '', grade: '', section: '', session: '', adviser: '', address: '', contact_number: '', sex: '', birthdate: '', age: ''
-        });
-
-        const csv = [header.join(',')].concat(rows.map(r => header.map(h => `"${(r[h]||'').toString().replace(/"/g,'""')}"`).join(','))).join('\n');
-
-        res.setHeader('Content-disposition', 'attachment; filename=students.csv');
-        res.setHeader('Content-Type', 'text/csv');
-        res.send(csv);
+        const columns = ['student_id', 'name', 'grade', 'section', 'session', 'adviser', 'address', 'contact_number', 'sex', 'birthdate', 'age'];
+        sendCsv(res, 'students.csv', toCsv(columns, students.map(s => columns.map(c => s[c]))));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// Export learner borrower's log (formatted CSV matching the provided template)
+// Rows for the learner or teacher borrower's log. Print items only: non-print has its own log.
+async function getBorrowerLogRows(kind) {
+    const isTeacher = kind === 'teacher';
+    const { data: borrowers, error: borrowersError } = isTeacher
+        ? await fetchAll(() => supabase.from('faculty').select('faculty_id, position, subject_area, grade_level'))
+        : await fetchAll(() => supabase.from('users').select('student_id, grade, section').eq('role', 'student'));
+    if (borrowersError) throw borrowersError;
+    // The faculty list also holds Non-Teaching staff; the teacher log is for teachers only
+    const eligible = isTeacher ? borrowers.filter(b => !/non[-\s]?teaching/i.test(b.position || '')) : borrowers;
+    const borrowerMap = new Map(eligible.map(b => [isTeacher ? b.faculty_id : b.student_id, b]));
+
+    const [{ data: records, error: recordsError }, { data: books, error: booksError }] = await Promise.all([
+        fetchAll(() => supabase.from('borrow_records').select('*').eq('item_category', 'print').order('borrow_date', { ascending: true })),
+        fetchAll(() => supabase.from('books').select('accession_number, title, author, copyright_year'))
+    ]);
+    if (recordsError) throw recordsError;
+    if (booksError) throw booksError;
+    const bookMap = new Map(books.map(b => [b.accession_number, b]));
+
+    return records.filter(rec => borrowerMap.has(rec.student_id)).map(rec => {
+        const borrower = borrowerMap.get(rec.student_id);
+        const book = bookMap.get(rec.item_code) || {};
+        return {
+            date_borrowed: rec.borrow_date || '',
+            borrower_name: rec.student_name || '',
+            subject_area: isTeacher ? borrower.subject_area || '' : '',
+            grade_level: isTeacher ? borrower.grade_level || '' : [borrower.grade, borrower.section].filter(Boolean).join(' - '),
+            author: book.author || '',
+            title: book.title || rec.item_title || '', // the title typed at the kiosk is sometimes wrong
+            copyright: book.copyright_year ? String(book.copyright_year) : '',
+            due_date: rec.due_date || '',
+            date_returned: rec.return_date || '',
+            remarks: returnRemarks(rec)
+        };
+    });
+}
+
+const BORROWER_LOG_HEADER = ['Date Borrowed', "Borrower's Name", 'Subject Area', 'Grade Level', 'Author', 'Title', 'Copyright', 'Due Date', 'Signature', 'Date Returned', 'Signature (Returned)', 'Remarks'];
+const borrowerLogCsv = rows => toCsv(BORROWER_LOG_HEADER, rows.map(r => [r.date_borrowed, r.borrower_name, r.subject_area, r.grade_level, r.author, r.title, r.copyright, r.due_date, '', r.date_returned, '', r.remarks]));
+
+// Learner borrower's log: CSV download, and JSON for the PDF/Excel exports
 app.get('/api/admin/export/borrowers-log', async (req, res) => {
     try {
-        // exclude any borrow records created by admin accounts
-        const { data: adminUsers } = await supabase.from('users').select('student_id').eq('role', 'admin');
-        const adminIds = (adminUsers || []).map(a => a.student_id);
-
-        const { data: records, error } = await supabase
-            .from('borrow_records')
-            .select('*')
-            .order('borrow_date', { ascending: true });
-
-        // filter out admin-related records
-        const filteredRecords = (records || []).filter(r => !adminIds.includes(r.student_id));
-
-        if (error) throw error;
-
-        // Enrich with book data (author, copyright)
-        const enriched = await Promise.all((filteredRecords || []).map(async (rec) => {
-            let author = '';
-            let copyright = '';
-            if (rec.item_category === 'print') {
-                const { data: book } = await supabase.from('books').select('author,copyright_year').eq('accession_number', rec.item_code).maybeSingle();
-                if (book) {
-                    author = book.author || '';
-                    copyright = book.copyright_year ? book.copyright_year.toString() : '';
-                }
-            }
-
-            let remarks = '';
-            if (rec.status === 'returned') {
-                if (rec.return_condition === 'Damaged') remarks = 'Returned Damaged';
-                else if (rec.return_condition === 'Good Condition') remarks = 'Returned in Good Condition';
-                else remarks = 'Returned';
-            }
-
-            const faculty = facultyMap[rec.student_id] || {};
-            return {
-                date_borrowed: rec.borrow_date || '',
-                borrower_name: rec.student_name || '',
-                subject_area: faculty.subject_area || '',
-                grade_level: faculty.grade_level || '',
-                author,
-                title: rec.item_title || '',
-                copyright,
-                due_date: rec.due_date || '',
-                signature: '',
-                date_returned: rec.return_date || '',
-                signature_return: '',
-                remarks
-            };
-        }));
-
-        const header = ['Date Borrowed','Borrower\'s Name','Subject Area','Grade Level','Author','Title','Copyright','Due Date','Signature','Date Returned','Signature (Returned)','Remarks'];
-        const csvRows = enriched.map(r => header.map(h => {
-            const key = ({
-                'Date Borrowed':'date_borrowed','Borrower\'s Name':'borrower_name','Subject Area':'subject_area','Grade Level':'grade_level','Author':'author','Title':'title','Copyright':'copyright','Due Date':'due_date','Signature':'signature','Date Returned':'date_returned','Signature (Returned)':'signature_return','Remarks':'remarks'
-            })[h];
-            return `"${(r[key]||'').toString().replace(/"/g,'""')}"`;
-        }).join(','));
-
-        const csv = [header.join(',')].concat(csvRows).join('\n');
-
-        res.setHeader('Content-disposition', 'attachment; filename=borrowers_log.csv');
-        res.setHeader('Content-Type', 'text/csv');
-        res.send(csv);
+        sendCsv(res, 'borrowers_log.csv', borrowerLogCsv(await getBorrowerLogRows('learner')));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// Return borrowers log as JSON (enriched) for PDF/Excel export
 app.get('/api/admin/export/borrowers-json', async (req, res) => {
     try {
-        const { data: adminUsers } = await supabase.from('users').select('student_id').eq('role', 'admin');
-        const adminIds = (adminUsers || []).map(a => a.student_id);
+        res.json({ records: await getBorrowerLogRows('learner') });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
-        const { data: records, error } = await supabase
-            .from('borrow_records')
-            .select('*')
-            .order('borrow_date', { ascending: true });
+// Teacher borrower's log: same formats
+app.get('/api/admin/export/teacher-borrowers-log', async (req, res) => {
+    try {
+        sendCsv(res, 'teacher_borrowers_log.csv', borrowerLogCsv(await getBorrowerLogRows('teacher')));
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
-        if (error) throw error;
+app.get('/api/admin/export/teacher-borrowers-json', async (req, res) => {
+    try {
+        res.json({ records: await getBorrowerLogRows('teacher') });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
-        const filteredRecords = (records || []).filter(r => !adminIds.includes(r.student_id));
+// School Library Circulation Report for one month, learners only so every section adds up to Total Checkouts.
+// ?month=YYYY-MM
+app.get('/api/admin/circulation-report', async (req, res) => {
+    try {
+        const month = String(req.query.month || '');
+        if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+            return res.status(400).json({ error: 'Choose a month, e.g. 2026-09.' });
+        }
+        const [year, monthNumber] = month.split('-').map(Number);
+        const start = `${month}-01`;
+        const end = new Date(year, monthNumber, 0).toLocaleDateString('sv'); // day 0 of next month = last day of this one
+        const today = new Date().toLocaleDateString('sv');
+        if (start > today) {
+            return res.status(400).json({ error: 'That month has not started yet.' });
+        }
 
-        const enriched = await Promise.all((filteredRecords || []).map(async (rec) => {
-            let author = '';
-            let copyright = '';
-            if (rec.item_category === 'print') {
-                const { data: book } = await supabase.from('books').select('author,copyright_year').eq('accession_number', rec.item_code).maybeSingle();
-                if (book) {
-                    author = book.author || '';
-                    copyright = book.copyright_year ? book.copyright_year.toString() : '';
-                }
-            }
+        const [studentsResult, recordsResult, booksResult] = await Promise.all([
+            fetchAll(() => supabase.from('users').select('student_id, grade').eq('role', 'student')),
+            // '*' so the report still works before the renewed_from column is added
+            fetchAll(() => supabase.from('borrow_records').select('*')),
+            fetchAll(() => supabase.from('books').select('accession_number, category'))
+        ]);
+        for (const result of [studentsResult, recordsResult, booksResult]) {
+            if (result.error) throw result.error;
+        }
 
-            let remarks = '';
-            if (rec.status === 'returned') {
-                if (rec.return_condition === 'Damaged') remarks = 'Returned Damaged';
-                else if (rec.return_condition === 'Good Condition') remarks = 'Returned in Good Condition';
-                else remarks = 'Returned';
-            }
+        const gradeOf = new Map(studentsResult.data.map(s => [s.student_id, s.grade]));
+        const categoryOf = new Map(booksResult.data.map(b => [b.accession_number, b.category]));
+        const learnerRecords = recordsResult.data.filter(r => gradeOf.has(r.student_id));
+        const inMonth = r => r.borrow_date >= start && r.borrow_date <= end;
+        // A renewal adds a record but is not a new checkout
+        const checkouts = learnerRecords.filter(r => inMonth(r) && !r.renewed_from);
+        const renewals = learnerRecords.filter(r => inMonth(r) && r.renewed_from).length;
 
-            return {
-                date_borrowed: rec.borrow_date || '',
-                borrower_name: rec.student_name || '',
-                grade_section: rec.section || '',
-                author,
-                title: rec.item_title || '',
-                copyright,
-                due_date: rec.due_date || '',
-                date_returned: rec.return_date || '',
-                remarks
-            };
-        }));
+        const byGrade = { 7: 0, 8: 0, 9: 0, 10: 0, 11: 0, 12: 0 };
+        let otherGrade = 0;
+        checkouts.forEach(r => {
+            const grade = Number(String(gradeOf.get(r.student_id) || '').match(/\d{1,2}/)?.[0]);
+            if (grade in byGrade) byGrade[grade]++;
+            else otherGrade++;
+        });
 
-        res.json({ records: enriched });
+        const byCategory = {};
+        checkouts.filter(r => r.item_category === 'print').forEach(r => {
+            const category = categoryOf.get(r.item_code) || 'Uncategorized';
+            byCategory[category] = (byCategory[category] || 0) + 1;
+        });
+
+        // Overdue = due date passed while the item was still out: at the close of the month,
+        // or right now for the current month (which has not closed yet)
+        const monthClosed = end < today;
+        const isOverdue = r => {
+            // A renewed loan was replaced by its renewal record, which carries the due date that counts
+            if (!r.due_date || r.borrow_date > end || r.status === 'renewed') return false;
+            if (monthClosed) return r.due_date <= end && (!r.return_date || r.return_date > end);
+            return r.due_date < today && !r.return_date;
+        };
+
+        res.json({
+            month,
+            start,
+            end,
+            registered_students: studentsResult.data.length,
+            total_checkouts: checkouts.length,
+            renewals,
+            // Renewing counts as borrowing activity for the learner
+            active_borrowers: new Set(learnerRecords.filter(inMonth).map(r => r.student_id)).size,
+            overdue_at_month_end: learnerRecords.filter(isOverdue).length,
+            damaged_returns: learnerRecords.filter(r => r.return_condition === 'Damaged' && r.return_date >= start && r.return_date <= end).length,
+            by_grade: byGrade,
+            other_grade: otherGrade,
+            by_category: Object.entries(byCategory).map(([category, count]) => ({ category, count })).sort((a, b) => b.count - a.count),
+            print: checkouts.filter(r => r.item_category === 'print').length,
+            non_print: checkouts.filter(r => r.item_category === 'non-print').length
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
 // Return non-print borrowers log as JSON for PDF export in the non-print section
-async function getNonPrintBorrowersJson(req, res) {
+app.get('/api/admin/export/non-print-borrowers-json', async (req, res) => {
     try {
-        const { data: adminUsers } = await supabase.from('users').select('student_id').eq('role', 'admin');
-        const adminIds = (adminUsers || []).map(a => a.student_id);
+        const { data: adminUsers, error: adminError } = await supabase.from('users').select('student_id').eq('role', 'admin');
+        if (adminError) throw adminError;
+        const adminIds = new Set(adminUsers.map(a => a.student_id));
 
-        const { data: records, error } = await supabase
-            .from('borrow_records')
-            .select('*')
-            .eq('item_category', 'non-print')
-            .order('borrow_date', { ascending: true });
-
+        const [{ data: records, error }, { data: resources, error: resourcesError }] = await Promise.all([
+            fetchAll(() => supabase.from('borrow_records').select('*').eq('item_category', 'non-print').order('borrow_date', { ascending: true })),
+            fetchAll(() => supabase.from('non_print_resources').select('resource_code, category, title'))
+        ]);
         if (error) throw error;
+        if (resourcesError) throw resourcesError;
+        const resourceMap = new Map(resources.map(r => [r.resource_code, r]));
 
-        const filteredRecords = (records || []).filter(r => !adminIds.includes(r.student_id));
-        const resourceCodes = [...new Set(filteredRecords.map(r => r.item_code).filter(Boolean))];
-        const { data: resources } = await supabase
-            .from('non_print_resources')
-            .select('resource_code,category,title')
-            .in('resource_code', resourceCodes);
-
-        const resourceMap = (resources || []).reduce((map, item) => {
-            if (item.resource_code) map[item.resource_code] = item;
-            return map;
-        }, {});
-
-        const enriched = (filteredRecords || []).map(rec => {
-            const resource = resourceMap[rec.item_code] || {};
-            let remarks = '';
-            if (rec.status === 'returned') {
-                if (rec.return_condition === 'Damaged') remarks = 'Returned Damaged';
-                else if (rec.return_condition === 'Good Condition') remarks = 'Returned in Good Condition';
-                else remarks = 'Returned';
-            }
-            return {
-                date_borrowed: rec.borrow_date || '',
-                borrower_name: rec.student_name || '',
-                resource_category: resource.category || 'Others',
-                resource_title: rec.item_title || resource.title || '',
-                resource_code: rec.item_code || '',
-                due_date: rec.due_date || '',
-                date_returned: rec.return_date || '',
-                remarks
-            };
+        res.json({
+            records: records.filter(rec => !adminIds.has(rec.student_id)).map(rec => {
+                const resource = resourceMap.get(rec.item_code) || {};
+                return {
+                    date_borrowed: rec.borrow_date || '',
+                    borrower_name: rec.student_name || '',
+                    resource_category: resource.category || 'Others',
+                    resource_title: rec.item_title || resource.title || '',
+                    resource_code: rec.item_code || '',
+                    due_date: rec.due_date || '',
+                    date_returned: rec.return_date || '',
+                    remarks: returnRemarks(rec)
+                };
+            })
         });
-
-        res.json({ records: enriched });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-}
-
-app.get('/api/admin/export/non-print-borrowers-json', getNonPrintBorrowersJson);
-app.get('/api/admin/export/non_print_borrowers_json', getNonPrintBorrowersJson);
-
-// Export teacher borrower's log (formatted CSV matching the provided template)
-app.get('/api/admin/export/teacher-borrowers-log', async (req, res) => {
-    try {
-        const { data: facultyUsers, error: facultyError } = await supabase.from('faculty').select('faculty_id, subject_area, grade_level');
-        if (facultyError) throw facultyError;
-
-        const facultyMap = (facultyUsers || []).reduce((map, f) => {
-            if (f.faculty_id) map[f.faculty_id] = f;
-            return map;
-        }, {});
-
-        const facultyIds = Object.keys(facultyMap);
-        if (!facultyIds.length) {
-            const header = ['Date Borrowed','Borrower\'s Name','Subject Area','Grade Level','Author','Title','Copyright','Due Date','Signature','Date Returned','Signature (Returned)','Remarks'];
-            res.setHeader('Content-disposition', 'attachment; filename=teacher_borrowers_log.csv');
-            res.setHeader('Content-Type', 'text/csv');
-            return res.send(header.join(','));
-        }
-
-        const { data: records, error } = await supabase
-            .from('borrow_records')
-            .select('*')
-            .in('student_id', facultyIds)
-            .order('borrow_date', { ascending: true });
-
-        if (error) throw error;
-
-        const enriched = await Promise.all((records || []).map(async (rec) => {
-            let author = '';
-            let copyright = '';
-            if (rec.item_category === 'print') {
-                const { data: book } = await supabase.from('books').select('author,copyright_year').eq('accession_number', rec.item_code).maybeSingle();
-                if (book) {
-                    author = book.author || '';
-                    copyright = book.copyright_year ? book.copyright_year.toString() : '';
-                }
-            }
-
-            let remarks = '';
-            if (rec.status === 'returned') {
-                if (rec.return_condition === 'Damaged') remarks = 'Returned Damaged';
-                else if (rec.return_condition === 'Good Condition') remarks = 'Returned in Good Condition';
-                else remarks = 'Returned';
-            }
-
-            const faculty = facultyMap[rec.student_id] || {};
-            return {
-                date_borrowed: rec.borrow_date || '',
-                borrower_name: rec.student_name || '',
-                subject_area: faculty.subject_area || '',
-                grade_level: faculty.grade_level || '',
-                author,
-                title: rec.item_title || '',
-                copyright,
-                due_date: rec.due_date || '',
-                signature: '',
-                date_returned: rec.return_date || '',
-                signature_return: '',
-                remarks
-            };
-        }));
-
-        const header = ['Date Borrowed','Borrower\'s Name','Subject Area','Grade Level','Author','Title','Copyright','Due Date','Signature','Date Returned','Signature (Returned)','Remarks'];
-        const csvRows = enriched.map(r => header.map(h => {
-            const key = ({
-                'Date Borrowed':'date_borrowed','Borrower\'s Name':'borrower_name','Subject Area':'subject_area','Grade Level':'grade_level','Author':'author','Title':'title','Copyright':'copyright','Due Date':'due_date','Signature':'signature','Date Returned':'date_returned','Signature (Returned)':'signature_return','Remarks':'remarks'
-            })[h];
-            return `"${(r[key]||'').toString().replace(/"/g,'""')}"`;
-        }).join(','));
-
-        const csv = [header.join(',')].concat(csvRows).join('\n');
-
-        res.setHeader('Content-disposition', 'attachment; filename=teacher_borrowers_log.csv');
-        res.setHeader('Content-Type', 'text/csv');
-        res.send(csv);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Return teacher borrowers log as JSON (enriched) for PDF/Excel export
-app.get('/api/admin/export/teacher-borrowers-json', async (req, res) => {
-    try {
-        const { data: facultyUsers, error: facultyError } = await supabase.from('faculty').select('faculty_id, subject_area, grade_level');
-        if (facultyError) throw facultyError;
-
-        const facultyMap = (facultyUsers || []).reduce((map, f) => {
-            if (f.faculty_id) map[f.faculty_id] = f;
-            return map;
-        }, {});
-
-        const facultyIds = Object.keys(facultyMap);
-        if (!facultyIds.length) {
-            return res.json({ records: [] });
-        }
-
-        const { data: records, error } = await supabase
-            .from('borrow_records')
-            .select('*')
-            .in('student_id', facultyIds)
-            .order('borrow_date', { ascending: true });
-
-        if (error) throw error;
-
-        const enriched = await Promise.all((records || []).map(async (rec) => {
-            let author = '';
-            let copyright = '';
-            if (rec.item_category === 'print') {
-                const { data: book } = await supabase.from('books').select('author,copyright_year').eq('accession_number', rec.item_code).maybeSingle();
-                if (book) {
-                    author = book.author || '';
-                    copyright = book.copyright_year ? book.copyright_year.toString() : '';
-                }
-            }
-
-            let remarks = '';
-            if (rec.status === 'returned') {
-                if (rec.return_condition === 'Damaged') remarks = 'Returned Damaged';
-                else if (rec.return_condition === 'Good Condition') remarks = 'Returned in Good Condition';
-                else remarks = 'Returned';
-            }
-
-            const faculty = facultyMap[rec.student_id] || {};
-            return {
-                date_borrowed: rec.borrow_date || '',
-                borrower_name: rec.student_name || '',
-                subject_area: faculty.subject_area || '',
-                grade_level: faculty.grade_level || '',
-                author,
-                title: rec.item_title || '',
-                copyright,
-                due_date: rec.due_date || '',
-                date_returned: rec.return_date || '',
-                remarks
-            };
-        }));
-
-        res.json({ records: enriched });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -2468,13 +2504,21 @@ app.put('/api/admin/verify-return/:id', async (req, res) => {
     }
 
     try {
-        const { data, error } = await supabase
+        const { data: record, error: findError } = await supabase.from('borrow_records').select('id, status').eq('id', id).maybeSingle();
+        if (findError) throw findError;
+        if (!record) return res.status(404).json({ error: 'Borrow record not found.' });
+        if (record.status === 'renewed') return res.status(400).json({ error: 'This loan was renewed. Verify the return on its renewal record instead.' });
+
+        const update = { admin_verified: true, return_condition, updated_at: new Date().toISOString() };
+        // Handed back at the desk instead of the kiosk: record the return now
+        if (record.status === 'borrowed') {
+            const now = new Date();
+            Object.assign(update, { status: 'returned', return_date: now.toLocaleDateString('sv'), return_time: now.toTimeString().slice(0, 8) });
+        }
+
+        const { error } = await supabase
             .from('borrow_records')
-            .update({
-                admin_verified: true,
-                return_condition,
-                updated_at: new Date().toISOString()
-            })
+            .update(update)
             .eq('id', id);
 
         if (error) throw error;
@@ -2615,21 +2659,23 @@ app.get('/api/admin/most-read-book', async (req, res) => {
     }
 });
 
-// Visitors by Grade Level
+// Visitors by Grade Level (?month=YYYY-MM for one month)
 app.get('/api/admin/visitors-by-grade', async (req, res) => {
     try {
-        const { data: logs, error } = await supabase
+        const month = reportMonth(req);
+        if (month === null) return res.status(400).json({ error: BAD_MONTH_MESSAGE });
+        const { data: logs, error } = await fetchAll(() => inMonth(supabase
             .from('library_logs')
             .select(`id, user_id, user_type`)
-            .eq('user_type', 'student');
+            .eq('user_type', 'student'), month));
 
         if (error) return res.status(500).json({ error: error.message });
 
         // Get all student IDs and fetch their grades
         const studentIds = [...new Set((logs || []).map(l => l.user_id))];
-        
+
         if (studentIds.length === 0) {
-            return res.json({ grades: [] });
+            return res.json({ month: month || null, grades: [] });
         }
 
         const { data: students, error: err2 } = await supabase
@@ -2665,18 +2711,20 @@ app.get('/api/admin/visitors-by-grade', async (req, res) => {
             percentage: totalVisits > 0 ? Math.round((g.visits / totalVisits) * 100) : 0
         })).sort((a, b) => b.visits - a.visits);
 
-        res.json({ grades });
+        res.json({ month: month || null, grades });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// Visitors by Purpose
+// Visitors by Purpose (?month=YYYY-MM for one month)
 app.get('/api/admin/visitors-by-purpose', async (req, res) => {
     try {
-        const { data: logs, error } = await supabase
+        const month = reportMonth(req);
+        if (month === null) return res.status(400).json({ error: BAD_MONTH_MESSAGE });
+        const { data: logs, error } = await fetchAll(() => inMonth(supabase
             .from('library_logs')
-            .select('visit_reason');
+            .select('visit_reason'), month));
 
         if (error) return res.status(500).json({ error: error.message });
 
@@ -2697,18 +2745,20 @@ app.get('/api/admin/visitors-by-purpose', async (req, res) => {
             }))
             .sort((a, b) => b.visits - a.visits);
 
-        res.json({ purposes });
+        res.json({ month: month || null, purposes });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// Visitors by Gender
+// Visitors by Gender (?month=YYYY-MM for one month)
 app.get('/api/admin/visitors-by-gender', async (req, res) => {
     try {
-        const { data: logs, error } = await supabase
+        const month = reportMonth(req);
+        if (month === null) return res.status(400).json({ error: BAD_MONTH_MESSAGE });
+        const { data: logs, error } = await fetchAll(() => inMonth(supabase
             .from('library_logs')
-            .select(`id, user_id, user_type`);
+            .select(`id, user_id, user_type`), month));
 
         if (error) return res.status(500).json({ error: error.message });
 
@@ -2728,7 +2778,7 @@ app.get('/api/admin/visitors-by-gender', async (req, res) => {
             if (err1) return res.status(500).json({ error: err1.message });
             
             (students || []).forEach(s => {
-                sexMap[s.id] = s.sex;
+                sexMap[`student:${s.id}`] = s.sex;
             });
         }
 
@@ -2742,14 +2792,14 @@ app.get('/api/admin/visitors-by-gender', async (req, res) => {
             if (err2) return res.status(500).json({ error: err2.message });
             
             (faculty || []).forEach(f => {
-                sexMap[f.id] = f.sex;
+                sexMap[`faculty:${f.id}`] = f.sex;
             });
         }
 
         // Count visits per gender
         const genderMap = {};
         (logs || []).forEach(log => {
-            const sex = sexMap[log.user_id] || 'Unknown';
+            const sex = sexMap[`${log.user_type}:${log.user_id}`] || 'Unknown';
             genderMap[sex] = (genderMap[sex] || 0) + 1;
         });
 
@@ -2763,7 +2813,7 @@ app.get('/api/admin/visitors-by-gender', async (req, res) => {
             }))
             .sort((a, b) => b.visits - a.visits);
 
-        res.json({ genders });
+        res.json({ month: month || null, genders });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -2830,13 +2880,14 @@ app.post('/api/validate-book', async (req, res) => {
     }
 });
 
-// Get book reading analytics (most read books)
+// Get book reading analytics (most read books). ?month=YYYY-MM limits it to one month.
 app.get('/api/book-analytics', async (req, res) => {
     try {
+        const month = reportMonth(req);
+        if (month === null) return res.status(400).json({ error: BAD_MONTH_MESSAGE });
         // Get all reading sessions with book accession numbers
-        const { data: sessions, error: sessionsError } = await supabase
-            .from('reading_sessions')
-            .select('book_accession');
+        const { data: sessions, error: sessionsError } = await fetchAll(() =>
+            inMonth(supabase.from('reading_sessions').select('book_accession'), month));
 
         if (sessionsError) throw sessionsError;
 
@@ -2850,7 +2901,7 @@ app.get('/api/book-analytics', async (req, res) => {
         // Fetch book details for top books
         const accessions = Object.keys(bookCounts);
         if (accessions.length === 0) {
-            return res.json({ analytics: [], top_books: [] });
+            return res.json({ month: month || null, total_reading_sessions: 0, total_unique_books: 0, analytics: [] });
         }
 
         const { data: books, error: booksError } = await supabase
@@ -2864,12 +2915,14 @@ app.get('/api/book-analytics', async (req, res) => {
         const analytics = (books || [])
             .map(book => ({
                 ...book,
+                category: SHELF_CODE_BY_CATEGORY[book.category] || book.category || '', // shown as GEN / LAR / FIC / FIL
                 read_count: bookCounts[book.accession_number] || 0
             }))
             .sort((a, b) => b.read_count - a.read_count)
             .slice(0, 20); // Top 20 most read books
 
-        res.json({ 
+        res.json({
+            month: month || null,
             total_reading_sessions: sessions.length,
             total_unique_books: accessions.length,
             analytics 
@@ -2882,9 +2935,12 @@ app.get('/api/book-analytics', async (req, res) => {
 
 // --- START SERVER ---
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+if (require.main === module) {
+    app.listen(PORT, (error) => {
+        if (error) throw error; // Express 5 passes listen errors (e.g. port in use) here
+        console.log(`Server is running on port ${PORT}`);
+    });
+}
 
 // 11b. Bulk import books (expects { records: [ { accession_number, call_number, title, author, category, copyright_year, isbn }, ... ] })
 app.post('/api/admin/import-books', async (req, res) => {
@@ -2892,8 +2948,12 @@ app.post('/api/admin/import-books', async (req, res) => {
     if (!Array.isArray(payload) || payload.length === 0) return res.status(400).json({ error: 'No records provided' });
 
     const toInsert = prepareBookImportRows(payload);
+    const skipped = payload.length - toInsert.length;
+    const skippedNote = skipped ? `. Skipped ${skipped} row(s) with a missing Accession No., Call No./DDC No., Title or Author, an invalid category, or a repeated accession number` : '';
 
-    if (!toInsert.length) return res.status(400).json({ error: 'No valid rows to import (missing required fields).' });
+    if (!toInsert.length) {
+        return res.status(400).json({ error: `No valid rows to import. Each row needs Accession No., Call No. or DDC No., Title, Author, and a category (${BOOK_CATEGORIES.join(', ')}).` });
+    }
 
     try {
         const { data, error } = await supabase.from('books').upsert(toInsert, { onConflict: 'accession_number' }).select('*');
@@ -2914,12 +2974,12 @@ app.post('/api/admin/import-books', async (req, res) => {
                     return res.status(500).json({ error: fallbackError.message });
                 }
                 const fallbackCount = Array.isArray(fallbackData) ? fallbackData.length : 0;
-                return res.json({ message: `Imported or updated ${fallbackCount} books with core fields only. Run the migration to enable metadata columns.`, imported: fallbackCount });
+                return res.json({ message: `Imported or updated ${fallbackCount} books with core fields only. Run the migration to enable metadata columns${skippedNote}.`, imported: fallbackCount, skipped });
             }
             return res.status(500).json({ error: error.message });
         }
         const importedCount = Array.isArray(data) ? data.length : 0;
-        res.json({ message: `Imported or updated ${importedCount} books`, imported: importedCount });
+        res.json({ message: `Imported or updated ${importedCount} books${skippedNote}`, imported: importedCount, skipped });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -2942,13 +3002,19 @@ app.post('/api/admin/import-non-print-resources', async (req, res) => {
     if (!toInsert.length) return res.status(400).json({ error: 'No valid rows to import (missing required fields).' });
 
     try {
-        const { data, error } = await supabase.from('non_print_resources').insert(toInsert);
+        const { error } = await supabase.from('non_print_resources').insert(toInsert);
         if (error) {
             console.error('[IMPORT-NONPRINT] error', error);
             return res.status(500).json({ error: error.message });
         }
-        res.json({ message: `Imported ${data.length} resources`, imported: data.length });
+        res.json({ message: `Imported ${toInsert.length} resources`, imported: toInsert.length });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
+
+module.exports = app;
+module.exports.buildBookRecord = buildBookRecord; // for tests
+module.exports.renewalDueDate = renewalDueDate; // for tests
+module.exports.reportMonth = reportMonth; // for tests
+module.exports.inMonth = inMonth; // for tests
