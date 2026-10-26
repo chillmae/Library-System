@@ -2572,6 +2572,12 @@ app.get('/api/admin/export/non-print-borrowers-json', async (req, res) => {
     }
 });
 
+// A return recorded at the desk is often entered days later, so it counts as returned on the due date
+// rather than the day it was recorded; one recorded before the due date keeps that day's date
+function deskReturnDate(dueDate, today) {
+    return dueDate && dueDate < today ? dueDate : today;
+}
+
 // 25. Admin verifies a return
 app.put('/api/admin/verify-return/:id', async (req, res) => {
     const { id } = req.params;
@@ -2582,7 +2588,7 @@ app.put('/api/admin/verify-return/:id', async (req, res) => {
     }
 
     try {
-        const { data: record, error: findError } = await supabase.from('borrow_records').select('id, status').eq('id', id).maybeSingle();
+        const { data: record, error: findError } = await supabase.from('borrow_records').select('id, status, due_date').eq('id', id).maybeSingle();
         if (findError) throw findError;
         if (!record) return res.status(404).json({ error: 'Borrow record not found.' });
         if (record.status === 'renewed') return res.status(400).json({ error: 'This loan was renewed. Verify the return on its renewal record instead.' });
@@ -2591,7 +2597,8 @@ app.put('/api/admin/verify-return/:id', async (req, res) => {
         // Handed back at the desk instead of the kiosk: record the return now
         if (record.status === 'borrowed') {
             const now = new Date();
-            Object.assign(update, { status: 'returned', return_date: now.toLocaleDateString('sv'), return_time: now.toTimeString().slice(0, 8) });
+            const return_date = deskReturnDate(record.due_date, now.toLocaleDateString('sv'));
+            Object.assign(update, { status: 'returned', return_date, return_time: now.toTimeString().slice(0, 8) });
         }
 
         const { error } = await supabase
@@ -3098,3 +3105,4 @@ module.exports.reportMonth = reportMonth; // for tests
 module.exports.inMonth = inMonth; // for tests
 module.exports.issueAdminToken = issueAdminToken; // for tests
 module.exports.buildOpacCatalog = buildOpacCatalog; // for tests
+module.exports.deskReturnDate = deskReturnDate; // for tests

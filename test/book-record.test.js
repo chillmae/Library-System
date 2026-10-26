@@ -4,7 +4,14 @@ const assert = require('node:assert');
 // Set before server.js loads .env so these tests never touch the real database
 process.env.SUPABASE_URL = 'http://127.0.0.1:9';
 process.env.SUPABASE_KEY = 'test-key';
-const { buildBookRecord, renewalDueDate, reportMonth, inMonth, buildOpacCatalog } = require('../server');
+const { buildBookRecord, renewalDueDate, reportMonth, inMonth, buildOpacCatalog, deskReturnDate } = require('../server');
+
+test('a desk return recorded late is dated on the due date; one recorded early keeps that day', () => {
+    assert.strictEqual(deskReturnDate('2026-08-10', '2026-10-26'), '2026-08-10'); // recorded weeks after it was due
+    assert.strictEqual(deskReturnDate('2026-10-29', '2026-10-26'), '2026-10-26'); // handed back before the due date
+    assert.strictEqual(deskReturnDate('2026-10-26', '2026-10-26'), '2026-10-26');
+    assert.strictEqual(deskReturnDate(null, '2026-10-26'), '2026-10-26'); // no due date set
+});
 
 test('OPAC groups copies under one title and marks only copies with an open loan as on loan', () => {
     const books = [
