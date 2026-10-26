@@ -4850,7 +4850,14 @@ function updateStudentsTable(filterSection = 'all') {
         ${label('mb-borrow-date', 'Borrow date')}
         <input id="mb-borrow-date" type="date" class="swal2-input" style="${field}" max="${today}" value="${today}">
         ${label('mb-due-date', 'Due date')}
-        <input id="mb-due-date" type="date" class="swal2-input" style="${field}" min="${today}" value="${addDays(today, LOAN_DAYS)}">`,
+        <input id="mb-due-date" type="date" class="swal2-input" style="${field}" min="${today}" value="${addDays(today, LOAN_DAYS)}">
+        ${label('mb-return-date', 'Returned date (optional)')}
+        <input id="mb-return-date" type="date" class="swal2-input" style="${field}" min="${today}" max="${today}">
+        <div style="text-align:left; font-size:0.8rem; margin-top:4px; color:#9aa0b4;">Fill this in for a past loan that was never recorded. Leave it blank if the item is still out.</div>
+        <div id="mb-condition-group" style="display:none;">
+          ${label('mb-condition', 'Condition when returned')}
+          <select id="mb-condition" class="swal2-select" style="${field} display:block;"><option value="Good Condition">Good Condition</option><option value="Damaged">Damaged</option></select>
+        </div>`,
       focusConfirm: false,
       showCancelButton: true,
       confirmButtonText: 'Save Borrowing',
@@ -4884,14 +4891,19 @@ function updateStudentsTable(filterSection = 'all') {
         $('mb-borrow-date').addEventListener('change', () => {
           const borrowDate = $('mb-borrow-date').value;
           $('mb-due-date').min = borrowDate;
+          $('mb-return-date').min = borrowDate;
           if (borrowDate) $('mb-due-date').value = addDays(borrowDate, LOAN_DAYS);
+        });
+        $('mb-return-date').addEventListener('input', () => {
+          $('mb-condition-group').style.display = $('mb-return-date').value ? 'block' : 'none';
         });
       },
       preConfirm: async () => {
         const $ = id => document.getElementById(id).value.trim();
         const body = { borrower_type: $('mb-type'), borrower_id: $('mb-borrower'), item_category: $('mb-category'), item_code: $('mb-code'), borrow_date: $('mb-borrow-date'), due_date: $('mb-due-date') };
+        if ($('mb-return-date')) Object.assign(body, { return_date: $('mb-return-date'), return_condition: $('mb-condition') });
         if (!body.borrower_id || !body.item_code || !body.borrow_date || !body.due_date) {
-          Swal.showValidationMessage('Fill in every field.');
+          Swal.showValidationMessage('Fill in the borrower ID, accession number, borrow date and due date.');
           return false;
         }
         try {

@@ -2279,9 +2279,10 @@ app.post('/api/admin/renew-borrow/:id', async (req, res) => {
     }
 });
 
-// Admin records a borrowing by hand (e.g. one from an earlier date); same lookups as the kiosk, already verified
+// Admin records a borrowing by hand (e.g. one from an earlier date); same lookups as the kiosk, already verified.
+// With a return date it is recorded as already returned (a past loan that was never entered).
 app.post('/api/admin/manual-borrow', async (req, res) => {
-    const { borrower_type, borrower_id, item_category, item_code, borrow_date, due_date } = req.body || {};
+    const { borrower_type, borrower_id, item_category, item_code, borrow_date, due_date, return_date, return_condition } = req.body || {};
     const borrowerId = String(borrower_id || '').trim();
     const code = String(item_code || '').trim();
     const today = new Date().toLocaleDateString('sv');
@@ -2292,6 +2293,11 @@ app.post('/api/admin/manual-borrow', async (req, res) => {
     if (!borrowerId || !code) return res.status(400).json({ error: 'Borrower ID and accession number are required.' });
     if (!isDate(borrow_date) || borrow_date > today) return res.status(400).json({ error: 'Choose a borrow date that is today or earlier.' });
     if (!isDate(due_date) || due_date < borrow_date) return res.status(400).json({ error: 'Choose a due date on or after the borrow date.' });
+    const returned = Boolean(return_date);
+    if (returned && (!isDate(return_date) || return_date < borrow_date || return_date > today)) {
+        return res.status(400).json({ error: 'Choose a returned date between the borrow date and today, or leave it blank if the item is still out.' });
+    }
+    if (returned && !['Good Condition', 'Damaged'].includes(return_condition)) return res.status(400).json({ error: 'Choose the condition the item was returned in.' });
 
     try {
         const isFaculty = borrower_type === 'faculty';
@@ -2309,14 +2315,17 @@ app.post('/api/admin/manual-borrow', async (req, res) => {
         if (!found) return res.status(404).json({ error: `No ${isPrint ? 'print book' : 'non-print resource'} has the code ${code}.` });
         const item = { category: item_category, title: found.title };
 
-        const { data: openLoans, error: openError } = await supabase.from('borrow_records')
-            .select('student_name')
-            .eq('item_code', code)
-            .eq('item_category', item.category)
-            .eq('status', 'borrowed')
-            .limit(1);
-        if (openError) throw openError;
-        if (openLoans.length) return res.status(409).json({ error: `This item is still on loan to ${openLoans[0].student_name}. Record its return first.` });
+        // A past loan that is already returned doesn't clash with whoever has the item now
+        if (!returned) {
+            const { data: openLoans, error: openError } = await supabase.from('borrow_records')
+                .select('student_name')
+                .eq('item_code', code)
+                .eq('item_category', item.category)
+                .eq('status', 'borrowed')
+                .limit(1);
+            if (openError) throw openError;
+            if (openLoans.length) return res.status(409).json({ error: `This item is still on loan to ${openLoans[0].student_name}. Record its return first.` });
+        }
 
         const { data, error } = await supabase.from('borrow_records').insert([{
             student_id: borrowerId,
@@ -2328,7 +2337,8 @@ app.post('/api/admin/manual-borrow', async (req, res) => {
             borrow_date,
             borrow_time: new Date().toTimeString().slice(0, 8),
             due_date,
-            status: 'borrowed',
+            status: returned ? 'returned' : 'borrowed',
+            ...(returned && { return_date, return_condition }),
             admin_verified: true
         }]).select('*');
         if (error) {
@@ -2336,7 +2346,7 @@ app.post('/api/admin/manual-borrow', async (req, res) => {
             throw error;
         }
 
-        res.json({ message: `Recorded: "${item.title}" borrowed by ${borrower.name}.`, record: data?.[0] || null });
+        res.json({ message: `Recorded: "${item.title}" borrowed by ${borrower.name}${returned ? ` and returned on ${return_date}` : ''}.`, record: data?.[0] || null });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
