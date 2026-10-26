@@ -2290,7 +2290,7 @@ app.post('/api/admin/manual-borrow', async (req, res) => {
 
     if (!['student', 'faculty'].includes(borrower_type)) return res.status(400).json({ error: 'Choose whether the borrower is a student or faculty.' });
     if (!['print', 'non-print'].includes(item_category)) return res.status(400).json({ error: 'Choose whether the resource is print or non-print.' });
-    if (!borrowerId || !code) return res.status(400).json({ error: 'Borrower ID and accession number are required.' });
+    if (!borrowerId || !code) return res.status(400).json({ error: 'Borrower ID and accession number or resource code are required.' });
     if (!isDate(borrow_date) || borrow_date > today) return res.status(400).json({ error: 'Choose a borrow date that is today or earlier.' });
     if (!isDate(due_date) || due_date < borrow_date) return res.status(400).json({ error: 'Choose a due date on or after the borrow date.' });
     const returned = Boolean(return_date);
@@ -2949,19 +2949,19 @@ app.post('/api/validate-book', async (req, res) => {
 
         const { data: resource, error: resourceError } = await supabase
             .from('non_print_resources')
-            .select('id, resource_code, title, name, category')
+            .select('id, resource_code, title, category')
             .eq('resource_code', code)
             .single();
 
         if (resource) {
-            console.log('[VALIDATE-BOOK] Non-print resource found:', resource.title || resource.name);
+            console.log('[VALIDATE-BOOK] Non-print resource found:', resource.title);
             return res.json({ 
                 valid: true, 
                 type: 'non-print',
                 resource: {
                     id: resource.id,
                     resource_code: resource.resource_code,
-                    title: resource.title || resource.name,
+                    title: resource.title,
                     category: resource.category
                 }
             });

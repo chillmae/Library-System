@@ -4826,10 +4826,11 @@ function updateStudentsTable(filterSection = 'all') {
     return result.toISOString().slice(0, 10);
   }
 
-  // Same idea as the kiosk: type the accession number and the title fills in; past borrow dates are allowed
+  // Same idea as the kiosk: type the accession number (or a non-print resource code) and the title fills in; past borrow dates are allowed
   async function openManualBorrow() {
     if (!allStudents.length) await loadStudents();
     if (!allFaculty.length) await loadFaculty();
+    if (!allNonPrintResources.length) await loadNonPrintResources();
     const today = new Date().toLocaleDateString('sv');
     const field = 'width:100%; margin:4px 0 0; box-sizing:border-box;';
     const label = (id, text) => `<label for="${id}" style="display:block; text-align:left; margin:12px 0 0; font-size:0.85rem;">${text}</label>`;
@@ -4846,6 +4847,7 @@ function updateStudentsTable(filterSection = 'all') {
         <select id="mb-category" class="swal2-select" style="${field} display:block;"><option value="print">Print</option><option value="non-print">Non-print</option></select>
         ${label('mb-code', 'Accession number')}
         <input id="mb-code" class="swal2-input" style="${field}" placeholder="e.g. 000265" autocomplete="off">
+        <datalist id="mb-resources">${allNonPrintResources.map(r => `<option value="${escapeHtml(r.code)}">${escapeHtml(r.name)}</option>`).join('')}</datalist>
         ${hint('mb-title')}
         ${label('mb-borrow-date', 'Borrow date')}
         <input id="mb-borrow-date" type="date" class="swal2-input" style="${field}" max="${today}" value="${today}">
@@ -4879,12 +4881,21 @@ function updateStudentsTable(filterSection = 'all') {
             const res = await fetch('/api/validate-book', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accession_number: code }) });
             const data = await res.json().catch(() => ({}));
             if ($('mb-code').value.trim() !== code) return; // typed on since this lookup started
-            $('mb-title').textContent = !data.valid ? 'Not found in the catalog'
+            const nonPrint = $('mb-category').value === 'non-print';
+            $('mb-title').textContent = !data.valid ? (nonPrint ? 'No non-print resource has this code' : 'Not found in the catalog')
               : data.type !== $('mb-category').value ? `This code is a ${data.type} resource`
-              : `Title: ${(data.book || data.resource).title}`;
+              : `${nonPrint ? 'Name' : 'Title'}: ${(data.book || data.resource).title}`;
           }, 300);
         };
-        $('mb-category').addEventListener('change', showTitle);
+        // Non-print items are found by their resource code (NP-…), picked from the non-print list
+        const showCodeField = () => {
+          const nonPrint = $('mb-category').value === 'non-print';
+          document.querySelector('label[for="mb-code"]').textContent = nonPrint ? 'Resource code' : 'Accession number';
+          $('mb-code').placeholder = nonPrint ? 'e.g. NP-000-18, or pick from the list' : 'e.g. 000265';
+          if (nonPrint) $('mb-code').setAttribute('list', 'mb-resources'); else $('mb-code').removeAttribute('list');
+          showTitle();
+        };
+        $('mb-category').addEventListener('change', showCodeField);
         $('mb-type').addEventListener('change', showBorrower);
         $('mb-borrower').addEventListener('input', showBorrower);
         $('mb-code').addEventListener('input', showTitle);
@@ -4903,7 +4914,7 @@ function updateStudentsTable(filterSection = 'all') {
         const body = { borrower_type: $('mb-type'), borrower_id: $('mb-borrower'), item_category: $('mb-category'), item_code: $('mb-code'), borrow_date: $('mb-borrow-date'), due_date: $('mb-due-date') };
         if ($('mb-return-date')) Object.assign(body, { return_date: $('mb-return-date'), return_condition: $('mb-condition') });
         if (!body.borrower_id || !body.item_code || !body.borrow_date || !body.due_date) {
-          Swal.showValidationMessage('Fill in the borrower ID, accession number, borrow date and due date.');
+          Swal.showValidationMessage('Fill in the borrower ID, accession number or resource code, borrow date and due date.');
           return false;
         }
         try {
