@@ -4760,7 +4760,7 @@ function updateStudentsTable(filterSection = 'all') {
         <td><strong>${escapeHtml(rec.student_name)}</strong></td><td><code>${escapeHtml(rec.student_id)}</code></td>
         <td>${gs}</td><td>${cat}</td><td>${escapeHtml(rec.item_title)}</td>
         <td><code>${escapeHtml(rec.item_code)}</code></td><td>${bd}</td><td>${due}</td>
-        <td><button class="btn btn-success btn-sm" onclick="verifyBorrow('${rec.id}')"><i class="fas fa-check"></i> Verify</button> <button class="btn btn-danger btn-sm" onclick="deleteBorrowRecord('${rec.id}','pending-borrow')"><i class="fas fa-trash"></i></button></td>
+        <td><button class="btn btn-success btn-sm" onclick="verifyBorrow('${rec.id}', '${rec.due_date || addDays(rec.borrow_date, LOAN_DAYS)}')"><i class="fas fa-check"></i> Verify</button> <button class="btn btn-danger btn-sm" onclick="deleteBorrowRecord('${rec.id}','pending-borrow')"><i class="fas fa-trash"></i></button></td>
       </tr>`;
     }).join('');
   }
@@ -4818,6 +4818,14 @@ function updateStudentsTable(filterSection = 'all') {
     }
   }
 
+  // Same rule as the server: an item is due 3 days after it is borrowed
+  const LOAN_DAYS = 3;
+  function addDays(date, days) {
+    const result = new Date(`${date}T00:00:00Z`);
+    result.setUTCDate(result.getUTCDate() + days);
+    return result.toISOString().slice(0, 10);
+  }
+
   // Same idea as the kiosk: type the accession number and the title fills in; past borrow dates are allowed
   async function openManualBorrow() {
     if (!allStudents.length) await loadStudents();
@@ -4842,7 +4850,7 @@ function updateStudentsTable(filterSection = 'all') {
         ${label('mb-borrow-date', 'Borrow date')}
         <input id="mb-borrow-date" type="date" class="swal2-input" style="${field}" max="${today}" value="${today}">
         ${label('mb-due-date', 'Due date')}
-        <input id="mb-due-date" type="date" class="swal2-input" style="${field}" min="${today}">`,
+        <input id="mb-due-date" type="date" class="swal2-input" style="${field}" min="${today}" value="${addDays(today, LOAN_DAYS)}">`,
       focusConfirm: false,
       showCancelButton: true,
       confirmButtonText: 'Save Borrowing',
@@ -4873,7 +4881,11 @@ function updateStudentsTable(filterSection = 'all') {
         $('mb-type').addEventListener('change', showBorrower);
         $('mb-borrower').addEventListener('input', showBorrower);
         $('mb-code').addEventListener('input', showTitle);
-        $('mb-borrow-date').addEventListener('change', () => { $('mb-due-date').min = $('mb-borrow-date').value; });
+        $('mb-borrow-date').addEventListener('change', () => {
+          const borrowDate = $('mb-borrow-date').value;
+          $('mb-due-date').min = borrowDate;
+          if (borrowDate) $('mb-due-date').value = addDays(borrowDate, LOAN_DAYS);
+        });
       },
       preConfirm: async () => {
         const $ = id => document.getElementById(id).value.trim();
@@ -4933,12 +4945,13 @@ function updateStudentsTable(filterSection = 'all') {
     }).join('');
   }
 
-  async function verifyBorrow(id) {
+  async function verifyBorrow(id, suggestedDueDate) {
     const { value: dueDate, isConfirmed } = await Swal.fire({
       title: 'Set Due Date',
-      text: 'Choose the due date for this borrowed item.',
+      text: `Items are due ${LOAN_DAYS} days after they are borrowed. Change the date only if needed.`,
       icon: 'calendar',
       input: 'date',
+      inputValue: suggestedDueDate,
       inputAttributes: { required: 'true' },
       showCancelButton: true,
       confirmButtonColor: '#5b6ef5',
@@ -5848,6 +5861,18 @@ function updateStudentsTable(filterSection = 'all') {
       for (const part of parts.slice(1)) {
         worker = worker.get('pdf').then(pdf => pdf.addPage()).from(part).toContainer().toCanvas().toPdf();
       }
+      // Footer on every page, inside the bottom margin, saying when the report was made
+      const generated = `Generated on ${new Date().toLocaleString('en-PH', { dateStyle: 'long', timeStyle: 'short' })}`;
+      worker = worker.get('pdf').then(pdf => {
+        const width = pdf.internal.pageSize.getWidth();
+        const height = pdf.internal.pageSize.getHeight();
+        for (let page = 1; page <= pdf.internal.getNumberOfPages(); page++) {
+          pdf.setPage(page);
+          pdf.setFontSize(8);
+          pdf.setTextColor(90);
+          pdf.text(generated, width / 2, height - 0.25, { align: 'center' });
+        }
+      });
       await worker.save();
     } finally {
       holder.remove();
@@ -6150,8 +6175,9 @@ function updateStudentsTable(filterSection = 'all') {
       table.style.tableLayout = 'fixed'; // fixed widths + wrapping so long titles stay on the page
 
       const thead = document.createElement('thead');
-      const cols = ['DATE BORROWED','BORROWER\'S NAME','SUBJECT AREA','GRADE LEVEL','AUTHOR','TITLE','COPYRIGHT','DUE DATE','SIGNATURE','DATE RETURNED','SIGNATURE','REMARKS'];
-      const colWidths = ['7%','12%','7%','9%','10%','15%','6%','7%','6%','7%','6%','8%'];
+      // Columns of Annex 2.2 (Learner Borrower's Log): no Subject Area; grade level and section share a column
+      const cols = ['DATE BORROWED','BORROWER\'S NAME','GRADE LEVEL & SECTION','AUTHOR','TITLE','COPYRIGHT','DUE DATE','SIGNATURE','DATE RETURNED','SIGNATURE','REMARKS'];
+      const colWidths = ['7%','13%','10%','11%','17%','6%','7%','6%','7%','6%','10%'];
       const htr = document.createElement('tr');
       cols.forEach((c, idx)=>{
         const th = document.createElement('th');
@@ -6175,7 +6201,7 @@ function updateStudentsTable(filterSection = 'all') {
       for (let i = 0; i < rowsToShow; i++) {
         const rec = records[i] || {};
         const tr = document.createElement('tr');
-        const cells = [rec.date_borrowed||'', rec.borrower_name||'', rec.subject_area||'', rec.grade_level||'', rec.author||'', rec.title||'', rec.copyright||'', rec.due_date||'', '', rec.date_returned||'', '', rec.remarks||''];
+        const cells = [rec.date_borrowed||'', rec.borrower_name||'', rec.grade_level||'', rec.author||'', rec.title||'', rec.copyright||'', rec.due_date||'', '', rec.date_returned||'', '', rec.remarks||''];
         cells.forEach(v=>{
           const td = document.createElement('td');
           td.textContent = v || '';
@@ -6350,8 +6376,8 @@ function updateStudentsTable(filterSection = 'all') {
       const records = d.records || [];
 
       const wb = XLSX.utils.book_new();
-      const cols = ['Date Borrowed','Borrower\'s Name','Subject Area','Grade Level','Author','Title','Copyright','Due Date','Date Returned','Remarks'];
-      const data = [cols].concat(records.map(rw=>[rw.date_borrowed, rw.borrower_name, rw.subject_area, rw.grade_level, rw.author, rw.title, rw.copyright, rw.due_date, rw.date_returned, rw.remarks]));
+      const cols = ['Date Borrowed','Borrower\'s Name','Grade Level & Section','Author','Title','Copyright','Due Date','Date Returned','Remarks'];
+      const data = [cols].concat(records.map(rw=>[rw.date_borrowed, rw.borrower_name, rw.grade_level, rw.author, rw.title, rw.copyright, rw.due_date, rw.date_returned, rw.remarks]));
       const ws = XLSX.utils.aoa_to_sheet(data);
       XLSX.utils.book_append_sheet(wb, ws, 'BorrowersLog');
       XLSX.writeFile(wb, 'borrowers_log.xlsx');

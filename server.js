@@ -831,12 +831,7 @@ app.get('/api/admin/students/:id', async (req, res) => {
 
 // One line of a library card: catalog call number/author/title, a due date, and remarks in words
 function toCardRecord(record, book, resource) {
-    let due_date = record.due_date || record.return_date || '';
-    if (!due_date && record.borrow_date) {
-        const due = new Date(`${record.borrow_date}T00:00:00Z`);
-        due.setUTCDate(due.getUTCDate() + 7);
-        due_date = due.toISOString().slice(0, 10);
-    }
+    const due_date = record.due_date || record.return_date || (record.borrow_date ? addDays(record.borrow_date, LOAN_DAYS) : '');
     const remarks = record.status === 'returned'
         ? ({ Damaged: 'Returned Damaged', 'Good Condition': 'Returned in Good Condition' }[record.return_condition] || 'Returned')
         : record.status === 'borrowed' ? (record.renewed_from ? 'Renewal - On loan' : 'On loan')
@@ -2028,6 +2023,7 @@ app.post('/api/borrow', async (req, res) => {
         const minutes = String(now.getMinutes()).padStart(2, '0');
         const seconds = String(now.getSeconds()).padStart(2, '0');
         const borrow_time = `${hours}:${minutes}:${seconds}`;
+        const due_date = addDays(borrow_date, LOAN_DAYS);
 
         const { data, error } = await supabase
             .from('borrow_records')
@@ -2040,6 +2036,7 @@ app.post('/api/borrow', async (req, res) => {
                 item_code: item_code.trim(),
                 borrow_date,
                 borrow_time,
+                due_date,
                 status: 'borrowed'
             }]);
 
@@ -2053,7 +2050,7 @@ app.post('/api/borrow', async (req, res) => {
         }
 
         console.log('[BORROW] Record created successfully');
-        res.json({ message: 'Borrow recorded successfully!', record: data });
+        res.json({ message: 'Borrow recorded successfully!', record: data, due_date });
     } catch (error) {
         console.error('[BORROW] Error:', error.message);
         res.status(500).json({ error: error.message });
@@ -2212,11 +2209,18 @@ app.get('/api/admin/pending-returns', async (req, res) => {
     }
 });
 
+// A new loan is due this many days after it is borrowed; the admin can still change it when verifying
+const LOAN_DAYS = 3;
+
+function addDays(date, days) {
+    const result = new Date(`${date}T00:00:00Z`);
+    result.setUTCDate(result.getUTCDate() + days);
+    return result.toISOString().slice(0, 10);
+}
+
 // New due date for a renewal, counted from the date the item was due: 3 days for learners, 5 for faculty
 function renewalDueDate(dueDate, isFaculty) {
-    const date = new Date(`${dueDate}T00:00:00Z`);
-    date.setUTCDate(date.getUTCDate() + (isFaculty ? 5 : 3));
-    return date.toISOString().slice(0, 10);
+    return addDays(dueDate, isFaculty ? 5 : 3);
 }
 
 const RENEWAL_COLUMN_SQL = 'ALTER TABLE borrow_records ADD COLUMN IF NOT EXISTS renewed_from UUID REFERENCES borrow_records(id) ON DELETE SET NULL;';
@@ -2415,11 +2419,14 @@ async function getBorrowerLogRows(kind) {
 
 const BORROWER_LOG_HEADER = ['Date Borrowed', "Borrower's Name", 'Subject Area', 'Grade Level', 'Author', 'Title', 'Copyright', 'Due Date', 'Signature', 'Date Returned', 'Signature (Returned)', 'Remarks'];
 const borrowerLogCsv = rows => toCsv(BORROWER_LOG_HEADER, rows.map(r => [r.date_borrowed, r.borrower_name, r.subject_area, r.grade_level, r.author, r.title, r.copyright, r.due_date, '', r.date_returned, '', r.remarks]));
+// The learner log (Annex 2.2) has no Subject Area column, and grade level and section share one column
+const LEARNER_LOG_HEADER = ['Date Borrowed', "Borrower's Name", 'Grade Level & Section', 'Author', 'Title', 'Copyright', 'Due Date', 'Signature', 'Date Returned', 'Signature (Returned)', 'Remarks'];
+const learnerLogCsv = rows => toCsv(LEARNER_LOG_HEADER, rows.map(r => [r.date_borrowed, r.borrower_name, r.grade_level, r.author, r.title, r.copyright, r.due_date, '', r.date_returned, '', r.remarks]));
 
 // Learner borrower's log: CSV download, and JSON for the PDF/Excel exports
 app.get('/api/admin/export/borrowers-log', async (req, res) => {
     try {
-        sendCsv(res, 'borrowers_log.csv', borrowerLogCsv(await getBorrowerLogRows('learner')));
+        sendCsv(res, 'borrowers_log.csv', learnerLogCsv(await getBorrowerLogRows('learner')));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

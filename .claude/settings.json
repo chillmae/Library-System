@@ -98,7 +98,14 @@
       "Bash(curl -s --max-time 5 http://localhost:3000/api/opac/catalog)",
       "Bash(netstat -ano)",
       "Bash(node C:/Users/HOME/AppData/Local/Temp/claude/c--xampp-htdocs-Library-System/8a3ff374-ca2a-4633-ba61-7308cc57c92c/scratchpad/shoot2.js C:/Users/HOME/AppData/Local/Temp/claude/c--xampp-htdocs-Library-System/8a3ff374-ca2a-4633-ba61-7308cc57c92c/scratchpad/shots)",
-      "mcp__claude-vscode__getDiagnostics"
+      "mcp__claude-vscode__getDiagnostics",
+      "Bash(rm -f C:/Users/HOME/AppData/Local/Temp/claude/c--xampp-htdocs-Library-System/8a3ff374-ca2a-4633-ba61-7308cc57c92c/scratchpad/pdfs/*.pdf)",
+      "Bash(node C:/Users/HOME/AppData/Local/Temp/claude/c--xampp-htdocs-Library-System/8a3ff374-ca2a-4633-ba61-7308cc57c92c/scratchpad/pdfcheck.js C:/Users/HOME/AppData/Local/Temp/claude/c--xampp-htdocs-Library-System/8a3ff374-ca2a-4633-ba61-7308cc57c92c/scratchpad/pdfs)",
+      "Bash(python -I -c ' *)",
+      "Bash('/c/Program Files \\(x86\\)/Microsoft/Edge/Application/msedge.exe' --headless=new --disable-gpu --no-first-run --user-data-dir=C:/Users/HOME/AppData/Local/Temp/claude/c--xampp-htdocs-Library-System/8a3ff374-ca2a-4633-ba61-7308cc57c92c/scratchpad/pdfs/edge-profile4 --virtual-time-budget=8000 --window-size=1400,1000 --screenshot=C:/Users/HOME/AppData/Local/Temp/claude/c--xampp-htdocs-Library-System/8a3ff374-ca2a-4633-ba61-7308cc57c92c/scratchpad/pdfs/view.png 'file:///C:/Users/HOME/AppData/Local/Temp/claude/c--xampp-htdocs-Library-System/8a3ff374-ca2a-4633-ba61-7308cc57c92c/scratchpad/pdfs/borrowers_log.pdf#page=1&zoom=page-fit')",
+      "Bash('/c/Program Files \\(x86\\)/Microsoft/Edge/Application/msedge.exe' --headless=new --disable-gpu --no-first-run --user-data-dir=C:/Users/HOME/AppData/Local/Temp/claude/c--xampp-htdocs-Library-System/8a3ff374-ca2a-4633-ba61-7308cc57c92c/scratchpad/pdfs/edge-profile5 --virtual-time-budget=15000 --window-size=1350,960 --screenshot=C:/Users/HOME/AppData/Local/Temp/claude/c--xampp-htdocs-Library-System/8a3ff374-ca2a-4633-ba61-7308cc57c92c/scratchpad/pdfs/page1.png file:///C:/Users/HOME/AppData/Local/Temp/claude/c--xampp-htdocs-Library-System/8a3ff374-ca2a-4633-ba61-7308cc57c92c/scratchpad/pdfs/render.html)",
+      "Bash(python -I -X utf8 C:/Users/HOME/AppData/Local/Temp/claude/c--xampp-htdocs-Library-System/8a3ff374-ca2a-4633-ba61-7308cc57c92c/scratchpad/read_xlsx.py 'ANNEXES_SCHOOL LIBRARY MANUAL.xlsx')",
+      "Bash(node -e \"require\\('dotenv'\\).config\\({quiet:true}\\); console.log\\(require\\('./server'\\).issueAdminToken\\(\\)\\)\")"
     ]
   }
 }

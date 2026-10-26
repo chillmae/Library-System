@@ -2985,7 +2985,8 @@
                 closeBorrowModal();
                 document.getElementById('success-title').textContent = 'Borrow Recorded!';
                 const resourceType = category === 'non-print' ? 'non-print resource' : 'print resource';
-                document.getElementById('success-subtitle').textContent = `${title} has been recorded as a ${resourceType}. Admin will verify it shortly.`;
+                const dueBy = data.due_date ? ` Please return it by ${new Date(`${data.due_date}T00:00:00`).toLocaleDateString('en-PH', { month: 'long', day: 'numeric', year: 'numeric' })}.` : '';
+                document.getElementById('success-subtitle').textContent = `${title} has been recorded as a ${resourceType}. Admin will verify it shortly.${dueBy}`;
                 showScreen('success');
             } else {
                 showError('borrow-error-msg', `❌ ${data.error || 'Error recording borrow'}`);
